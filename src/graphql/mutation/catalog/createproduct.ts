@@ -4,6 +4,7 @@ import { gql } from 'graphql-request'
 const CREATE_PRODUCT_MUTATION = gql`
   mutation CreateProduct(
     $storeId: ID!,
+    $sku: String!,
     $name: String!,
     $description: String!,
     $price: Float!,
@@ -11,6 +12,7 @@ const CREATE_PRODUCT_MUTATION = gql`
   ) {
     createProduct(
       store_id: $storeId,
+      sku: $sku,
       name: $name,
       description: $description,
       price: $price,
@@ -37,6 +39,7 @@ interface CreateProductResponse {
 export async function createProduct(
   token: string,
   storeId: number,
+  sku: string,
   name: string,
   description: string,
   price: number,
@@ -48,6 +51,6 @@ export async function createProduct(
 
   return await graphqlClient.request<CreateProductResponse>(
     CREATE_PRODUCT_MUTATION,
-    { storeId, name, description, price, attributes }
+    { storeId, sku, name, description, price, attributes }
   )
 }

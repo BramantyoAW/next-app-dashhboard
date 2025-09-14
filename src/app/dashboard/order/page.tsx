@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { graphqlClient } from "@/graphql/graphqlClient"
 import { GET_ORDERS_BY_STORE, GetOrdersByStoreResponse } from "@/graphql/query/order/getAllOrderByStore"
 import { useProfile } from "@/app/dashboard/layout"
+import { extractStoreId } from '@/lib/jwt'
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -13,8 +14,8 @@ export default function OrdersPage() {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const token = localStorage.getItem("token")
-        const storeId = profile?.me?.user?.store_id
+       const token = localStorage.getItem('token')
+      const storeId = extractStoreId(token)
 
         if (!token) throw new Error("Token not found")
 

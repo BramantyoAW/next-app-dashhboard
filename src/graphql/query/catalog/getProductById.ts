@@ -5,10 +5,12 @@ export const GET_PRODUCT_BY_ID = gql`
   query GetProductById($id: ID!) {
     getProductById(id: $id) {
       id
+      sku
       name
       price
       description
       attributes {
+        id
         name
         value
       }
@@ -17,12 +19,14 @@ export const GET_PRODUCT_BY_ID = gql`
 `
 
 export type ProductAttribute = {
+  id: string
   name: string
   value: string
 }
 
 export type Product = {
   id: string
+  sku: string
   name: string
   price: number
   description: string

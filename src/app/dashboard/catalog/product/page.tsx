@@ -1,10 +1,12 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getAllProducts } from '@/graphql/query/catalog/getAllProducts'
-import { useProfile } from '@/app/dashboard/layout'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { getAllProducts } from '@/graphql/query/catalog/getAllProducts'
+import ConfirmModal from '@/components/ConfirmModal'
+import { extractStoreId } from '@/lib/jwt'
+
 interface Attribute {
   name: string
   value: string
@@ -12,6 +14,7 @@ interface Attribute {
 
 interface Product {
   id: number
+  sku: string
   name: string
   price: number
   description?: string
@@ -21,23 +24,25 @@ interface Product {
 export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const profile = useProfile()
+  const [confirmId, setConfirmId] = useState<number | null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    const storeId = profile?.me?.user?.store_id
+    async function bootstrap() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.replace('/login')
+        return
+      }
 
-    if (!token) {
-      router.push('/login')
-      return
-    }
+      const storeId = extractStoreId(token)
+      if (!storeId) {
+        router.replace('/login')
+        return
+      }
 
-    if (!storeId) return
-
-    async function fetchProducts() {
       try {
-        const res = await getAllProducts(token as string, storeId as number, '', 10, 1)
+        const res = await getAllProducts(token, storeId, '', 10, 1)
         setProducts(res.getAllProducts.data || [])
       } catch (err) {
         console.error('Failed to fetch products:', err)
@@ -46,15 +51,13 @@ export default function ProductPage() {
       }
     }
 
-    fetchProducts()
-  }, [profile])
+    bootstrap()
+  }, [router])
 
   const handleDelete = (id: number) => {
-    const confirmDelete = confirm('Are you sure you want to delete this product?')
-    if (confirmDelete) {
-      setProducts(prev => prev.filter(p => p.id !== id))
-      // TODO: deleteProductService(id)
-    }
+    setProducts(prev => prev.filter(p => p.id !== id))
+    // TODO: call deleteProductService(id)
+    setConfirmId(null)
   }
 
   return (
@@ -82,11 +85,18 @@ export default function ProductPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {products.map(product => (
-            <div key={product.id} className="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition flex flex-col justify-between">
+            <div
+              key={product.id}
+              className="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition flex flex-col justify-between"
+            >
               <div>
                 <h2 className="text-lg font-semibold text-gray-800">{product.name}</h2>
+                <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+
                 <p className="mt-2 text-sm text-gray-500">Price:</p>
-                <p className="text-blue-600 font-semibold text-lg">Rp {product.price.toLocaleString()}</p>
+                <p className="text-blue-600 font-semibold text-lg">
+                  Rp {product.price.toLocaleString()}
+                </p>
 
                 {product.attributes?.length ? (
                   <ul className="mt-2 text-sm text-gray-600 space-y-1">
@@ -106,7 +116,7 @@ export default function ProductPage() {
                   Edit
                 </Link>
                 <button
-                  onClick={() => handleDelete(product.id)}
+                  onClick={() => setConfirmId(product.id)}
                   className="text-sm px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
                 >
                   Delete
@@ -115,6 +125,23 @@ export default function ProductPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {confirmId && (
+        <ConfirmModal
+          title="Konfirmasi Hapus"
+          message={
+            <p>
+              Apakah kamu yakin ingin menghapus product{' '}
+              <span className="font-semibold">
+                {products.find(p => p.id === confirmId)?.name}
+              </span>
+              ?
+            </p>
+          }
+          onCancel={() => setConfirmId(null)}
+          onConfirm={() => handleDelete(confirmId)}
+        />
       )}
     </div>
   )

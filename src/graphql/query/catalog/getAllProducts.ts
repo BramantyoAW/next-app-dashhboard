@@ -11,6 +11,7 @@ const GET_ALL_PRODUCTS_QUERY = gql`
     ) {
       data {
         id
+        sku
         name
         price
         description
@@ -29,12 +30,14 @@ const GET_ALL_PRODUCTS_QUERY = gql`
 `
 
 interface Attribute {
+  id: number
   name: string
   value: string
 }
 
 interface Product {
   id: number
+  sku: string
   name: string
   price: number
   description: string

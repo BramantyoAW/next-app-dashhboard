@@ -1,33 +1,31 @@
 'use client'
-
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createAttributeService } from '@/graphql/mutation/catalog/attribute'
-import { useProfile } from '@/app/dashboard/layout'
+import { extractStoreId } from '@/lib/jwt'
 
 export default function CreateAttributePage() {
-  const [name, setName] = useState('')
   const router = useRouter()
-  const profile = useProfile()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-  
+
     const form = e.currentTarget as HTMLFormElement
     const name = (form.elements.namedItem('name') as HTMLInputElement).value
     const type = (form.elements.namedItem('type') as HTMLSelectElement).value
-  
-    const storeId = profile?.me?.user?.store_id
-    if (!storeId) {
-      alert('Store ID tidak ditemukan')
-      return
+
+    const token = localStorage.getItem('token');
+    const storeId = extractStoreId(token);
+    
+    if (!token || !storeId) {
+      alert('Store belum dipilih.');
+      router.push('/login'); // or '/select-store'
+      return;
     }
-  
-    const res = await createAttributeService(storeId, name, type)
-    console.log('Submitting attribute:', { name, type })
-  
+
+    await createAttributeService(storeId, name, type)
+
     alert('Attribute created successfully!')
-    router.push('/dashboard/catalog/attribute') // jangan lupa `/dashboard`
+    router.push('/dashboard/catalog/attribute')
   }
   return (
     <div>

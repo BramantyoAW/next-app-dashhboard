@@ -5,6 +5,7 @@ export const UPDATE_PRODUCT = gql`
   mutation UpdateProduct(
     $id: ID!
     $store_id: ID!
+    $sku: String!
     $name: String!
     $description: String
     $price: Float!
@@ -13,6 +14,7 @@ export const UPDATE_PRODUCT = gql`
     updateProduct(
       id: $id
       store_id: $store_id
+      sku: $sku
       name: $name
       description: $description
       price: $price
@@ -36,6 +38,7 @@ export async function updateProduct(
   variables: {
     id: string
     store_id: string
+    sku: string
     name: string
     description?: string
     price: number
