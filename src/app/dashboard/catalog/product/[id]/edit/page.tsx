@@ -11,6 +11,7 @@ import {
 import { updateProduct } from '@/graphql/mutation/catalog/updateProduct'
 import { extractStoreId } from '@/lib/jwt'
 import { toast } from 'sonner'
+import { StockCard } from "@/components/catalog/StockCard"
 
 export default function EditProductPage() {
   const params = useParams()
@@ -165,6 +166,19 @@ export default function EditProductPage() {
           Save Changes
         </button>
       </form>
+
+      <div className="p-6 text-black space-y-8">
+      <h1 className="text-xl font-bold mb-4">Edit Product</h1>
+
+      {/* form product */}
+      <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
+        {/* form field ... */}
+      </form>
+
+      {/* stock management */}
+      <StockCard productId={Number(id)} />   {/* ⬅️ taruh di bawah form */}
+      </div>
     </div>
   )
 }
+
