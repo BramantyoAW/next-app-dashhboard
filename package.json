@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "graphql-request": "^7.2.0",
+    "graphql-request": "^7.3.1",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

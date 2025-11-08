@@ -87,9 +87,10 @@ export default function ProductPage() {
           {products.map(product => (
             <div
               key={product.id}
-              className="bg-white rounded-2xl shadow p-4 hover:shadow-lg transition flex flex-col justify-between"
+              className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4 flex items-center justify-between"
             >
-              <div>
+              {/* LEFT: product info */}
+              <div className="flex-1 pr-4">
                 <h2 className="text-lg font-semibold text-gray-800">{product.name}</h2>
                 <p className="text-xs text-gray-500">SKU: {product.sku}</p>
 
@@ -107,20 +108,36 @@ export default function ProductPage() {
                     ))}
                   </ul>
                 ) : null}
+
+                <div className="mt-3 flex space-x-2">
+                  <Link
+                    href={`/dashboard/catalog/product/${product.id}/edit`}
+                    className="text-sm px-3 py-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => setConfirmId(product.id)}
+                    className="text-sm px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="mt-4 flex space-x-2">
-                <Link
-                  href={`/dashboard/catalog/product/${product.id}/edit`}
-                  className="text-sm px-3 py-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
-                >
-                  Edit
-                </Link>
-                <button
-                  onClick={() => setConfirmId(product.id)}
-                  className="text-sm px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
-                >
-                  Delete
-                </button>
+
+              {/* RIGHT: product image thumbnail */}
+              <div className="w-[120px] h-[120px] flex-shrink-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <span className="text-gray-400 text-xs text-center px-2">
+                    No image
+                  </span>
+                )}
               </div>
             </div>
           ))}

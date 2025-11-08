@@ -9,6 +9,7 @@ export const UPDATE_PRODUCT = gql`
     $name: String!
     $description: String
     $price: Float!
+    $image: String
     $attributes: [ProductAttributeInput!]
   ) {
     updateProduct(
@@ -18,10 +19,12 @@ export const UPDATE_PRODUCT = gql`
       name: $name
       description: $description
       price: $price
+      image: $image
       attributes: $attributes
     ) {
       id
       name
+      image
     }
   }
 `
@@ -30,6 +33,7 @@ export interface UpdateProductResponse {
   updateProduct: {
     id: string
     name: string
+    image: string
   }
 }
 
@@ -42,6 +46,7 @@ export async function updateProduct(
     name: string
     description?: string
     price: number
+    image: string
     attributes: { attribute_id: string; value: string }[]
   }
 ): Promise<UpdateProductResponse> {

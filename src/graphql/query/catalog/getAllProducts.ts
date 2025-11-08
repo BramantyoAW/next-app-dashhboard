@@ -14,6 +14,7 @@ const GET_ALL_PRODUCTS_QUERY = gql`
         sku
         name
         price
+        image
         description
         attributes {
           name
@@ -40,6 +41,7 @@ interface Product {
   sku: string
   name: string
   price: number
+  image: string
   description: string
   attributes: Attribute[]
 }

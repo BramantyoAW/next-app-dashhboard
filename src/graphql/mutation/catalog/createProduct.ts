@@ -8,6 +8,7 @@ const CREATE_PRODUCT_MUTATION = gql`
     $name: String!,
     $description: String!,
     $price: Float!,
+    $image: String, 
     $attributes: [ProductAttributeInput!]
   ) {
     createProduct(
@@ -16,10 +17,12 @@ const CREATE_PRODUCT_MUTATION = gql`
       name: $name,
       description: $description,
       price: $price,
+      image: $image,
       attributes: $attributes
     ) {
       id
       name
+      image
     }
   }
 `
@@ -33,6 +36,7 @@ interface CreateProductResponse {
   createProduct: {
     id: string
     name: string
+    image: string
   }
 }
 
@@ -43,7 +47,8 @@ export async function createProduct(
   name: string,
   description: string,
   price: number,
-  attributes: AttributeInput[]
+  attributes: AttributeInput[],
+  image?: string
 ): Promise<CreateProductResponse> {
   if (!token) throw new Error('Token tidak ditemukan')
 
@@ -51,6 +56,6 @@ export async function createProduct(
 
   return await graphqlClient.request<CreateProductResponse>(
     CREATE_PRODUCT_MUTATION,
-    { storeId, sku, name, description, price, attributes }
+    { storeId, sku, name, description, price, attributes, image }
   )
 }

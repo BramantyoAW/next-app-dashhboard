@@ -8,6 +8,7 @@ export const GET_PRODUCT_BY_ID = gql`
       sku
       name
       price
+      image
       description
       attributes {
         id
@@ -29,6 +30,7 @@ export type Product = {
   sku: string
   name: string
   price: number
+  image: string
   description: string
   attributes: ProductAttribute[]
 }
