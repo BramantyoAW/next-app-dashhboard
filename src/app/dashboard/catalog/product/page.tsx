@@ -18,6 +18,7 @@ interface Product {
   name: string
   price: number
   description?: string
+  image?: string
   attributes?: Attribute[]
 }
 
@@ -25,43 +26,71 @@ export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmId, setConfirmId] = useState<number | null>(null)
+  const [filter, setFilter] = useState({
+    keyword: '',
+    minPrice: '',
+    maxPrice: '',
+  })
   const router = useRouter()
 
   useEffect(() => {
-    async function bootstrap() {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    try {
       const token = localStorage.getItem('token')
-      if (!token) {
-        router.replace('/login')
-        return
-      }
+      if (!token) return router.replace('/login')
 
       const storeId = extractStoreId(token)
-      if (!storeId) {
-        router.replace('/login')
-        return
-      }
+      if (!storeId) return router.replace('/login')
 
-      try {
-        const res = await getAllProducts(token, storeId, '', 10, 1)
-        setProducts(res.getAllProducts.data || [])
-      } catch (err) {
-        console.error('Failed to fetch products:', err)
-      } finally {
-        setLoading(false)
-      }
+      const res = await getAllProducts(token, storeId, '', 100, 1)
+      setProducts(res.getAllProducts.data || [])
+    } catch (err) {
+      console.error('Failed to fetch products:', err)
+    } finally {
+      setLoading(false)
     }
-
-    bootstrap()
-  }, [router])
+  }
 
   const handleDelete = (id: number) => {
     setProducts(prev => prev.filter(p => p.id !== id))
-    // TODO: call deleteProductService(id)
     setConfirmId(null)
   }
 
+  const handleFilterChange = (key: string, value: string) => {
+    setFilter(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleReset = async () => {
+    // Kosongkan filter
+    setFilter({
+      keyword: '',
+      minPrice: '',
+      maxPrice: '',
+    })
+    // Ambil ulang data dari server
+    setLoading(true)
+    await fetchProducts()
+  }
+
+  const filteredProducts = products.filter(product => {
+    const keywordMatch =
+      !filter.keyword ||
+      product.name.toLowerCase().includes(filter.keyword.toLowerCase()) ||
+      product.sku.toLowerCase().includes(filter.keyword.toLowerCase())
+
+    const minPrice = filter.minPrice ? parseFloat(filter.minPrice) : 0
+    const maxPrice = filter.maxPrice ? parseFloat(filter.maxPrice) : Infinity
+    const priceMatch = product.price >= minPrice && product.price <= maxPrice
+
+    return keywordMatch && priceMatch
+  })
+
   return (
     <div>
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Products</h1>
         <div className="flex space-x-2">
@@ -69,7 +98,7 @@ export default function ProductPage() {
             href="/dashboard/catalog/product/import"
             className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
           >
-            + Import Product
+            + Bulk Import Product
           </Link>
           <Link
             href="/dashboard/catalog/product/create"
@@ -80,11 +109,64 @@ export default function ProductPage() {
         </div>
       </div>
 
+      {/* FILTER BAR */}
+      <div className="bg-white p-4 rounded-xl shadow mb-6 flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Search by Name or SKU
+          </label>
+          <input
+            type="text"
+            value={filter.keyword}
+            onChange={e => handleFilterChange('keyword', e.target.value)}
+            placeholder="Search..."
+            className="border rounded p-2 w-full"
+          />
+        </div>
+
+        <div className="w-40">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Min Price
+          </label>
+          <input
+            type="number"
+            value={filter.minPrice}
+            onChange={e => handleFilterChange('minPrice', e.target.value)}
+            placeholder="0"
+            className="border rounded p-2 w-full"
+          />
+        </div>
+
+        <div className="w-40">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Max Price
+          </label>
+          <input
+            type="number"
+            value={filter.maxPrice}
+            onChange={e => handleFilterChange('maxPrice', e.target.value)}
+            placeholder="100000"
+            className="border rounded p-2 w-full"
+          />
+        </div>
+
+        <button
+          onClick={handleReset}
+          type="button"
+          className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm font-medium border border-gray-300"
+        >
+          Reset
+        </button>
+      </div>
+
+      {/* PRODUCT LIST */}
       {loading ? (
         <p className="text-gray-500">Loading products...</p>
+      ) : filteredProducts.length === 0 ? (
+        <p className="text-gray-500">No products found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {products.map(product => (
+          {filteredProducts.map(product => (
             <div
               key={product.id}
               className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4 flex items-center justify-between"
@@ -144,6 +226,7 @@ export default function ProductPage() {
         </div>
       )}
 
+      {/* DELETE MODAL */}
       {confirmId && (
         <ConfirmModal
           title="Konfirmasi Hapus"
