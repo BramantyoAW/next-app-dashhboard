@@ -7,6 +7,7 @@ const PROFILE_QUERY = gql`
       user {
         full_name
         store_id
+        store_name
       }
       expires_in
       expired_status
