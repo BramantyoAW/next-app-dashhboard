@@ -29,8 +29,27 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any>(null)
   const router = useRouter()
 
+  // 👉 Refetch helper
+  const refreshProfile = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+    try {
+      const res = await getProfile(token)
+      setProfile(res)
+      window.dispatchEvent(new Event('storeRefreshed'))
+    } catch {
+      handleForceLogout()
+    }
+  }
+
+  const handleForceLogout = () => {
+    console.warn('Session expired or invalid. Logging out...')
+    localStorage.removeItem('token')
+    router.replace('/login')
+  }
+
+  // 👉 Initial fetch
   useEffect(() => {
-    if (typeof window === 'undefined') return
     const token = localStorage.getItem('token')
     if (!token) {
       router.replace('/login')
@@ -43,13 +62,35 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
         setProfile(res)
       } catch (err) {
         console.error('Gagal fetch profile:', err)
-        localStorage.removeItem('token')
-        router.replace('/login')
+        handleForceLogout()
       }
     }
 
     fetchProfile()
   }, [router])
+
+  // ✅ Check session every 30s
+  useEffect(() => {
+    const checkSession = () => {
+      const token = localStorage.getItem('token')
+      if (!token) return handleForceLogout()
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const exp = payload.exp ? payload.exp * 1000 : 0
+        if (exp && Date.now() > exp) {
+          console.log('JWT expired, forcing logout')
+          handleForceLogout()
+        }
+      } catch (err) {
+        console.warn('Invalid token structure, forcing logout')
+        handleForceLogout()
+      }
+    }
+
+    const interval = setInterval(checkSession, 30 * 1000) // 🔁 tiap 30 detik
+    return () => clearInterval(interval)
+  }, [])
 
   if (!profile) {
     return (
@@ -60,7 +101,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>
+  return (
+    <ProfileContext.Provider value={{ ...profile, refreshProfile }}>
+      {children}
+    </ProfileContext.Provider>
+  )
 }
 
 // ================================
@@ -137,7 +182,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       const chosen = await chooseStoreService(token, storeId)
       localStorage.setItem('token', chosen.chooseStore.access_token)
       setStoreModal(false)
-      router.refresh()
+
+      // ✅ Re-fetch data profile biar langsung update tanpa reload
+      await profile.refreshProfile()
+
     } catch (e: any) {
       console.error(e)
       alert(e?.message || 'Gagal memilih outlet.')
@@ -159,9 +207,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 p-6 flex flex-col">
         <div className="flex flex-col items-center mb-8">
-          <img src="/omBot.png" alt="OmBot Logo" className="w-16 h-16 object-contain mb-2" />
+          <img
+            src="/omBot.png"
+            alt="OmBot Logo"
+            className="w-16 h-16 object-contain mb-2"
+          />
           <span className="text-xs text-gray-500 text-center">
-            OmBot Dashboard<br />by Bramantyo
+            OmBot Application
           </span>
         </div>
 
@@ -204,7 +256,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="p-6">{children}</main>
+        <main className="p-6 flex-1">{children}</main>
+        {/* Footer */}
+        <footer className="mt-auto bg-gray-50 text-center py-4 border-t border-gray-200">
+          <p className="text-sm text-gray-500">
+            © 2025 <span className="font-semibold text-gray-700">OmBot</span> by <span className="font-medium text-blue-600">Bramantyo</span>.
+            <br className="hidden sm:block" />
+            <span className="italic text-gray-600">Untuk UMKM, Untuk Indonesia 🇮🇩</span>
+            </p>
+          </footer>
       </div>
 
       {/* Modal pilih store */}

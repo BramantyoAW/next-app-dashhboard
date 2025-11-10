@@ -26,6 +26,7 @@ export const GET_ORDERS_BY_STORE = gql`
         additional_data
         created_at
         items {
+          name
           product_id
           qty
           price
@@ -50,6 +51,7 @@ export type GetOrdersByStoreResponse = {
       discount: number
       additional_data: string | null
       items: {
+        name: string
         product_id: number
         qty: number
         price: number
