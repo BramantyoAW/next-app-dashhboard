@@ -24,6 +24,7 @@ export const GET_ORDERS_BY_STORE = gql`
         total_amount
         discount
         additional_data
+        created_at
         items {
           product_id
           qty
