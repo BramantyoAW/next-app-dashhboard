@@ -14,6 +14,7 @@ import {
   Package,
   Layers,
   ClipboardList,
+  Settings,
 } from 'lucide-react'
 
 // ================================
@@ -237,6 +238,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
           <SidebarLink href="/dashboard/catalog/inventory" icon={<ClipboardList size={16} />}>
             Inventory
+          </SidebarLink>
+          <p className="mt-6 mb-1 text-xs text-gray-400 uppercase font-semibold tracking-wider">
+            Settings
+          </p>
+          <SidebarLink href="/dashboard/settings/configuration" icon={<Settings size={16} />}>
+            Configuration
           </SidebarLink>
         </nav>
       </aside>
