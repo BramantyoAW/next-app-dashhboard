@@ -24,6 +24,14 @@ export default function LoginPage() {
       // 1) Login → dapat token awal (mungkin tanpa store_id)
       const res = await loginService(email, password);
       const token = res.login.access_token;
+      const role = res.login.user.role;
+
+      if (role === "admin") {
+        // admin langsung masuk dashboard admin (tanpa pilih store)
+        localStorage.setItem("token", token);
+        router.push("/admin/dashboard");
+        return;
+      }
 
       // 2) Ambil daftar store user
       const s = await myStoresService(token);
