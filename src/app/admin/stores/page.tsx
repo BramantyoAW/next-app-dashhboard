@@ -37,7 +37,7 @@ export default function AdminStoresPage() {
       const token = localStorage.getItem("token");
       if (!token) return router.push("/login");
 
-      const res = await adminGetAllStoresService(token, limit, page);
+      const res = await adminGetAllStoresService(token, limit);
       setStores(res.getAllStores.data);
       setPagination(res.getAllStores.pagination);
 

@@ -59,8 +59,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
 
     async function fetchProfile() {
       try {
-        const res = await getProfile(token)
-        setProfile(res)
+        if (!token) {
+          router.push("/login");
+          return;
+        }
+
+        const res = await getProfile(token);
+        setProfile(res);
       } catch (err) {
         console.error('Gagal fetch profile:', err)
         handleForceLogout()
