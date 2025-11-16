@@ -17,7 +17,7 @@ export default function StorePicker({ stores, onPick, onCancel }:{
               onClick={()=>setSelected(Number(s.id))}
               className={`border rounded-md p-3 cursor-pointer ${selected===Number(s.id)?'border-blue-600 bg-blue-50':'hover:bg-gray-50'}`}>
               <p className="font-medium">{s.name}</p>
-              <p className="text-xs text-gray-500">ID: {s.id}</p>
+              {/* <p className="text-xs text-gray-500">ID: {s.id}</p> */}
             </div>
           ))}
         </div>
