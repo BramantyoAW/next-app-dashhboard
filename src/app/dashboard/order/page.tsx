@@ -7,6 +7,8 @@ import { useProfile } from "@/app/dashboard/layout"
 import { extractStoreId } from '@/lib/jwt'
 import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -64,28 +66,41 @@ export default function OrdersPage() {
     setFilteredOrders(filtered)
   }, [search, dateRange, orders])
 
+  const storeName =
+    profile?.me?.user?.store_name ||
+    orders?.[0]?.store?.name ||
+    "Store"
+
+  const safeStoreName = storeName
+    .replace(/[^a-z0-9]/gi, "_")
+    .toLowerCase()
+  
+  const today = new Date().toISOString().split("T")[0]
+
   const handleExportExcel = () => {
     const dataToExport = filteredOrders.length ? filteredOrders : orders
     if (!dataToExport.length) return alert("No data to export")
 
     const exportData = dataToExport.map((order) => ({
       "Order Number": order.order_number,
+      // "Discount (Rp)": order.discount,
+      "Items": order.items
+        .map((item: any) =>
+          `Product ${item.name} x${item.qty} = Rp${item.price.toLocaleString()}`
+        )
+        .join("\n"),
       "Total (Rp)": order.total_amount,
-      "Discount (Rp)": order.discount,
       "Created At": order.created_at,
-      "Items": order.items.map((item: any) => 
-        `Product ${item.product_id} x${item.qty} = Rp${item.price}`
-      ).join("; "),
-      "Additional Data": typeof order.additional_data === "object"
-        ? JSON.stringify(order.additional_data)
-        : order.additional_data || "",
+      // "Additional Data": typeof order.additional_data === "object"
+      //   ? JSON.stringify(order.additional_data)
+      //   : order.additional_data || "",
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, "Orders")
 
-    const filename = `orders_${new Date().toISOString().split("T")[0]}.xlsx`
+    const filename = `${safeStoreName}_orders_${today}.xlsx`
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
     const blob = new Blob([excelBuffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -93,18 +108,69 @@ export default function OrdersPage() {
     saveAs(blob, filename)
   }
 
+  const handleExportPDF = () => {
+    const dataToExport = filteredOrders.length ? filteredOrders : orders
+    if (!dataToExport.length) return alert("No data to export")
+
+   const doc = new jsPDF("p", "mm", "a4")
+
+    doc.setFontSize(16)
+    doc.text(storeName, 105, 12, { align: "center" })
+
+    doc.setFontSize(10)
+    doc.text(`OmBot Orders Report • Exported date ${today}`, 105, 18, { align: "center" })
+
+    const tableData = dataToExport.map((order) => [
+      order.order_number,
+      order.items
+        .map(
+          (item: any) =>
+            `• Product ${item.name} x${item.qty} = Rp${item.price.toLocaleString()}`
+        )
+        .join("\n"),
+      `Rp ${order.total_amount.toLocaleString()}`,
+      order.created_at,
+    ])
+
+    autoTable(doc, {
+      startY: 24,
+      head: [["Order Number", "Items", "Total", "Created At"]],
+      body: tableData,
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "top",
+      },
+      columnStyles: {
+        1: { cellWidth: 80 },
+      },
+    })
+
+    doc.save(`${safeStoreName}_orders_${today}.pdf`)
+  }
+
+
   if (loading) return <p className="text-gray-500">Loading orders...</p>
 
   return (
     <div className="p-6 relative">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
-        <button
-          onClick={handleExportExcel}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm"
-        >
-          📤 Export to Excel
-        </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportExcel}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm text-sm"
+            >
+              📤 Export Excel
+            </button>
+
+            <button
+              onClick={handleExportPDF}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow-sm text-sm"
+            >
+              📄 Export PDF
+            </button>
+          </div>
       </div>
 
       {/* Filter bar */}
@@ -162,7 +228,7 @@ export default function OrdersPage() {
               <th className="px-6 py-3 border-b">Discount</th>
               <th className="px-6 py-3 border-b">Items</th>
               <th className="px-6 py-3 border-b">Created At</th>
-              <th className="px-6 py-3 border-b">Action</th>
+              <th className="px-6 py-3 border-b">Detail</th>
             </tr>
           </thead>
           <tbody>
@@ -181,7 +247,7 @@ export default function OrdersPage() {
                   <ul className="list-disc pl-5 space-y-1">
                     {order.items.map((item: any, idx: number) => (
                       <li key={idx}>
-                        Product {item.product_id} —{" "}
+                        Product {item.name} —{" "}
                         <span className="text-gray-700 font-medium">{item.qty}</span> × Rp{" "}
                         {item.price.toLocaleString()}
                       </li>

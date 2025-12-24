@@ -152,11 +152,27 @@ export default function DashboardPage() {
   const chartData = Object.entries(chartMap)
     .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
     .map(([label, sales]) => ({ label, sales }))
-  const statusMap: Record<string, number> = {}
-  filteredOrders.forEach((o) => {
-    statusMap[o.status] = (statusMap[o.status] || 0) + 1
-  })
-  const pieData = Object.entries(statusMap).map(([status, value]) => ({ name: status, value }))
+const amountBuckets: Record<string, number> = {
+  '< 50rb': 0,
+  '50rb - 100rb': 0,
+  '> 100rb': 0,
+}
+
+filteredOrders.forEach((o) => {
+  const total = o.total_amount || 0
+
+  if (total < 50_000) {
+    amountBuckets['< 50rb']++
+  } else if (total <= 100_000) {
+    amountBuckets['50rb - 100rb']++
+  } else {
+    amountBuckets['> 100rb']++
+  }
+})
+
+const pieData = Object.entries(amountBuckets)
+  .filter(([, value]) => value > 0) // buang bucket kosong
+  .map(([name, value]) => ({ name, value }))
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444']
 
   // -------------------- Return UI --------------------

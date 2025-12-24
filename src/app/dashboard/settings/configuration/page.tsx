@@ -113,7 +113,10 @@ export default function ConfigurationPage() {
       {/* Report Schedule */}
       <div className="bg-white p-4 shadow-sm rounded border">
         <h2 className="font-semibold mb-2">Report Schedule</h2>
-
+        <div className="text-xs text-gray-500 mb-2">
+          Note: Report will be sent 10 PM - 12 PM every selected schedule.
+        </div>
+        
         <label className="block text-sm text-gray-600 mb-1">
           Send Report Every
         </label>
@@ -122,7 +125,7 @@ export default function ConfigurationPage() {
           value={settings.report_schedule ?? ""}
           onChange={(e) => updateField("report_schedule", e.target.value)}
         >
-          <option value="">Choose</option>
+          <option value="">OFF</option>
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
