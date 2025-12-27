@@ -16,6 +16,7 @@ import {
   ClipboardList,
   Settings,
   Users,
+  MessageCircle
 } from 'lucide-react'
 
 // ================================
@@ -248,9 +249,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <p className="mt-6 mb-1 text-xs text-gray-400 uppercase font-semibold tracking-wider">
             User Store
           </p>
+
           <SidebarLink href="/dashboard/user" icon={<Users size={16} />}>
             User
           </SidebarLink>
+
+          <SidebarLink href="/dashboard/user/message" icon={<MessageCircle  size={16} />}>
+            Users Message
+          </SidebarLink>
+
+          <p className="mt-6 mb-1 text-xs text-gray-400 uppercase font-semibold tracking-wider">
+            {/* Section separator — tambahkan menu lain di bawah sini */}
+          </p>
+
           <p className="mt-6 mb-1 text-xs text-gray-400 uppercase font-semibold tracking-wider">
             Settings
           </p>

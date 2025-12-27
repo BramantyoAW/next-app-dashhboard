@@ -13,12 +13,19 @@ export default function LoginPage() {
   const [stores, setStores] = useState<{ id: number; name: string }[] | null>(null);
   const [loginToken, setLoginToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    general?: string;
+  }>({});
+  
 
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({}); 
 
     try {
       // 1) Login → dapat token awal (mungkin tanpa store_id)
@@ -48,8 +55,21 @@ export default function LoginPage() {
       setStores(s.myStores);
       // jangan redirect di sini
     } catch (err: any) {
+
+      
+      const validation = err?.extensions?.validation;
+
+      if (validation) {
+        setErrors({
+          email: validation.email?.[0],
+          password: validation.password?.[0],
+        });
+      } else {
+        setErrors({
+          general: 'Login gagal. Periksa kembali email dan password anda.',
+        });
+      }
       console.error('Login flow failed:', err);
-      alert(err?.message || 'Login gagal. Cek kembali email & password.');
     } finally {
       setLoading(false);
     }
@@ -81,6 +101,11 @@ export default function LoginPage() {
         )}
 
         {/* Logo */}
+        {errors.general && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+            {errors.general}
+          </div>
+        )}
         <div className="text-center">
           <img src="/omBot.png" alt="Logo" className="mx-auto w-20 h-20 object-contain mb-4" />
           <h1 className="text-2xl font-bold text-gray-800">Login to OmBot</h1>
@@ -95,13 +120,16 @@ export default function LoginPage() {
             <input
               type="email"
               id="email"
-              placeholder="you@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-400"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:border-blue-400'
+              }`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="username"
             />
+
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -111,13 +139,16 @@ export default function LoginPage() {
             <input
               type="password"
               id="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-blue-400"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring ${
+                errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:border-blue-400'
+              }`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
             />
+
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+            )}
           </div>
 
           <button
