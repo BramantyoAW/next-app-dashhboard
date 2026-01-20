@@ -4,9 +4,11 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getAllAttribute } from '@/graphql/query/catalog/getAllAttributes'
+import { deleteAttributeService } from '@/graphql/mutation/catalog/deleteAttribute'
 import { useRouter } from 'next/navigation'
 import { extractStoreId } from '@/lib/jwt'
 import ConfirmModal from '@/components/ConfirmModal';
+
 
 interface Attribute {
   id: number | string
@@ -19,6 +21,8 @@ export default function AttributePage() {
   const [loading, setLoading] = useState(true)
   const [confirmId, setConfirmId] = useState<number | string | null>(null)
   const router = useRouter()
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [success, setSuccess] = useState<string | null>(null); // State untuk pesan sukses
 
   useEffect(() => {
     async function bootstrap() {
@@ -55,14 +59,35 @@ export default function AttributePage() {
   }, [router]);
   
 
-  const handleDelete = (id: number | string) => {
+  const handleDelete = (id: number) => {
+    setErrors({});   // Reset error setiap kali submit
+    setSuccess(null); // Reset success setiap kali submit
     setAttributes(prev => prev.filter(attr => attr.id !== id))
-    // TODO: call deleteAttributeService(id)
+    const token = localStorage.getItem('token')
+    if (token) {
+      deleteAttributeService(id).catch(err => {
+        console.error('Failed to delete attribute:', err)
+        setErrors({ general: 'Failed to delete attribute' });
+      })
+    }
+    setSuccess('Attribute deleted successfully!')
     setConfirmId(null)
   }
 
   return (
     <div>
+      {/* Pesan Sukses */}
+      {success && (
+        <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
+          {success}
+        </div>
+      )}
+      {/* Pesan Error */}
+      {errors.general && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          {errors.general}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Attributes</h1>
         <Link
