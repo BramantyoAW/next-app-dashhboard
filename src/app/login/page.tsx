@@ -132,7 +132,7 @@ export default function LoginPage() {
                 <img src="/omBot.png" alt="Logo" className="w-16 h-16 object-contain rounded-xl shadow-md" />
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Login ke omBot</h1>
-            <p className="text-base text-slate-500 font-medium">Order Management Bot by Bramantyo</p>
+            <p className="text-base text-slate-500 font-medium">Order Management Untuk UMKM untuk Indonesia</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
