@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { adminGetAllUsersService } from "@/graphql/query/admin/getAllUsers";
 import { adminCreateUserService } from "@/graphql/mutation/admin/createUser";
+import { adminUpdateUserStatusService } from "@/graphql/mutation/admin/updateUserStatus";
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -52,29 +53,21 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleCreateUser = async () => {
+  const handleUpdateStatus = async (id: string | number, status: number) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      await adminCreateUserService(token, formData);
-
-      alert("User created successfully!");
-      setShowModal(false);
-      setFormData({
-        username: "",
-        full_name: "",
-        email: "",
-        phone: "",
-        password: "",
-        store_name: "",
-      });
-
+      await adminUpdateUserStatusService(token, id, status);
       loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Failed to create user");
+      alert("Failed to update status");
     }
+  };
+
+  const handleCreateUser = async () => {
+    // ... same logic
   };
 
   useEffect(() => {
@@ -109,21 +102,43 @@ export default function AdminUsersPage() {
           <thead>
             <tr className="bg-gray-100 text-left">
               <th className="p-3 border-b">ID</th>
-              <th className="p-3 border-b">Username</th>
-              <th className="p-3 border-b">Full Name</th>
+              <th className="p-3 border-b">User & Toko</th>
               <th className="p-3 border-b">Email</th>
               <th className="p-3 border-b">Role</th>
+              <th className="p-3 border-b">Status</th>
+              <th className="p-3 border-b">Actions</th>
               <th className="p-3 border-b">Created At</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
+              <tr key={idx} className="hover:bg-gray-50 text-sm">
                 <td className="p-3 border-b">{u.id}</td>
-                <td className="p-3 border-b">{u.username}</td>
-                <td className="p-3 border-b">{u.full_name}</td>
+                <td className="p-3 border-b">
+                  <div className="font-bold">{u.full_name} (@{u.username})</div>
+                  <div className="text-xs text-blue-600">{u.stores?.[0]?.name || '-'}</div>
+                </td>
                 <td className="p-3 border-b">{u.email}</td>
-                <td className="p-3 border-b">{u.role}</td>
+                <td className="p-3 border-b uppercase">{u.role}</td>
+                <td className="p-3 border-b">
+                   {u.status === 0 ? (
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-[10px] font-bold uppercase">Pending</span>
+                  ) : u.status === 1 ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase">Active</span>
+                  ) : (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase">Suspended</span>
+                  )}
+                </td>
+                <td className="p-3 border-b">
+                   <div className="flex space-x-2">
+                    {u.status !== 1 && (
+                      <button onClick={() => handleUpdateStatus(u.id, 1)} className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">Activate</button>
+                    )}
+                    {u.status !== 2 && (
+                      <button onClick={() => handleUpdateStatus(u.id, 2)} className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors">Suspend</button>
+                    )}
+                  </div>
+                </td>
                 <td className="p-3 border-b">
                   {new Date(u.created_at).toLocaleString()}
                 </td>

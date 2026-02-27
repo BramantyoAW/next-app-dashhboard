@@ -41,11 +41,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
 
           <button
-            onClick={() => router.push('/admin/settings')}
+            onClick={() => router.push('/admin/email-history')}
             className="w-full text-left px-3 py-2 rounded hover:bg-blue-50 transition"
+          >
+            Email History
+          </button>
+
+          <button
+            onClick={() => router.push('/admin/settings')}
+            className="w-full text-left px-3 py-2 rounded hover:bg-blue-50 transition font-semibold"
           >
             Settings
           </button>
+          <div className="pl-6 space-y-1">
+            <button
+              onClick={() => router.push('/admin/settings/email')}
+              className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-blue-50 transition border-l-2 border-transparent hover:border-blue-500"
+            >
+              Email (SMTP)
+            </button>
+          </div>
         </nav>
 
         <div className="pt-6">

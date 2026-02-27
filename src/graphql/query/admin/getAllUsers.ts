@@ -9,6 +9,13 @@ export const GET_ALL_USERS = `
         full_name
         email
         role
+        status
+        stores {
+          id
+          name
+          image
+          description
+        }
         created_at
       }
       meta {
