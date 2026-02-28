@@ -18,7 +18,8 @@ import {
   Users,
   MessageCircle,
   Menu,
-  X
+  X,
+  Coins
 } from 'lucide-react'
 
 // ================================
@@ -216,11 +217,16 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       `}>
         <div className="flex items-center justify-between mb-10">
           <Link href="/dashboard" className="flex items-center gap-3">
+            {profile?.me?.user?.store_image && (
+              <div className="p-1 bg-white rounded-xl shadow-sm border border-border">
+                <img src={profile.me.user.store_image} alt="Store Logo" className="w-10 h-10 object-cover rounded-lg" />
+              </div>
+            )}
             <div className="p-2 bg-primary/10 rounded-xl">
               <img src="/omBot.png" alt="OmBot" className="w-8 h-8 object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight">OmBot</span>
+              <span className="font-bold text-lg tracking-tight line-clamp-1">{profile?.me?.user?.store_name || 'OmBot'}</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Dashboard</span>
             </div>
           </Link>
@@ -235,6 +241,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
           <SidebarLink href="/dashboard/order" icon={<ShoppingCart size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Orders
+          </SidebarLink>
+          <SidebarLink href="/dashboard/points" icon={<Coins size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Credits & Points
           </SidebarLink>
 
           <div className="pt-6 pb-2 px-4">
@@ -295,7 +304,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <h2 className="text-lg font-bold tracking-tight text-slate-900">{getPageTitle(pathname)}</h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 md:gap-6">
+            <Link 
+              href="/dashboard/points"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group"
+            >
+              <Coins size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[10px] font-bold uppercase tracking-tight opacity-70">Budget</span>
+                <span className="text-sm font-black tracking-tight">{profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
+              </div>
+            </Link>
+
             <UserMenu
               userName={profile?.me?.user?.full_name ?? 'User'}
               storeName={profile?.me?.user?.store_name ?? 'Belum pilih toko'}

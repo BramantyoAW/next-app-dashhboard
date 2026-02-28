@@ -8,11 +8,12 @@ import {
   Users, 
   Store, 
   Mail, 
-  Settings, 
   LogOut, 
   Menu, 
   X,
-  ChevronRight
+  ChevronRight,
+  CreditCard,
+  History
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -102,15 +103,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebarLink href="/admin/email-history" icon={<Mail size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Email History
           </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/payment-history" icon={<History size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Payment History
+          </AdminSidebarLink>
 
           <div className="pt-6 pb-2 px-4">
             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Settings</span>
           </div>
-          <AdminSidebarLink href="/admin/settings" icon={<Settings size={18} />} onClick={() => setIsSidebarOpen(false)}>
-            General Settings
-          </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/email" icon={<Mail size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Email (SMTP)
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/midtrans" icon={<CreditCard size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Midtrans Config
           </AdminSidebarLink>
         </nav>
 

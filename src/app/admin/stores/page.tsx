@@ -7,6 +7,9 @@ import { adminGetAllStoresService } from "@/graphql/query/admin/getAllStores";
 import { adminCreateStoreService } from "@/graphql/mutation/admin/createStore";
 import { adminAssignUserToStoreService } from "@/graphql/mutation/admin/assignUserToStore";
 import { adminGetAllUsersService } from "@/graphql/query/admin/getAllUsers";
+import { getPointHistoriesService } from "@/graphql/query/points/getPointServices";
+import { adminAdjustStoreBalanceService } from "@/graphql/mutation/admin/adjustStoreBalance";
+import { Store, UserPlus, Plus, History, Coins, X, ArrowUpRight, ArrowDownLeft, Clock, PlusCircle } from "lucide-react";
 
 export default function AdminStoresPage() {
   const router = useRouter();
@@ -31,6 +34,20 @@ export default function AdminStoresPage() {
   });
 
   const [users, setUsers] = useState<any[]>([]);
+
+  // History Modal State
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<any>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [pointHistories, setPointHistories] = useState<any[]>([]);
+
+  // Adjust Balance Modal State
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [adjustData, setAdjustData] = useState({
+    amount: 0,
+    note: "",
+  });
+  const [adjusting, setAdjusting] = useState(false);
 
   const loadStores = async () => {
     try {
@@ -99,6 +116,47 @@ export default function AdminStoresPage() {
     }
   };
 
+  const handleShowHistory = async (store: any) => {
+    setSelectedStore(store);
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    try {
+      const token = localStorage.getItem("token") || "";
+      const res = await getPointHistoriesService(token, store.id);
+      setPointHistories(res.getPointHistories.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleAdjustBalance = async () => {
+    if (adjustData.amount === 0) {
+        alert("Amount cannot be zero.");
+        return;
+    }
+    setAdjusting(true);
+    try {
+      const token = localStorage.getItem("token") || "";
+      await adminAdjustStoreBalanceService(
+        token,
+        selectedStore.id,
+        adjustData.amount,
+        adjustData.note
+      );
+      alert("Balance adjusted successfully!");
+      setShowAdjustModal(false);
+      setAdjustData({ amount: 0, note: "" });
+      loadStores(); // refresh list
+    } catch (err) {
+      console.error(err);
+      alert("Failed to adjust balance.");
+    } finally {
+      setAdjusting(false);
+    }
+  };
+
   useEffect(() => {
     loadStores();
     loadUsers(); // for assign user modal
@@ -139,23 +197,66 @@ export default function AdminStoresPage() {
       <div className="bg-white shadow-lg rounded-xl p-6 border">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-3 border-b">ID</th>
-              <th className="p-3 border-b">Name</th>
-              <th className="p-3 border-b">Created</th>
-              <th className="p-3 border-b">Updated</th>
+            <tr className="bg-slate-50 text-left border-b border-slate-100">
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">ID</th>
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Image</th>
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Store Name</th>
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Points</th>
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Created</th>
+              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {stores.map((store) => (
-              <tr key={store.id} className="hover:bg-gray-50">
-                <td className="p-3 border-b">{store.id}</td>
-                <td className="p-3 border-b">{store.name}</td>
-                <td className="p-3 border-b">
-                  {new Date(store.created_at).toLocaleString()}
+              <tr key={store.id} className="hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                <td className="px-6 py-4 text-sm text-slate-500 font-medium">#{store.id}</td>
+                <td className="px-6 py-4">
+                  {store.image ? (
+                    <img 
+                      src={store.image} 
+                      alt={store.name} 
+                      className="w-10 h-10 object-cover rounded-xl border border-slate-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
+                      <Store size={18} />
+                    </div>
+                  )}
                 </td>
-                <td className="p-3 border-b">
-                  {new Date(store.updated_at).toLocaleString()}
+                <td className="px-6 py-4">
+                  <div className="font-bold text-slate-900">{store.name}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Coins size={16} />
+                    </div>
+                    <span className="font-black text-slate-900">{store.points?.toLocaleString() ?? 0}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">
+                  {new Date(store.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                        onClick={() => {
+                            setSelectedStore(store);
+                            setShowAdjustModal(true);
+                        }}
+                        className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors inline-flex items-center gap-2 font-bold text-sm"
+                        title="Adjust Balance"
+                    >
+                        <PlusCircle size={18} /> Points
+                    </button>
+                    <button
+                        onClick={() => handleShowHistory(store)}
+                        className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors inline-flex items-center gap-2 font-bold text-sm"
+                        title="View Credit History"
+                    >
+                        <History size={18} /> Detail
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -293,6 +394,155 @@ export default function AdminStoresPage() {
               >
                 Assign
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Point History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+                  <History size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">Credit History</h2>
+                  <p className="text-sm text-slate-500 font-medium">{selectedStore?.name} (ID: #{selectedStore?.id})</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="p-2 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors"
+                title="Close"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto">
+              {historyLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                  <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+                  <p className="text-slate-400 font-bold animate-pulse">Loading history...</p>
+                </div>
+              ) : pointHistories.length === 0 ? (
+                <div className="py-20 text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center">
+                    <History size={32} />
+                  </div>
+                  <p className="text-slate-400 italic font-medium">Belum ada riwayat transaksi poin untuk toko ini.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {pointHistories.map((h) => (
+                    <div key={h.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${h.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                          {h.amount > 0 ? <ArrowUpRight size={20} /> : <ArrowDownLeft size={20} />}
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900 capitalize">{h.type.replace('_', ' ')}</p>
+                          <p className="text-xs text-slate-500 font-medium">{h.note}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-lg font-black ${h.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {h.amount > 0 ? '+' : ''}{h.amount}
+                        </p>
+                        <div className="flex items-center justify-end gap-1.5 text-slate-400 mt-1">
+                          <Clock size={12} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">{new Date(h.created_at).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Total Points</span>
+                  <span className="text-lg font-black text-blue-600">{selectedStore?.points?.toLocaleString() ?? 0}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-slate-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Adjust Balance Modal */}
+      {showAdjustModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
+                  <PlusCircle size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">Adjust Balance</h2>
+                  <p className="text-sm text-slate-500 font-medium">{selectedStore?.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowAdjustModal(false)}
+                className="p-2 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Amount (Use negative for deduction)</label>
+                  <input
+                    type="number"
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all font-black text-lg"
+                    placeholder="e.g. 100 or -50"
+                    value={adjustData.amount}
+                    onChange={(e) => setAdjustData({ ...adjustData, amount: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Note / Reason</label>
+                  <textarea
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-emerald-50 focus:border-emerald-500 transition-all min-h-[120px]"
+                    placeholder="e.g. Promo ramadhan, Gift, atau Koreksi saldo"
+                    value={adjustData.note}
+                    onChange={(e) => setAdjustData({ ...adjustData, note: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleAdjustBalance}
+                  disabled={adjusting || adjustData.amount === 0 || !adjustData.note}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-5 rounded-[24px] shadow-xl shadow-emerald-200 transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  {adjusting ? <div className="animate-spin h-6 w-6 border-2 border-white/30 border-t-white rounded-full" /> : <Coins size={20} />}
+                  {adjusting ? 'Processing...' : 'Submit Adjustment'}
+                </button>
+                <button
+                  onClick={() => setShowAdjustModal(false)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-[20px] transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>

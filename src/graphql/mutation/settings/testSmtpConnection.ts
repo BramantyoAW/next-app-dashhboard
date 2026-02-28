@@ -3,7 +3,7 @@ import { graphqlClient } from "@/graphql/graphqlClient";
 export const TEST_SMTP_CONNECTION = `
   mutation TestSmtpConnection(
     $host: String!, 
-    $port: String!, 
+    $port: Int!, 
     $username: String, 
     $password: String, 
     $encryption: String, 

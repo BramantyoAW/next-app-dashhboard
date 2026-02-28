@@ -6,6 +6,8 @@ export const GET_ALL_STORES = `
       data {
         id
         name
+        points
+        image
         created_at
         updated_at
       }

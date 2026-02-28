@@ -74,6 +74,12 @@ export default function LoginPage() {
     setErrors({});
     setSuccessMessage(null);
 
+    if (!image) {
+      setErrors({ general: 'Logo/Gambar Toko wajib diunggah.' });
+      setLoading(false);
+      return;
+    }
+
     try {
       await registerService({
         username,
@@ -235,12 +241,13 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Logo/Gambar Toko</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Logo/Gambar Toko <span className="text-red-500">* (Wajib)</span></label>
                   <input
                     type="file"
                     className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     onChange={(e) => setImage(e.target.files?.[0] || null)}
                     accept="image/*"
+                    required
                   />
                 </div>
               </>

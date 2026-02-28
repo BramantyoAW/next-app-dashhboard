@@ -94,7 +94,7 @@ export default function SmtpSettingsPage() {
 
       const res = await adminTestSmtpConnectionService(token, {
         host: settings.mail_host,
-        port: settings.mail_port,
+        port: parseInt(settings.mail_port),
         username: settings.mail_username,
         password: settings.mail_password,
         encryption: settings.mail_encryption,
