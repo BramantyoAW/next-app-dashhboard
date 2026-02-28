@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { ChevronDown, Store, LogOut, User } from 'lucide-react'
 
 export default function UserMenu({
   userName,
@@ -30,104 +31,60 @@ export default function UserMenu({
       {/* ==== Trigger Button ==== */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full bg-white border px-3 py-1.5 shadow-sm hover:bg-gray-50 transition"
+        className="flex items-center gap-3 rounded-2xl bg-white border border-border p-1.5 pr-4 shadow-sm hover:shadow-md hover:bg-slate-50 transition-all duration-200 group active:scale-95"
       >
-        <div className="flex flex-col text-left leading-tight">
-          <span className="text-gray-800 font-semibold text-sm">
-            Halo, {userName}
+        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-110">
+          <User size={18} />
+        </div>
+        <div className="hidden sm:flex flex-col text-left leading-tight min-w-0">
+          <span className="text-slate-900 font-bold text-sm truncate max-w-[150px]">
+            {userName}
           </span>
           {storeName && (
-            <span className="text-xs text-gray-500 truncate max-w-[120px]">
-              🏬 {storeName}
+            <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider truncate max-w-[120px]">
+              {storeName}
             </span>
           )}
         </div>
-        <svg
-          className="w-4 h-4 text-gray-500"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" />
-        </svg>
+        <ChevronDown 
+          size={16} 
+          className={`text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`} 
+        />
       </button>
 
       {/* ==== Dropdown Menu ==== */}
       {open && (
-        <div className="absolute right-0 mt-2 w-48 rounded-md bg-white shadow-lg ring-1 ring-black/5 z-50">
-          <div className="py-1">
-            <button
-              onClick={() => {
-                setOpen(false)
-                onChangeStore()
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-            >
-              <svg
-                className="h-4 w-4 text-gray-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <path
-                  d="M16 3h5v5"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M8 21H3v-5"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M21 3l-7 7"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M3 21l7-7"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Ubah Toko
-            </button>
+        <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-white border border-border shadow-2xl p-2 z-50 animate-in overflow-hidden">
+           <div className="px-4 py-3 border-b border-border mb-1 lg:hidden">
+              <p className="text-sm font-bold text-slate-900 truncate">{userName}</p>
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">{storeName}</p>
+           </div>
+           
+           <button
+             onClick={() => {
+               setOpen(false)
+               onChangeStore()
+             }}
+             className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-secondary rounded-xl flex items-center gap-3 transition-colors group"
+           >
+             <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+               <Store size={16} />
+             </div>
+             <span className="font-medium">Switch Outlet</span>
+           </button>
 
-            <button
-              onClick={() => {
-                setOpen(false)
-                onLogout()
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
-            >
-              <svg
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <path
-                  d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M16 17l5-5-5-5"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M21 12H9"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              Logout
-            </button>
-          </div>
+           <button
+             onClick={() => {
+               setOpen(false)
+               onLogout()
+             }}
+             className="w-full text-left px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 rounded-xl flex items-center gap-3 transition-colors group"
+           >
+             <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive group-hover:scale-110 transition-transform">
+               <LogOut size={16} />
+             </div>
+             <span className="font-bold">Logout</span>
+           </button>
         </div>
       )}
     </div>
