@@ -18,7 +18,7 @@ export default function PaymentHistoryPage() {
       // For now, let's assume we want to see all or filter.
       // If store_id is required by schema, we might need to adjust.
       // Let's use a dummy or first store for now if needed, but ideally admin sees all.
-      const res = await adminGetPaymentHistoriesService(token, { page, limit: 10 });
+      const res = await adminGetPaymentHistoriesService(token ?? '', { page, limit: 10 });
       setPayments(res.getPaymentHistories.data);
       setPagination(res.getPaymentHistories.pagination);
     } catch (err) {
