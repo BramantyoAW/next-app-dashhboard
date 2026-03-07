@@ -271,7 +271,18 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+              <div className="flex justify-between items-center">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                {!isRegister && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/forgot-password')}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    Lupa Password?
+                  </button>
+                )}
+              </div>
               <input
                 type="password"
                 placeholder="••••••••"
