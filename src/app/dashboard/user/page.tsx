@@ -25,7 +25,6 @@ export default function UserPage() {
     full_name: "",
     email: "",
     phone: "",
-    password: "",
   });
 
   // Edit Modal State
@@ -188,7 +187,7 @@ export default function UserPage() {
           >
             <h2 className="font-semibold text-lg">Create User</h2>
 
-            {["username", "full_name", "email", "phone", "password"].map(
+            {["username", "full_name", "email", "phone"].map(
               (field) => (
                 <input
                   key={field}

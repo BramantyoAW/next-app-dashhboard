@@ -1,8 +1,8 @@
 import { gqlFetch } from '@/lib/graphqlClient';
 
 const GET_PAYMENT_HISTORIES = `
-  query GetPaymentHistories($store_id: ID, $page: Int, $limit: Int) {
-    getPaymentHistories(store_id: $store_id, page: $page, limit: $limit) {
+  query GetPaymentHistories($store_id: ID, $search: String, $page: Int, $limit: Int) {
+    getPaymentHistories(store_id: $store_id, search: $search, page: $page, limit: $limit) {
       data {
         id
         store_id
@@ -12,6 +12,12 @@ const GET_PAYMENT_HISTORIES = `
         payload
         response
         created_at
+        store {
+          id
+          name
+          image
+          description
+        }
       }
       pagination {
         total

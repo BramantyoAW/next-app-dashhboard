@@ -52,9 +52,9 @@ export default function StorePicker({ stores, onPick, onCancel }:{
                 <span className={`font-bold transition-colors ${selected === Number(s.id) ? 'text-primary' : 'text-slate-700'}`}>
                   {s.name}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
+                {/* <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
                   ID: {s.id}
-                </span>
+                </span> */}
               </div>
               
               <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${

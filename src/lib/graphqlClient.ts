@@ -5,14 +5,22 @@ export async function gqlFetch<T>(
 ): Promise<T> {
   const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_URL?.trim();
   if (!endpoint) {
-    throw new Error(
-      'NEXT_PUBLIC_GRAPHQL_URL is empty. Set it in .env.local'
-    );
+    throw new Error('NEXT_PUBLIC_GRAPHQL_URL is empty.');
   }
 
-  const hasFiles = Object.values(variables).some(
-    (v) => v instanceof File || v instanceof Blob
-  );
+  // Recursive helper to find all files and their paths
+  const files: { file: File | Blob; path: string }[] = [];
+  const findFiles = (obj: any, path: string) => {
+    if (!obj) return;
+    if (obj instanceof File || obj instanceof Blob) {
+      files.push({ file: obj, path });
+    } else if (Array.isArray(obj)) {
+      obj.forEach((item, i) => findFiles(item, `${path}.${i}`));
+    } else if (typeof obj === 'object') {
+      Object.keys(obj).forEach((key) => findFiles(obj[key], `${path}.${key}`));
+    }
+  };
+  findFiles(variables, 'variables');
 
   let body: any;
   const headers: Record<string, string> = {
@@ -20,28 +28,26 @@ export async function gqlFetch<T>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  if (hasFiles) {
+  if (files.length > 0) {
     const formData = new FormData();
-    const operations = { query, variables: { ...variables } };
+    // Clone variables to modify them for operations string
+    const variablesClone = JSON.parse(JSON.stringify(variables, (key, value) => {
+      if (value instanceof File || value instanceof Blob) return null;
+      return value;
+    }));
+
+    const operations = { query, variables: variablesClone };
     const map: Record<string, string[]> = {};
     
-    // Deteksi file dan pindahkan ke form-data root sesuai spec
-    Object.keys(variables).forEach((key) => {
-      if (variables[key] instanceof File || variables[key] instanceof Blob) {
-        operations.variables[key] = null;
-        map[key] = [`variables.${key}`];
-      }
+    files.forEach((item, index) => {
+      const key = index.toString();
+      map[key] = [item.path];
+      formData.append(key, item.file);
     });
 
     formData.append('operations', JSON.stringify(operations));
     formData.append('map', JSON.stringify(map));
-    
-    Object.keys(map).forEach((key) => {
-      formData.append(key, variables[key]);
-    });
-
     body = formData;
-    // Berbeda dengan JSON, fetch akan otomatis set Content-Type: multipart/form-data dengan boundary yang benar
   } else {
     headers['Content-Type'] = 'application/json';
     body = JSON.stringify({ query, variables });
@@ -58,7 +64,7 @@ export async function gqlFetch<T>(
   const contentType = (res.headers.get('content-type') || '').toLowerCase();
   
   if (!contentType.includes('application/json')) {
-    throw new Error(`Non-JSON response from GraphQL (${res.status}). ${raw.slice(0, 200)}`);
+    throw new Error(`Non-JSON (${res.status}). ${raw.slice(0, 100)}`);
   }
 
   const json = JSON.parse(raw);

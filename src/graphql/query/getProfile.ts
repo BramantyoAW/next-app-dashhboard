@@ -10,6 +10,8 @@ const PROFILE_QUERY = gql`
         store_name
         store_points
         store_image
+        store_phone
+        store_address
       }
       expires_in
       expired_status

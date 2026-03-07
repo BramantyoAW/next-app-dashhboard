@@ -1,7 +1,6 @@
-'use client'
-
 import React, { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Store, LogOut, User, Plus, Camera, X } from 'lucide-react'
+import ReactDOM from 'react-dom'
+import { ChevronDown, Store, LogOut, User, Plus, Camera, X, CheckCircle2, AlertCircle, Upload } from 'lucide-react'
 import { merchantCreateStoreService } from '@/graphql/mutation/merchantCreateStore'
 
 export default function UserMenu({
@@ -20,9 +19,16 @@ export default function UserMenu({
   const [open, setOpen] = useState(false)
   const [showAddStore, setShowAddStore] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({ name: '', description: '', image: null as File | null })
+  const [formData, setFormData] = useState({ name: '', description: '', phone: '', address: '', image: null as File | null })
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -39,24 +45,209 @@ export default function UserMenu({
     if (!token) return
     
     if (!formData.image) {
-      alert('Please upload a store logo/image. It is mandatory.')
+      setErrorMsg('Logo toko wajib diunggah.')
       return
     }
     
     setLoading(true)
+    setErrorMsg(null)
     try {
       await merchantCreateStoreService(token, formData)
       setShowAddStore(false)
-      setFormData({ name: '', description: '', image: null })
-      // Trigger a refresh if needed, usually chooseStore or profile refresh
-      alert('Store created successfully! You can switch to it now.')
-      onChangeStore() // Open the switch outlet modal to see the new store
+      setFormData({ name: '', description: '', phone: '', address: '', image: null })
+      setShowSuccess(true)
     } catch (err: any) {
-      alert(err.message || 'Failed to create store')
+      setErrorMsg(err.message || 'Gagal membuat toko')
     } finally {
       setLoading(false)
     }
   }
+
+  const handleSuccessClose = () => {
+    setShowSuccess(false)
+    onChangeStore()
+  }
+
+  // All modals rendered via portal to escape header overflow
+  const modals = mounted ? ReactDOM.createPortal(
+    <>
+      {/* ==== Success Modal ==== */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl shadow-emerald-500/20 text-center space-y-6">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-500">
+              <CheckCircle2 size={48} strokeWidth={2.5} className="animate-bounce" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-900">Toko Berhasil Dibuat!</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">Bisnis baru Anda telah terdaftar. Silakan pilih outlet untuk mulai mengelola.</p>
+            </div>
+            <button 
+              onClick={handleSuccessClose}
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black shadow-lg shadow-emerald-500/30 transition-all active:scale-95"
+            >
+              Pilih Outlet Sekarang
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==== Error Modal ==== */}
+      {errorMsg && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl shadow-red-500/20 text-center space-y-6">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500">
+              <AlertCircle size={48} strokeWidth={2.5} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-black text-slate-900">Oops!</h3>
+              <p className="text-slate-500 font-medium leading-relaxed">{errorMsg}</p>
+            </div>
+            <button 
+              onClick={() => setErrorMsg(null)}
+              className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-500/30 transition-all active:scale-95"
+            >
+              Mengerti
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ==== Add Store Modal ==== */}
+      {showAddStore && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <form 
+            onSubmit={handleCreateStore}
+            className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col"
+            style={{ maxHeight: '90vh' }}
+          >
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
+               <div>
+                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Add New Store</h3>
+                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Start a new business venture</p>
+               </div>
+               <button 
+                 type="button" 
+                 onClick={() => setShowAddStore(false)} 
+                 className="p-3 hover:bg-white rounded-2xl transition-all group active:scale-90"
+               >
+                 <X size={20} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+               </button>
+            </div>
+
+            {/* Body (scrollable) */}
+            <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1" style={{ minHeight: 0 }}>
+               {/* Logo Upload */}
+               <div className="flex flex-col items-center gap-3">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Logo Toko</p>
+                  <div className="relative group">
+                    <div className={`w-28 h-28 rounded-[1.5rem] border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all duration-300 cursor-pointer ${
+                      formData.image 
+                        ? 'border-primary/30 bg-white shadow-lg shadow-primary/10' 
+                        : 'border-amber-300 bg-amber-50/50'
+                    }`}>
+                      {formData.image ? (
+                        <img src={URL.createObjectURL(formData.image)} className="w-full h-full object-cover" alt="Preview" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera size={28} className="text-amber-400" />
+                          <span className="text-[9px] font-bold text-amber-400 uppercase">Upload</span>
+                        </div>
+                      )}
+                    </div>
+                    <label className="absolute -bottom-2 -right-2 w-9 h-9 bg-primary text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 active:scale-95 transition-all border-3 border-white">
+                      <Plus size={18} strokeWidth={3} />
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={(e) => setFormData({...formData, image: e.target.files?.[0] || null})}
+                      />
+                    </label>
+                  </div>
+                  {!formData.image ? (
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-3 py-1 rounded-full animate-pulse">⚠ Wajib Diunggah</span>
+                  ) : (
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">✓ Logo Terlampir</span>
+                  )}
+               </div>
+
+               {/* Store Name */}
+               <div className="space-y-2">
+                 <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Store Name</label>
+                 <input
+                   required
+                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
+                   placeholder="e.g. OmBot Coffee & Roastery"
+                   value={formData.name}
+                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                 />
+               </div>
+
+               {/* Phone & Description */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</label>
+                    <input
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
+                      placeholder="0812xxxx"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Description</label>
+                    <input
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-bold text-slate-900 placeholder:text-slate-300"
+                      placeholder="Short description..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    />
+                  </div>
+               </div>
+
+               {/* Address */}
+               <div className="space-y-2">
+                 <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Store Address</label>
+                 <textarea
+                   rows={2}
+                   className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-bold text-slate-900 resize-none placeholder:text-slate-300"
+                   placeholder="Complete address..."
+                   value={formData.address}
+                   onChange={(e) => setFormData({...formData, address: e.target.value})}
+                 />
+               </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex gap-3 flex-shrink-0">
+               <button
+                 type="button"
+                 onClick={() => setShowAddStore(false)}
+                 className="flex-1 py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-black hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+               >
+                 Cancel
+               </button>
+               <button
+                 type="submit"
+                 disabled={loading}
+                 className="flex-[2] py-3.5 px-5 bg-primary text-primary-foreground rounded-2xl text-sm font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+               >
+                 {loading ? (
+                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                 ) : (
+                   <CheckCircle2 size={18} strokeWidth={2.5} />
+                 )}
+                 <span>Create Store</span>
+               </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>,
+    document.body
+  ) : null
 
   return (
     <div ref={ref} className="relative">
@@ -137,92 +328,8 @@ export default function UserMenu({
         </div>
       )}
 
-      {/* ==== Add Store Modal ==== */}
-      {showAddStore && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-border flex items-center justify-between bg-slate-50">
-               <div>
-                 <h3 className="text-xl font-black text-slate-900">Add New Store</h3>
-                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Start a new business venture</p>
-               </div>
-               <button onClick={() => setShowAddStore(false)} className="p-2 hover:bg-white rounded-xl transition-colors shadow-sm">
-                 <X size={20} className="text-slate-400" />
-               </button>
-            </div>
-
-            <form onSubmit={handleCreateStore} className="p-8 space-y-6">
-               <div className="flex flex-col items-center gap-4">
-                  <div className="relative group">
-                    <div className={`w-24 h-24 bg-slate-100 rounded-3xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-colors ${!formData.image ? 'border-amber-200 hover:border-amber-400' : 'border-slate-200 group-hover:border-primary/50'}`}>
-                      {formData.image ? (
-                        <img src={URL.createObjectURL(formData.image)} className="w-full h-full object-cover" alt="Preview" />
-                      ) : (
-                        <Camera size={24} className="text-slate-300 group-hover:text-primary transition-colors" />
-                      )}
-                      {!formData.image && <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Logo Required</span>}
-                    </div>
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*"
-                        required
-                        onChange={(e) => setFormData({...formData, image: e.target.files?.[0] || null})}
-                      />
-                    </label>
-                  </div>
-                  <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest text-center">Store Image is Mandatory</p>
-               </div>
-
-               <div className="grid gap-5">
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Store Name</label>
-                   <input
-                     required
-                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-semibold text-slate-900"
-                     placeholder="e.g. OmBot Coffee & Roastery"
-                     value={formData.name}
-                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                   />
-                 </div>
-
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Description (Optional)</label>
-                   <textarea
-                     rows={3}
-                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all font-semibold text-slate-900 resize-none"
-                     placeholder="Tell us a bit about this store..."
-                     value={formData.description}
-                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                   />
-                 </div>
-               </div>
-
-               <div className="pt-4 flex gap-3 mt-4">
-                 <button
-                   type="button"
-                   onClick={() => setShowAddStore(false)}
-                   className="flex-1 py-4 px-6 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
-                 >
-                   Cancel
-                 </button>
-                 <button
-                   type="submit"
-                   disabled={loading}
-                   className="flex-[2] py-4 px-6 bg-primary text-primary-foreground rounded-2xl text-sm font-black shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                 >
-                   {loading ? (
-                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                   ) : (
-                     <>Create Store</>
-                   )}
-                 </button>
-               </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Portaled modals */}
+      {modals}
     </div>
   )
 }
