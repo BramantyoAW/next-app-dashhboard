@@ -7,11 +7,13 @@ import { merchantCreateStoreService } from '@/graphql/mutation/merchantCreateSto
 export default function UserMenu({
   userName,
   storeName,
+  storeImage,
   onLogout,
   onChangeStore,
 }: {
   userName: string
   storeName?: string
+  storeImage?: string
   onLogout: () => void
   onChangeStore: () => void
 }) {
@@ -63,8 +65,12 @@ export default function UserMenu({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-3 rounded-2xl bg-white border border-border p-1.5 pr-4 shadow-sm hover:shadow-md hover:bg-slate-50 transition-all duration-200 group active:scale-95"
       >
-        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-110">
-          <User size={18} />
+        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold transition-transform group-hover:scale-110 overflow-hidden border border-border/50">
+          {storeImage ? (
+            <img src={storeImage} alt="Store" className="w-full h-full object-cover" />
+          ) : (
+            <User size={18} />
+          )}
         </div>
         <div className="hidden sm:flex flex-col text-left leading-tight min-w-0">
           <span className="text-slate-900 font-bold text-sm truncate max-w-[150px]">

@@ -19,7 +19,8 @@ import {
   MessageCircle,
   Menu,
   X,
-  Coins
+  Coins,
+  Store
 } from 'lucide-react'
 
 // ================================
@@ -195,6 +196,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (path.startsWith('/dashboard/order')) return 'Orders'
     if (path.startsWith('/dashboard/user/message')) return 'User Messages'
     if (path.startsWith('/dashboard/user')) return 'Users'
+    if (path.startsWith('/dashboard/settings/store')) return 'Store Profile'
+    if (path.startsWith('/dashboard/settings/configuration')) return 'Configuration'
     if (path.startsWith('/dashboard/settings')) return 'Settings'
     return 'Dashboard Overview'
   }
@@ -217,17 +220,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       `}>
         <div className="flex items-center justify-between mb-10">
           <Link href="/dashboard" className="flex items-center gap-3">
-            {profile?.me?.user?.store_image && (
-              <div className="p-1 bg-white rounded-xl shadow-sm border border-border">
-                <img src={profile.me.user.store_image} alt="Store Logo" className="w-10 h-10 object-cover rounded-lg" />
-              </div>
-            )}
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <img src="/omBot.png" alt="OmBot" className="w-8 h-8 object-contain" />
+            <div className="p-2.5 bg-primary rounded-xl shadow-lg shadow-primary/20 hover-scale">
+              <img src="/omBot.png" alt="OmBot" className="w-8 h-8 object-contain brightness-0 invert" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight line-clamp-1">{profile?.me?.user?.store_name || 'OmBot'}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Dashboard</span>
+              <span className="font-bold text-xl tracking-tight text-primary">omBot</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">Dashboard</span>
             </div>
           </Link>
           <button className="lg:hidden p-2 hover:bg-secondary rounded-lg" onClick={() => setIsSidebarOpen(false)}>
@@ -272,6 +270,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="pt-6 pb-2 px-4">
             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Settings</span>
           </div>
+          <SidebarLink href="/dashboard/settings/store" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Store Profile
+          </SidebarLink>
           <SidebarLink href="/dashboard/settings/configuration" icon={<Settings size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Configuration
           </SidebarLink>
@@ -319,6 +320,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <UserMenu
               userName={profile?.me?.user?.full_name ?? 'User'}
               storeName={profile?.me?.user?.store_name ?? 'Belum pilih toko'}
+              storeImage={profile?.me?.user?.store_image}
               onLogout={handleLogout}
               onChangeStore={handleOpenChangeStore}
             />
