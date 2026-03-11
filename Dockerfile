@@ -11,6 +11,13 @@ RUN npm ci
 # Copy whole project
 COPY . .
 
+
+ARG GRAPHQL_URL=http://nginx-server:80/graphql
+ENV GRAPHQL_URL=$GRAPHQL_URL
+
+ARG NEXT_PUBLIC_GRAPHQL_URL=/graphql
+ENV NEXT_PUBLIC_GRAPHQL_URL=$NEXT_PUBLIC_GRAPHQL_URL
+
 # Build production bundles
 RUN npm run build
 

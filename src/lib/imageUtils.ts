@@ -15,7 +15,7 @@ export function resolveImageUrl(imageUrl: string | null | undefined): string {
   const backendPatterns = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    'https://services.tyb-services.site',
+    'http://nginx-server:80',
   ];
 
   for (const pattern of backendPatterns) {

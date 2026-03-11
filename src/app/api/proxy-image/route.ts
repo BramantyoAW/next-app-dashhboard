@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     BACKEND_BASE,
     'http://127.0.0.1:8000',
     'http://localhost:8000',
+    'http://nginx-server:80',
     process.env.GRAPHQL_URL?.replace('/graphql', ''),
   ].filter(Boolean);
 
