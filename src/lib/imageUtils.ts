@@ -16,6 +16,8 @@ export function resolveImageUrl(imageUrl: string | null | undefined): string {
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'http://nginx-server:80',
+    'https://services.om-bot.com',
+    'http://services.om-bot.com',
   ];
 
   for (const pattern of backendPatterns) {

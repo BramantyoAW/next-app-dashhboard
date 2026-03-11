@@ -10,12 +10,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 });
   }
 
-  // Only allow proxying images from our backend
+  const publicOrigins = [
+    'https://services.om-bot.com',
+    'http://services.om-bot.com',
+  ];
+
   const allowedOrigins = [
     BACKEND_BASE,
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'http://nginx-server:80',
+    ...publicOrigins,
     process.env.GRAPHQL_URL?.replace('/graphql', ''),
   ].filter(Boolean);
 
@@ -24,10 +29,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'URL not allowed' }, { status: 403 });
   }
 
+  // Internal fetch optimization: bypass Cloudflare Access by fetching from container
+  let fetchUrl = imageUrl;
+  let hostHeader = '';
+  for (const pub of publicOrigins) {
+    if (fetchUrl.startsWith(pub)) {
+      fetchUrl = fetchUrl.replace(pub, BACKEND_BASE);
+      hostHeader = pub.replace(/^https?:\/\//, ''); // e.g. services.om-bot.com
+      break;
+    }
+  }
+
   try {
-    const response = await fetch(imageUrl);
+    const response = await fetch(fetchUrl, {
+      headers: hostHeader ? { 'Host': hostHeader } : {}
+    });
+
     if (!response.ok) {
-      // If image is missing (403/404), redirect to default placeholder
       if (response.status === 403 || response.status === 404) {
         return NextResponse.redirect(new URL('/default-product.svg', request.url));
       }
