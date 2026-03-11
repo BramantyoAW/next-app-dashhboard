@@ -171,7 +171,7 @@ export default function LoginPage() {
 
           <div className="text-center sm:text-left space-y-2">
             <div className="flex justify-center sm:justify-start mb-6 lg:hidden">
-                <img src="/omBot.png" alt="Logo" className="w-16 h-16 object-contain rounded-xl shadow-md" />
+                <img src="/ombotico.png" alt="Logo" className="w-16 h-16 object-contain rounded-xl shadow-md" />
             </div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
               {isRegister ? 'Daftar Akun Baru' : 'Login ke omBot'}

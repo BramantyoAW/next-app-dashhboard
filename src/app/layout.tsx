@@ -23,10 +23,9 @@ export const metadata = {
   description: 'Order Management Bot by Bramantyo Aryo',
   icons: {
     icon: [
-      { url: '/ombotico.png'},
-      { url: '/ombot-favicon.png', type: 'image/png' },
+      { url: '/ombotico.png', type: 'image/png' },
     ],
-    apple: '/ombot-favicon.png',
+    apple: '/ombotico.png',
   },
 }
 

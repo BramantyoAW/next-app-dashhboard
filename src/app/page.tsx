@@ -8,10 +8,20 @@ export default function Home() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md shadow-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8 max-w-7xl">
-          <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105">
-            <Image src="/omBot.png" alt="omBot Logo" width={36} height={36} className="rounded-lg shadow-sm" />
-            <span className="text-2xl font-extrabold text-blue-700 tracking-tight">omBot</span>
-          </Link>
+            <div className="relative group">
+              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-3xl blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+              <Image 
+                src="/ombotico.png" 
+                alt="omBot Logo" 
+                width={72} 
+                height={72} 
+                className="relative rounded-3xl shadow-2xl transition-all duration-500 group-hover:scale-110" 
+              />
+            </div>
+            <div className="flex flex-col ml-1">
+              <span className="text-4xl font-black text-slate-900 tracking-tighter leading-none">omBot</span>
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1 opacity-80">Order Management Bot</span>
+            </div>
           <nav className="flex items-center gap-4">
             <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors">
               Login
@@ -141,8 +151,9 @@ export default function Home() {
 
       <footer className="w-full border-t bg-slate-50 py-10">
         <div className="container mx-auto px-4 md:px-6 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0 text-center md:text-left">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-slate-400 grayscale">omBot</span>
+          <div className="flex items-center gap-3">
+            <Image src="/ombotico.png" alt="omBot" width={32} height={32} className="rounded-lg opacity-50" />
+            <span className="text-xl font-bold text-slate-400">omBot</span>
           </div>
           <p className="text-sm text-slate-500 font-medium">
             &copy; {new Date().getFullYear()} omBot Dashboard. All rights reserved.

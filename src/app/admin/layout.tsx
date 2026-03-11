@@ -76,13 +76,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center justify-between mb-10">
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/10 rounded-xl text-blue-600">
-              <LayoutDashboard size={24} />
+          <Link href="/admin/dashboard" className="flex flex-col items-center gap-4 group w-full pt-4">
+            <div className="relative">
+              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
+              <img 
+                src="/ombotico.png" 
+                alt="OmBot" 
+                className="relative w-20 h-20 object-contain transition-all duration-500 group-hover:scale-110 drop-shadow-xl saturate-[1.1]" 
+              />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg tracking-tight text-blue-600">OmBot Admin</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Management</span>
+            <div className="flex flex-col items-center">
+              <span className="font-black text-2xl tracking-tighter text-blue-600 leading-none">OmBot Admin</span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100/50">Order Management Bot</span>
             </div>
           </Link>
           <button className="lg:hidden p-2 hover:bg-secondary rounded-lg" onClick={() => setIsSidebarOpen(false)}>

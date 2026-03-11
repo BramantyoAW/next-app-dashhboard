@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { getAllProducts } from '@/graphql/query/catalog/getAllProducts'
 import ConfirmModal from '@/components/ConfirmModal'
 import { extractStoreId } from '@/lib/jwt'
+import { resolveImageUrl } from '@/lib/imageUtils'
 
 interface Attribute {
   name: string
@@ -209,17 +210,11 @@ export default function ProductPage() {
 
               {/* RIGHT: product image thumbnail */}
               <div className="w-[120px] h-[120px] flex-shrink-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                {product.image ? (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <span className="text-gray-400 text-xs text-center px-2">
-                    No image
-                  </span>
-                )}
+                <img
+                  src={resolveImageUrl(product.image)}
+                  alt={product.name}
+                  className="object-cover w-full h-full"
+                />
               </div>
             </div>
           ))}

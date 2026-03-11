@@ -10,6 +10,7 @@ import { adminGetAllUsersService } from "@/graphql/query/admin/getAllUsers";
 import { getPointHistoriesService } from "@/graphql/query/points/getPointServices";
 import { adminAdjustStoreBalanceService } from "@/graphql/mutation/admin/adjustStoreBalance";
 import { Store, UserPlus, Plus, History, Coins, X, ArrowUpRight, ArrowDownLeft, Clock, PlusCircle } from "lucide-react";
+import { resolveImageUrl } from '@/lib/imageUtils';
 
 export default function AdminStoresPage() {
   const router = useRouter();
@@ -213,7 +214,7 @@ export default function AdminStoresPage() {
                 <td className="px-6 py-4">
                   {store.image ? (
                     <img 
-                      src={store.image} 
+                      src={resolveImageUrl(store.image)} 
                       alt={store.name} 
                       className="w-10 h-10 object-cover rounded-xl border border-slate-100 shadow-sm"
                     />
