@@ -40,10 +40,17 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Cloudflare Access Headers (if provided in ENV)
+  const cfId = process.env.CF_ACCESS_CLIENT_ID;
+  const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
+
   try {
-    const response = await fetch(fetchUrl, {
-      headers: hostHeader ? { 'Host': hostHeader } : {}
-    });
+    const headers: Record<string, string> = {};
+    if (hostHeader) headers['Host'] = hostHeader;
+    if (cfId) headers['CF-Access-Client-Id'] = cfId;
+    if (cfSecret) headers['CF-Access-Client-Secret'] = cfSecret;
+
+    const response = await fetch(fetchUrl, { headers });
 
     if (!response.ok) {
       if (response.status === 403 || response.status === 404) {
