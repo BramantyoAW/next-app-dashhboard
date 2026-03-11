@@ -83,6 +83,7 @@ export default function OrdersPage() {
 
     const exportData = dataToExport.map((order) => ({
       "Order Number": order.order_number,
+      "User": order.user?.full_name || "-",
       // "Discount (Rp)": order.discount,
       "Items": order.items
         .map((item: any) =>
@@ -108,43 +109,131 @@ export default function OrdersPage() {
     saveAs(blob, filename)
   }
 
-  const handleExportPDF = () => {
+  // Helper to load image to Base64 for jsPDF
+  const getBase64FromUrl = async (url: string): Promise<string> => {
+    try {
+      const data = await fetch(url);
+      const blob = await data.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => resolve(reader.result as string);
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  const handleExportPDF = async () => {
     const dataToExport = filteredOrders.length ? filteredOrders : orders
     if (!dataToExport.length) return alert("No data to export")
 
-   const doc = new jsPDF("p", "mm", "a4")
+    const doc = new jsPDF("p", "mm", "a4")
+    const pageWidth = doc.internal.pageSize.getWidth()
+    
+    // --- 1. Top Header with Logos ---
+    // OmBot Logo (Left)
+    const omBotLogoBase64 = await getBase64FromUrl("/ombotico.png");
+    if (omBotLogoBase64) {
+      doc.addImage(omBotLogoBase64, "PNG", 15, 10, 20, 20);
+    }
 
-    doc.setFontSize(16)
-    doc.text(storeName, 105, 12, { align: "center" })
+    // Store Logo (Right)
+    const storeLogoUrl = profile?.me?.user?.store_image;
+    if (storeLogoUrl) {
+      const storeLogoBase64 = await getBase64FromUrl(storeLogoUrl);
+      if (storeLogoBase64) {
+        doc.addImage(storeLogoBase64, "JPEG", pageWidth - 35, 10, 20, 20);
+      }
+    }
 
+    // Content: Store Name & Title
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(22)
+    doc.setTextColor(30, 41, 59) // slate-800
+    doc.text(storeName, pageWidth / 2, 20, { align: "center" })
+
+    doc.setFont("helvetica", "normal")
     doc.setFontSize(10)
-    doc.text(`OmBot Orders Report • Exported date ${today}`, 105, 18, { align: "center" })
+    doc.setTextColor(100, 116, 139) // slate-500
+    
+    // Format Export Date: 11 Maret 2026
+    const exportDateFormatted = new Date().toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+    doc.text(`Laporan Penjualan OmBot • Per tanggal ${exportDateFormatted}`, pageWidth / 2, 27, { align: "center" })
 
+    // --- 2. Orders Table ---
     const tableData = dataToExport.map((order) => [
       order.order_number,
+      order.user?.full_name || "-",
       order.items
         .map(
           (item: any) =>
-            `• Product ${item.name} x${item.qty} = Rp${item.price.toLocaleString()}`
+            `• ${item.name} (x${item.qty}) = Rp ${item.price.toLocaleString()}`
         )
         .join("\n"),
       `Rp ${order.total_amount.toLocaleString()}`,
-      order.created_at,
+      new Date(order.created_at).toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      }),
     ])
 
     autoTable(doc, {
-      startY: 24,
-      head: [["Order Number", "Items", "Total", "Created At"]],
+      startY: 40,
+      head: [["Order #", "Petugas", "Item Pesanan", "Total", "Tanggal"]],
       body: tableData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [37, 99, 235], // blue-600
+        textColor: [255, 255, 255],
+        fontSize: 10,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
       styles: {
         fontSize: 9,
-        cellPadding: 3,
-        valign: "top",
+        cellPadding: 4,
+        valign: "middle",
       },
       columnStyles: {
-        1: { cellWidth: 80 },
+        2: { cellWidth: 70 }, // Items
+        3: { halign: 'right', fontStyle: 'bold' }, // Total
+        4: { halign: 'center' }, // Date
       },
     })
+
+    // --- 3. Summary Footer ---
+    const finalY = (doc as any).lastAutoTable.finalY + 10
+    const totalSales = dataToExport.reduce((sum, o) => sum + o.total_amount, 0)
+
+    doc.setDrawColor(226, 232, 240) // border slate-200
+    doc.line(15, finalY, pageWidth - 15, finalY)
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.setTextColor(30, 41, 59)
+    doc.text("Ringkasan Penjualan:", 15, finalY + 10)
+    
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(10)
+    doc.text(`Total Pesanan: ${dataToExport.length} Order`, 15, finalY + 17)
+
+    // Highlight Total Terjual
+    doc.setFillColor(248, 250, 252) // slate-50
+    doc.rect(pageWidth - 85, finalY + 5, 70, 15, 'F')
+    
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.text("Total Terjual:", pageWidth - 80, finalY + 11)
+    
+    doc.setFontSize(13)
+    doc.setTextColor(37, 99, 235) // blue-600
+    doc.text(`Rp ${totalSales.toLocaleString()}`, pageWidth - 80, finalY + 17)
 
     doc.save(`${safeStoreName}_orders_${today}.pdf`)
   }
@@ -224,6 +313,7 @@ export default function OrdersPage() {
           <thead className="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
             <tr>
               <th className="px-6 py-3 border-b">Order Number</th>
+              <th className="px-6 py-3 border-b">Input by</th>
               <th className="px-6 py-3 border-b">Total</th>
               <th className="px-6 py-3 border-b">Discount</th>
               <th className="px-6 py-3 border-b">Items</th>
@@ -236,6 +326,9 @@ export default function OrdersPage() {
               <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 border-b font-medium text-gray-800">
                   {order.order_number}
+                </td>
+                <td className="px-6 py-4 border-b text-blue-600 font-semibold italic">
+                  {order.user?.full_name || "-"}
                 </td>
                 <td className="px-6 py-4 border-b">
                   Rp {order.total_amount.toLocaleString()}

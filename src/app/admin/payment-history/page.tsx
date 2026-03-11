@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { adminGetPaymentHistoriesService } from '@/graphql/query/points/getPaymentHistories';
 import { History, Search, Filter, Eye, Clock, CheckCircle2, XCircle, AlertCircle, X, MapPin, Phone, Info, Calendar, DollarSign } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/imageUtils';
 
 export default function PaymentHistoryPage() {
   const [loading, setLoading] = useState(true);
@@ -69,7 +70,7 @@ export default function PaymentHistoryPage() {
           {/* Header */}
           <div className="relative h-48 bg-slate-100 flex-shrink-0">
             {store.image ? (
-              <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+              <img src={resolveImageUrl(store.image)} alt={store.name} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600">
                 <History size={64} className="text-white/20" />
@@ -85,7 +86,7 @@ export default function PaymentHistoryPage() {
               <div className="w-24 h-24 rounded-3xl bg-white p-2 shadow-xl border border-slate-100">
                 <div className="w-full h-full rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden">
                    {store.image ? (
-                     <img src={store.image} alt="Logo" className="w-full h-full object-cover" />
+                     <img src={resolveImageUrl(store.image)} alt="Logo" className="w-full h-full object-cover" />
                    ) : (
                      <Info size={32} className="text-slate-300" />
                    )}
@@ -215,7 +216,7 @@ export default function PaymentHistoryPage() {
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm overflow-hidden flex-shrink-0">
                           {payment.store?.image ? (
-                            <img src={payment.store.image} alt="Store" className="w-full h-full object-cover" />
+                            <img src={resolveImageUrl(payment.store.image)} alt="Store" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
                               <Info size={16} />

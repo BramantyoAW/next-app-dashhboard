@@ -93,7 +93,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   if (!profile) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground">
-        <img src="/omBot.png" className="w-20 h-20 mb-4 animate-pulse" alt="Loading..." />
+        <img src="/ombotico.png" className="w-20 h-20 mb-4 animate-pulse" alt="Loading..." />
         <p className="text-sm font-medium">Loading your dashboard...</p>
       </div>
     )
@@ -219,13 +219,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex items-center justify-between mb-10">
-          <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary rounded-xl shadow-lg shadow-primary/20 hover-scale">
-              <img src="/omBot.png" alt="OmBot" className="w-8 h-8 object-contain brightness-0 invert" />
+          <Link href="/dashboard" className="flex flex-col items-center gap-4 group w-full pt-4">
+            <div className="relative">
+              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
+              <img 
+                src="/ombotico.png" 
+                alt="OmBot" 
+                className="relative w-24 h-24 object-contain transition-all duration-500 group-hover:scale-110 drop-shadow-xl" 
+              />
             </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl tracking-tight text-primary">omBot</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black">Dashboard</span>
+            <div className="flex flex-col items-center">
+              <span className="font-black text-3xl tracking-tighter text-slate-900 leading-none">omBot</span>
+              <span className="text-[10px] text-blue-600 uppercase tracking-[0.2em] font-black mt-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100/50">Order Management Bot</span>
             </div>
           </Link>
           <button className="lg:hidden p-2 hover:bg-secondary rounded-lg" onClick={() => setIsSidebarOpen(false)}>

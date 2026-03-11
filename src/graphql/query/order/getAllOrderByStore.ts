@@ -32,6 +32,9 @@ export const GET_ORDERS_BY_STORE = gql`
           price
           discount
         }
+        user {
+          full_name
+        }
       }
       pagination {
         total
@@ -57,6 +60,9 @@ export type GetOrdersByStoreResponse = {
         price: number
         discount: number
       }[]
+      user: {
+        full_name: string
+      } | null
     }[]
     pagination: {
       total: number
