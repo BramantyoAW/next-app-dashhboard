@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { resetPasswordService } from '@/graphql/mutation/forgotPassword';
