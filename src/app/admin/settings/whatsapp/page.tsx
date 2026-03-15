@@ -169,7 +169,7 @@ export default function WhatsappSettingsPage() {
 
         <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-inner h-[800px] w-full relative group">
           <iframe 
-            src="/api/wwebjs/" 
+            src="/api/wwebjs/proxy" 
             className="w-full h-full border-none opacity-0 transition-opacity duration-300"
             onLoad={(e) => (e.target as HTMLIFrameElement).classList.remove('opacity-0')}
             title="WWebJS Services Proxy"
