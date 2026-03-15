@@ -13,7 +13,8 @@ import {
   X,
   ChevronRight,
   CreditCard,
-  History
+  History,
+  Phone
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -120,6 +121,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/midtrans" icon={<CreditCard size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Midtrans Config
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/whatsapp" icon={<Phone size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Whatsapp Config
           </AdminSidebarLink>
         </nav>
 

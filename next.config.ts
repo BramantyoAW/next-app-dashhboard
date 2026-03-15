@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
         source: '/graphql',
         destination: process.env.GRAPHQL_URL || 'http://nginx-server:80/graphql',
       },
+      {
+        source: '/api/wwebjs/proxy',
+        destination: process.env.WWEBJS_URL ? `${process.env.WWEBJS_URL}/` : 'http://127.0.0.1:3000/',
+      },
+      {
+        source: '/api/wwebjs/:path*',
+        destination: process.env.WWEBJS_URL ? `${process.env.WWEBJS_URL}/:path*` : 'http://127.0.0.1:3000/:path*',
+      },
     ];
   },
 };
