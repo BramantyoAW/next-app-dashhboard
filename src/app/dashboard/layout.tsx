@@ -8,6 +8,7 @@ import UserMenu from '@/components/UserMenu'
 import StorePicker from '@/components/StorePicker'
 import { myStoresService } from '@/graphql/query/myStores'
 import { chooseStoreService } from '@/graphql/mutation/chooseStore'
+import { resolveImageUrl } from '@/lib/imageUtils'
 import {
   Home,
   ShoppingCart,
@@ -325,7 +326,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             <UserMenu
               userName={profile?.me?.user?.full_name ?? 'User'}
               storeName={profile?.me?.user?.store_name ?? 'Belum pilih toko'}
-              storeImage={profile?.me?.user?.store_image}
+              storeImage={profile?.me?.user?.store_image ? resolveImageUrl(profile.me.user.store_image) : undefined}
               onLogout={handleLogout}
               onChangeStore={handleOpenChangeStore}
             />

@@ -9,6 +9,7 @@ import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { resolveImageUrl } from "@/lib/imageUtils"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -139,7 +140,7 @@ export default function OrdersPage() {
     }
 
     // Store Logo (Right)
-    const storeLogoUrl = profile?.me?.user?.store_image;
+    const storeLogoUrl = profile?.me?.user?.store_image ? resolveImageUrl(profile.me.user.store_image) : undefined;
     if (storeLogoUrl) {
       const storeLogoBase64 = await getBase64FromUrl(storeLogoUrl);
       if (storeLogoBase64) {

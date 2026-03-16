@@ -5,6 +5,7 @@ import { useProfile } from '@/app/dashboard/layout'
 import { Camera, Save, History, ArrowLeft, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react'
 import Link from 'next/link'
 import { gqlFetch } from '@/lib/graphqlClient'
+import { resolveImageUrl } from '@/lib/imageUtils'
 
 const UPDATE_STORE_MUTATION = `
   mutation UpdateStore($id: ID!, $name: String, $description: String, $image: Upload, $phone: String, $address: String) {
@@ -61,7 +62,7 @@ export default function StoreSettingsPage() {
       setDescription(profile?.me?.user?.description || '')
       setPhone(profile?.me?.user?.store_phone || '')
       setAddress(profile?.me?.user?.store_address || '')
-      setImagePreview(profile?.me?.user?.store_image || null)
+      setImagePreview(profile?.me?.user?.store_image ? resolveImageUrl(profile.me.user.store_image) : null)
       fetchHistory()
     }
   }, [profile])
