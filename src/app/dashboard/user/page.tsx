@@ -131,7 +131,7 @@ export default function UserPage() {
         token,
         editUser.id,
         storeId,
-        'staff',
+        editUser.role,
         {
           full_name: editUser.full_name,
           email: editUser.email,
@@ -250,15 +250,17 @@ export default function UserPage() {
                     Edit
                   </button>
 
-                  <button
-                    className="px-3 py-1 bg-red-600 text-white rounded text-xs"
-                    onClick={() => {
-                      setDeleteUserId(u.id);
-                      setShowDeleteModal(true);
-                    }}
-                  >
-                    Delete
-                  </button>
+                  {u.role !== 'owner' && (
+                    <button
+                      className="px-3 py-1 bg-red-600 text-white rounded text-xs"
+                      onClick={() => {
+                        setDeleteUserId(u.id);
+                        setShowDeleteModal(true);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -346,31 +348,35 @@ export default function UserPage() {
               </div>
             )}
 
-            {editFields.map(({ key, label, type }) => (
-              <div key={key}>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  {label}
-                </label>
-                <input
-                  className={`w-full p-2 border rounded transition-colors ${
-                    editErrors[key]
-                      ? 'border-red-400 bg-red-50 focus:ring-red-200'
-                      : 'border-gray-200 focus:ring-blue-200'
-                  } focus:outline-none focus:ring-2`}
-                  placeholder={label}
-                  type={type}
-                  value={editUser[key] ?? ""}
-                  onChange={(e) =>
-                    setEditUser({ ...editUser, [key]: e.target.value })
-                  }
-                />
-                {editErrors[key] && (
-                  <p className="text-xs text-red-500 mt-1 font-medium">
-                    {editErrors[key]}
-                  </p>
-                )}
-              </div>
-            ))}
+            {editFields.map(({ key, label, type }) => {
+              if (key === 'password' && editUser.role !== 'owner') return null;
+              
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    {label}
+                  </label>
+                  <input
+                    className={`w-full p-2 border rounded transition-colors ${
+                      editErrors[key]
+                        ? 'border-red-400 bg-red-50 focus:ring-red-200'
+                        : 'border-gray-200 focus:ring-blue-200'
+                    } focus:outline-none focus:ring-2`}
+                    placeholder={label}
+                    type={type}
+                    value={editUser[key] ?? ""}
+                    onChange={(e) =>
+                      setEditUser({ ...editUser, [key]: e.target.value })
+                    }
+                  />
+                  {editErrors[key] && (
+                    <p className="text-xs text-red-500 mt-1 font-medium">
+                      {editErrors[key]}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
 
             <div className="flex justify-end gap-2 pt-2">
               <button
