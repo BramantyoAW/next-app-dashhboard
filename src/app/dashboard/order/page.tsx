@@ -23,29 +23,37 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const profile = useProfile()
 
+  async function fetchOrders() {
+    try {
+      const token = localStorage.getItem('token')
+      const storeId = extractStoreId(token)
+      if (!token) throw new Error("Token not found")
+
+      graphqlClient.setHeader("Authorization", `Bearer ${token}`)
+      const res = await graphqlClient.request<GetOrdersByStoreResponse>(
+        GET_ORDERS_BY_STORE,
+        { store_id: storeId, page: 1, limit: 50 }
+      )
+
+      setOrders(res.getOrdersByStore.data)
+      setFilteredOrders(res.getOrdersByStore.data)
+    } catch (err) {
+      console.error("Failed to fetch orders:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const token = localStorage.getItem('token')
-        const storeId = extractStoreId(token)
-        if (!token) throw new Error("Token not found")
+    fetchOrders()
 
-        graphqlClient.setHeader("Authorization", `Bearer ${token}`)
-        const res = await graphqlClient.request<GetOrdersByStoreResponse>(
-          GET_ORDERS_BY_STORE,
-          { store_id: storeId, page: 1, limit: 50 }
-        )
-
-        setOrders(res.getOrdersByStore.data)
-        setFilteredOrders(res.getOrdersByStore.data)
-      } catch (err) {
-        console.error("Failed to fetch orders:", err)
-      } finally {
-        setLoading(false)
-      }
+    const handleStoreRefresh = () => {
+      setLoading(true)
+      fetchOrders()
     }
 
-    fetchOrders()
+    window.addEventListener('storeRefreshed', handleStoreRefresh)
+    return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
   }, [])
 
   // Filter logic

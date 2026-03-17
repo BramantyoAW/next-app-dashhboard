@@ -61,6 +61,14 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventory()
+
+    const handleStoreRefresh = () => {
+      setLoading(true)
+      fetchInventory()
+    }
+
+    window.addEventListener('storeRefreshed', handleStoreRefresh)
+    return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
   }, [search])
 
   return (
