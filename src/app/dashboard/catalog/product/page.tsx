@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getAllProducts } from '@/graphql/query/catalog/getAllProducts'
+import { deleteProductService } from '@/graphql/mutation/catalog/deleteProduct'
 import ConfirmModal from '@/components/ConfirmModal'
 import { extractStoreId } from '@/lib/jwt'
 import { resolveImageUrl } from '@/lib/imageUtils'
@@ -55,9 +56,18 @@ export default function ProductPage() {
     }
   }
 
-  const handleDelete = (id: number) => {
-    setProducts(prev => prev.filter(p => p.id !== id))
-    setConfirmId(null)
+  const handleDelete = async (id: number) => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return router.replace('/login')
+      await deleteProductService(token, id)
+      setProducts(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      console.error('Failed to delete product:', err)
+      alert("Failed to delete product")
+    } finally {
+      setConfirmId(null)
+    }
   }
 
   const handleFilterChange = (key: string, value: string) => {
