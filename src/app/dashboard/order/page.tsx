@@ -11,6 +11,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { resolveImageUrl } from "@/lib/imageUtils"
 import { Search, User, Package, Calendar, XCircle, Filter, FileText, Download } from "lucide-react"
+import { Pagination } from "@/components/ui/Pagination"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
@@ -23,7 +24,11 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const profile = useProfile()
 
-  async function fetchOrders() {
+  const [pagination, setPagination] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
+
+  async function fetchOrders(p = page, limit = perPage) {
     try {
       const token = localStorage.getItem('token')
       const storeId = extractStoreId(token)
@@ -32,11 +37,12 @@ export default function OrdersPage() {
       graphqlClient.setHeader("Authorization", `Bearer ${token}`)
       const res = await graphqlClient.request<GetOrdersByStoreResponse>(
         GET_ORDERS_BY_STORE,
-        { store_id: storeId, page: 1, limit: 50 }
+        { store_id: storeId, page: p, limit: limit }
       )
 
       setOrders(res.getOrdersByStore.data)
       setFilteredOrders(res.getOrdersByStore.data)
+      setPagination(res.getOrdersByStore.pagination)
     } catch (err) {
       console.error("Failed to fetch orders:", err)
     } finally {
@@ -45,16 +51,17 @@ export default function OrdersPage() {
   }
 
   useEffect(() => {
-    fetchOrders()
+    fetchOrders(page, perPage)
 
     const handleStoreRefresh = () => {
       setLoading(true)
-      fetchOrders()
+      fetchOrders(1, perPage)
+      setPage(1)
     }
 
     window.addEventListener('storeRefreshed', handleStoreRefresh)
     return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
-  }, [])
+  }, [page, perPage])
 
   // Filter logic
   useEffect(() => {
@@ -402,6 +409,19 @@ export default function OrdersPage() {
               </div>
             </div>
           </div>
+          {pagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={pagination.total_pages}
+              perPage={perPage}
+              totalItems={pagination.total}
+              onPageChange={setPage}
+              onLimitChange={(limit) => {
+                setPerPage(limit);
+                setPage(1);
+              }}
+            />
+          )}
         </div>
       </div>
 

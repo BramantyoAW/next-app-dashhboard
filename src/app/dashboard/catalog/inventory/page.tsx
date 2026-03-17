@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { useEffect, useState } from 'react'
 import { getAllInventory } from '@/graphql/query/inventory/getAllInventory'
@@ -17,26 +17,29 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
-  CheckCircle2,
-  MinusCircle
 } from 'lucide-react'
+import { Pagination } from '@/components/ui/Pagination'
 
 export default function InventoryPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [inventory, setInventory] = useState<any[]>([])
+  const [pagination, setPagination] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
   const [logs, setLogs] = useState<any[]>([])
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
 
   // Fetch inventory list
-  const fetchInventory = async () => {
+  const fetchInventory = async (p = page, limit = perPage) => {
     try {
       const token = localStorage.getItem('token')
       if (!token) throw new Error('Token not found')
       const storeId = extractStoreId(token)
       setLoading(true)
-      const data = await getAllInventory(token, String(storeId), search)
-      setInventory(data)
+      const res = await getAllInventory(token, String(storeId), search, p, limit)
+      setInventory(res.data)
+      setPagination(res.pagination)
     } catch (err: any) {
       console.error('Failed to load inventory:', err)
       toast.error('Gagal memuat data stok')
@@ -60,15 +63,21 @@ export default function InventoryPage() {
   }
 
   useEffect(() => {
-    fetchInventory()
+    fetchInventory(page, perPage)
 
     const handleStoreRefresh = () => {
       setLoading(true)
-      fetchInventory()
+      fetchInventory(1, perPage)
+      setPage(1)
     }
 
     window.addEventListener('storeRefreshed', handleStoreRefresh)
     return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
+  }, [search, page, perPage])
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setPage(1)
   }, [search])
 
   return (
@@ -109,7 +118,7 @@ export default function InventoryPage() {
               />
             </div>
             <button
-              onClick={fetchInventory}
+              onClick={() => fetchInventory()}
               className="h-12 px-8 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-95 shrink-0"
             >
               Refresh Data
@@ -194,6 +203,19 @@ export default function InventoryPage() {
               </tbody>
             </table>
           </div>
+          {pagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={pagination.total_pages}
+              perPage={perPage}
+              totalItems={pagination.total}
+              onPageChange={setPage}
+              onLimitChange={(limit) => {
+                setPerPage(limit);
+                setPage(1);
+              }}
+            />
+          )}
         </div>
       </div>
 

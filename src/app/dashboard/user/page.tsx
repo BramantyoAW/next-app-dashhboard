@@ -53,11 +53,15 @@ function parseFieldErrors(err: any): Record<string, string> {
   return fieldErrors;
 }
 
+import { Pagination } from "@/components/ui/Pagination";
+
 export default function UserPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
 
   // Filters State
   const [nameFilter, setNameFilter] = useState("");
@@ -84,13 +88,13 @@ export default function UserPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
 
-  async function loadUsers(page = 1) {
+  async function loadUsers(p = page, limit = perPage) {
     const token = localStorage.getItem("token");
     const storeId = token ? extractStoreId(token) : null;
     if (!token || !storeId) return;
 
     try {
-      const res = await getUserByStoreId(token, storeId, 50, page);
+      const res = await getUserByStoreId(token, storeId, limit, p);
       setUsers(res.getUserByStoreId.data);
       setFilteredUsers(res.getUserByStoreId.data);
       setPagination(res.getUserByStoreId.meta.pagination);
@@ -103,16 +107,22 @@ export default function UserPage() {
   }
 
   useEffect(() => {
-    loadUsers();
+    loadUsers(page, perPage);
 
     const handleStoreRefresh = () => {
       setLoading(true);
-      loadUsers();
+      loadUsers(1, perPage);
+      setPage(1);
     };
 
     window.addEventListener('storeRefreshed', handleStoreRefresh);
     return () => window.removeEventListener('storeRefreshed', handleStoreRefresh);
-  }, []);
+  }, [page, perPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [nameFilter, emailFilter]);
 
   // Filter Logic
   useEffect(() => {
@@ -376,6 +386,19 @@ export default function UserPage() {
               </tbody>
             </table>
           </div>
+          {pagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={pagination.total_pages}
+              perPage={perPage}
+              totalItems={pagination.total}
+              onPageChange={setPage}
+              onLimitChange={(limit) => {
+                setPerPage(limit);
+                setPage(1);
+              }}
+            />
+          )}
         </div>
       </div>
 
