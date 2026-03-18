@@ -10,40 +10,58 @@ import { saveAs } from "file-saver"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { resolveImageUrl } from "@/lib/imageUtils"
+import { Search, User, Package, Calendar, XCircle, Filter, FileText, Download } from "lucide-react"
+import { Pagination } from "@/components/ui/Pagination"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [filteredOrders, setFilteredOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [inputBy, setInputBy] = useState("")
+  const [itemSearch, setItemSearch] = useState("")
   const [dateRange, setDateRange] = useState({ from: "", to: "" })
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const profile = useProfile()
 
+  const [pagination, setPagination] = useState<any>(null)
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(20)
+
+  async function fetchOrders(p = page, limit = perPage) {
+    try {
+      const token = localStorage.getItem('token')
+      const storeId = extractStoreId(token)
+      if (!token) throw new Error("Token not found")
+
+      graphqlClient.setHeader("Authorization", `Bearer ${token}`)
+      const res = await graphqlClient.request<GetOrdersByStoreResponse>(
+        GET_ORDERS_BY_STORE,
+        { store_id: storeId, page: p, limit: limit }
+      )
+
+      setOrders(res.getOrdersByStore.data)
+      setFilteredOrders(res.getOrdersByStore.data)
+      setPagination(res.getOrdersByStore.pagination)
+    } catch (err) {
+      console.error("Failed to fetch orders:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const token = localStorage.getItem('token')
-        const storeId = extractStoreId(token)
-        if (!token) throw new Error("Token not found")
+    fetchOrders(page, perPage)
 
-        graphqlClient.setHeader("Authorization", `Bearer ${token}`)
-        const res = await graphqlClient.request<GetOrdersByStoreResponse>(
-          GET_ORDERS_BY_STORE,
-          { store_id: storeId, page: 1, limit: 50 }
-        )
-
-        setOrders(res.getOrdersByStore.data)
-        setFilteredOrders(res.getOrdersByStore.data)
-      } catch (err) {
-        console.error("Failed to fetch orders:", err)
-      } finally {
-        setLoading(false)
-      }
+    const handleStoreRefresh = () => {
+      setLoading(true)
+      fetchOrders(1, perPage)
+      setPage(1)
     }
 
-    fetchOrders()
-  }, [])
+    window.addEventListener('storeRefreshed', handleStoreRefresh)
+    return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
+  }, [page, perPage])
 
   // Filter logic
   useEffect(() => {
@@ -52,6 +70,20 @@ export default function OrdersPage() {
     if (search.trim() !== "") {
       filtered = filtered.filter(o =>
         o.order_number.toLowerCase().includes(search.toLowerCase())
+      )
+    }
+
+    if (inputBy.trim() !== "") {
+      filtered = filtered.filter(o =>
+        (o.user?.full_name || "").toLowerCase().includes(inputBy.toLowerCase())
+      )
+    }
+
+    if (itemSearch.trim() !== "") {
+      filtered = filtered.filter(o =>
+        o.items.some((item: any) => 
+          (item.name || "").toLowerCase().includes(itemSearch.toLowerCase())
+        )
       )
     }
 
@@ -65,7 +97,7 @@ export default function OrdersPage() {
     }
 
     setFilteredOrders(filtered)
-  }, [search, dateRange, orders])
+  }, [search, inputBy, itemSearch, dateRange, orders])
 
   const storeName =
     profile?.me?.user?.store_name ||
@@ -240,165 +272,323 @@ export default function OrdersPage() {
   }
 
 
-  if (loading) return <p className="text-gray-500">Loading orders...</p>
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+  )
 
   return (
-    <div className="p-6 relative">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExportExcel}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-sm text-sm"
-            >
-              📤 Export Excel
-            </button>
+    <div className="p-8 max-w-[1600px] mx-auto space-y-8 bg-slate-50/50 min-h-screen">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Order Management</h1>
+          <p className="text-slate-500 mt-1">Manage and track all store transactions and exports.</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportExcel}
+            className="inline-flex items-center px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all gap-2 group active:scale-95 text-xs uppercase tracking-wider"
+          >
+            <Download size={16} className="text-emerald-600 group-hover:scale-110 transition-transform" />
+            Excel
+          </button>
 
-            <button
-              onClick={handleExportPDF}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow-sm text-sm"
-            >
-              📄 Export PDF
-            </button>
+          <button
+            onClick={handleExportPDF}
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all gap-2 group active:scale-95 text-xs uppercase tracking-wider"
+          >
+            <FileText size={16} className="group-hover:scale-110 transition-transform" />
+            PDF Report
+          </button>
+        </div>
+      </div>
+
+      {/* Advanced Filter Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-slate-800 font-bold">
+            <Filter size={18} className="text-indigo-600" />
+            <h2 className="text-base tracking-tight leading-none">Advance Filters</h2>
           </div>
+          <button
+            onClick={() => {
+              setSearch("")
+              setInputBy("")
+              setItemSearch("")
+              setDateRange({ from: "", to: "" })
+              setFilteredOrders(orders)
+            }}
+            className="flex items-center gap-1.5 text-rose-500 hover:text-rose-600 font-bold text-[11px] px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-all active:scale-95 leading-none"
+          >
+            <XCircle size={14} />
+            <span>Reset Filters</span>
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Filter: Order Number */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-0.5">
+                <FileText size={13} className="text-slate-400" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Order ID</label>
+              </div>
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="e.g. OMBOT-..."
+                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Filter: Input By */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-0.5">
+                <User size={13} className="text-slate-400" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Input By</label>
+              </div>
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <input
+                  type="text"
+                  value={inputBy}
+                  onChange={(e) => setInputBy(e.target.value)}
+                  placeholder="Staff name..."
+                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Filter: Product Items */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-0.5">
+                <Package size={13} className="text-slate-400" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Contains Product</label>
+              </div>
+              <div className="relative group">
+                <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <input
+                  type="text"
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  placeholder="Product name..."
+                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Filter: Period Selection (Redesigned) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-0.5">
+                <Calendar size={13} className="text-slate-400" />
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Transactions Period</label>
+              </div>
+              <div className="flex items-center bg-slate-50/50 border border-slate-200 rounded-xl h-11 px-3 gap-2 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 focus-within:bg-white transition-all group w-full">
+                <Calendar size={15} className="text-slate-400 group-focus-within:text-indigo-600 transition-colors shrink-0" />
+                <div className="flex items-center flex-1 gap-1">
+                  <input
+                    type="date"
+                    value={dateRange.from}
+                    onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
+                    className="bg-transparent border-none p-0 text-[11px] font-bold text-slate-700 outline-none tabular-nums w-full min-w-[90px]"
+                  />
+                  <span className="text-slate-300 font-bold shrink-0">—</span>
+                  <input
+                    type="date"
+                    value={dateRange.to}
+                    onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
+                    className="bg-transparent border-none p-0 text-[11px] font-bold text-slate-700 outline-none tabular-nums w-full min-w-[90px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          {pagination && (
+            <Pagination
+              currentPage={page}
+              totalPages={pagination.total_pages}
+              perPage={perPage}
+              totalItems={pagination.total}
+              onPageChange={setPage}
+              onLimitChange={(limit) => {
+                setPerPage(limit);
+                setPage(1);
+              }}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-        <div className="flex-1">
-          <label className="block text-sm text-gray-600 mb-1">Search Order Number</label>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="ORD-..."
-            className="border border-gray-300 rounded px-3 py-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">From Date</label>
-          <input
-            type="date"
-            value={dateRange.from}
-            onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
-            className="border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">To Date</label>
-          <input
-            type="date"
-            value={dateRange.to}
-            onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
-            className="border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
-
-        <button
-          onClick={() => {
-            setSearch("")
-            setDateRange({ from: "", to: "" })
-            setFilteredOrders(orders)
-          }}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded px-4 py-2"
-        >
-          Reset
-        </button>
-      </div>
-
-      {/* Orders table */}
-      <div className="overflow-x-auto bg-white shadow rounded-lg">
-        <table className="min-w-full text-sm text-left text-gray-600">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
-            <tr>
-              <th className="px-6 py-3 border-b">Order Number</th>
-              <th className="px-6 py-3 border-b">Input by</th>
-              <th className="px-6 py-3 border-b">Total</th>
-              <th className="px-6 py-3 border-b">Discount</th>
-              <th className="px-6 py-3 border-b">Items</th>
-              <th className="px-6 py-3 border-b">Created At</th>
-              <th className="px-6 py-3 border-b">Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 border-b font-medium text-gray-800">
-                  {order.order_number}
-                </td>
-                <td className="px-6 py-4 border-b text-blue-600 font-semibold italic">
-                  {order.user?.full_name || "-"}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  Rp {order.total_amount.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  Rp {order.discount.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  <ul className="list-disc pl-5 space-y-1">
-                    {order.items.map((item: any, idx: number) => (
-                      <li key={idx}>
-                        Product {item.name} —{" "}
-                        <span className="text-gray-700 font-medium">{item.qty}</span> × Rp{" "}
-                        {item.price.toLocaleString()}
-                      </li>
-                    ))}
-                  </ul>
-                </td>
-                <td className="px-6 py-4 border-b">{order.created_at}</td>
-                <td className="px-6 py-4 border-b">
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                  >
-                    View
-                  </button>
-                </td>
+      {/* Orders Table Container */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-200">
+                <th className="px-6 py-4 font-bold text-slate-800">Order Information</th>
+                <th className="px-6 py-4 font-bold text-slate-800">Assignee</th>
+                <th className="px-6 py-4 font-bold text-slate-800">Transaction Details</th>
+                <th className="px-6 py-4 font-bold text-slate-800">Order Items</th>
+                <th className="px-6 py-4 font-bold text-slate-800 text-center">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredOrders.length > 0 ? (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-slate-50/30 transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 mb-0.5 group-hover:text-indigo-600 transition-colors tabular-nums">
+                          {order.order_number}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium">
+                          {new Date(order.created_at).toLocaleString('id-ID', { 
+                            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                          {(order.user?.full_name || "??")[0].toUpperCase()}
+                        </div>
+                        <span className="text-slate-700 font-medium underline decoration-slate-200 underline-offset-4 decoration-2">
+                          {order.user?.full_name || "-"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-slate-600">
+                          <span className="text-xs font-medium uppercase tracking-wider opacity-60">Total</span>
+                          <span className="font-bold text-slate-900 tabular-nums">
+                            Rp {order.total_amount.toLocaleString()}
+                          </span>
+                        </div>
+                        {order.discount > 0 && (
+                          <div className="flex justify-between items-center text-rose-500">
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Discount</span>
+                            <span className="text-xs font-semibold tabular-nums">
+                              - Rp {order.discount.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 max-w-[300px]">
+                      <div className="flex flex-wrap gap-1.5">
+                        {order.items.slice(0, 3).map((item: any, idx: number) => (
+                          <div key={idx} className="inline-flex items-center bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] font-medium border border-slate-200">
+                            {item.name} <span className="text-indigo-600 ml-1 font-bold">x{item.qty}</span>
+                          </div>
+                        ))}
+                        {order.items.length > 3 && (
+                          <span className="text-slate-400 text-[10px] font-bold self-center">
+                            +{order.items.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="inline-flex items-center justify-center px-4 py-1.5 border border-indigo-200 text-indigo-600 font-bold text-xs rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-95"
+                      >
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="text-4xl mb-4">📭</span>
+                      <h3 className="text-slate-800 font-bold mb-1">No orders found</h3>
+                      <p className="text-slate-400 text-sm">Try adjusting your filters or search terms.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal Additional Data */}
+      {/* Modern Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative animate-fadeIn">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              onClick={() => setSelectedOrder(null)}
-            >
-              ✕
-            </button>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Order Metadata</h2>
+                <p className="text-xs text-slate-400 font-medium uppercase mt-0.5 tracking-widest">{selectedOrder.order_number}</p>
+              </div>
+              <button
+                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+                onClick={() => setSelectedOrder(null)}
+              >
+                ✕
+              </button>
+            </div>
 
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              Additional Data - {selectedOrder.order_number}
-            </h2>
-
-            {selectedOrder.additional_data ? (
-              typeof selectedOrder.additional_data === "object" ? (
-                <ul className="space-y-2">
-                  {Object.entries(selectedOrder.additional_data).map(([key, value]) => (
-                    <li key={key}>
-                      <span className="font-medium text-gray-800">{key}</span>:{" "}
-                      <span className="text-gray-600">{String(value)}</span>
-                    </li>
-                  ))}
-                </ul>
+            <div className="p-8">
+              {selectedOrder.additional_data ? (
+                typeof selectedOrder.additional_data === "object" ? (
+                  <div className="grid grid-cols-1 gap-6">
+                    {Object.entries(selectedOrder.additional_data).map(([key, value]) => (
+                      <div key={key} className="flex flex-col border-b border-slate-50 pb-4">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{key.replace(/_/g, ' ')}</span>
+                        <span className="text-slate-800 font-semibold">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-indigo-900 rounded-xl p-5 shadow-inner">
+                    <pre className="text-indigo-100 text-xs overflow-auto max-h-[400px] leading-relaxed custom-scrollbar font-mono">
+                      {JSON.stringify(JSON.parse(selectedOrder.additional_data), null, 4)}
+                    </pre>
+                  </div>
+                )
               ) : (
-                <pre className="bg-gray-100 rounded p-3 text-sm overflow-auto max-h-80 text-gray-700">
-                  {JSON.stringify(JSON.parse(selectedOrder.additional_data), null, 2)}
-                </pre>
-              )
-            ) : (
-              <p className="text-gray-500">No additional data available</p>
-            )}
+                <div className="text-center py-10">
+                  <span className="text-5xl block mb-4">🏜️</span>
+                  <p className="text-slate-400 font-medium">No additional data captured for this order.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+              <button
+                className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
+                onClick={() => setSelectedOrder(null)}
+              >
+                Close View
+              </button>
+            </div>
           </div>
         </div>
       )}
+      
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   )
 }

@@ -14,7 +14,7 @@ type StockLog = {
   created_at: string;
 };
 
-export function StockCard({ productId }: { productId: number }) {
+export function StockCard({ productId, onSuccess }: { productId: number, onSuccess?: () => void }) {
   const [qty, setQty] = useState<number>(0);
   const [logs, setLogs] = useState<StockLog[]>([]);
   const [open, setOpen] = useState(false);
@@ -66,6 +66,8 @@ export function StockCard({ productId }: { productId: number }) {
         created_at: new Date().toISOString(),
       };
       setLogs(prev => [newLog, ...prev]);
+
+      if (onSuccess) onSuccess();
 
       toast.success('Stock updated');
     } catch (e) {
