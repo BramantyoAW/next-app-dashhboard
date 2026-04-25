@@ -21,7 +21,9 @@ import {
   Menu,
   X,
   Coins,
-  Store
+  Store,
+  MessagesSquare,
+  Zap
 } from 'lucide-react'
 
 const ProfileContext = createContext<any>(null)
@@ -185,9 +187,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (path.startsWith('/dashboard/order')) return 'Orders'
     if (path.startsWith('/dashboard/user/message')) return 'User Messages'
     if (path.startsWith('/dashboard/user')) return 'Users'
+    if (path.startsWith('/dashboard/settings/gateway')) return 'Gateway'
     if (path.startsWith('/dashboard/settings/store')) return 'Store Profile'
     if (path.startsWith('/dashboard/settings/configuration')) return 'Configuration'
     if (path.startsWith('/dashboard/settings')) return 'Settings'
+    if (path.startsWith('/conversations')) return 'Conversations'
     return 'Dashboard Overview'
   }
 
@@ -268,11 +272,18 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Messages
           </SidebarLink>
 
+          <SidebarLink href="/conversations" icon={<MessagesSquare size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Conversations
+          </SidebarLink>
+
           <div className="pt-5 pb-1.5 px-3">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settings</span>
           </div>
           <SidebarLink href="/dashboard/settings/store" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Store Profile
+          </SidebarLink>
+          <SidebarLink href="/dashboard/settings/gateway" icon={<Zap size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Gateway
           </SidebarLink>
           <SidebarLink href="/dashboard/settings/configuration" icon={<Settings size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Configuration
