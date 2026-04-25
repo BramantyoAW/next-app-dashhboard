@@ -24,15 +24,9 @@ import {
   Store
 } from 'lucide-react'
 
-// ================================
-// CONTEXT
-// ================================
 const ProfileContext = createContext<any>(null)
 export const useProfile = () => useContext(ProfileContext)
 
-// ================================
-// PROVIDER
-// ================================
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<any>(null)
   const router = useRouter()
@@ -94,7 +88,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   if (!profile) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background text-muted-foreground">
-        <img src="/ombotico.png" className="w-20 h-20 mb-4 animate-pulse" alt="Loading..." />
+        <img src="/ombotico.png" className="w-16 h-16 md:w-20 md:h-20 mb-4 animate-pulse" alt="Loading..." />
         <p className="text-sm font-medium">Loading your dashboard...</p>
       </div>
     )
@@ -107,9 +101,6 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ================================
-// SIDEBAR LINK COMPONENT
-// ================================
 function SidebarLink({
   href,
   icon,
@@ -130,13 +121,13 @@ function SidebarLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group hover-scale ${
+      className={`flex items-center gap-3 px-3 md:px-4 py-2.5 rounded-xl transition-all duration-200 group ${
         isActive
-          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 font-semibold'
-          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+          ? 'bg-gradient-brand text-white shadow-md font-semibold'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       }`}
     >
-      <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+      <span className={`${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-200`}>
         {icon}
       </span>
       <span className="text-sm">{children}</span>
@@ -144,9 +135,6 @@ function SidebarLink({
   )
 }
 
-// ================================
-// MAIN LAYOUT CONTENT
-// ================================
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const profile = useProfile()
   const router = useRouter()
@@ -204,42 +192,49 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar Overlay (Mobile) */}
+    <div className="min-h-screen flex bg-slate-50">
+
+      {/* Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-card border-r border-border p-6 flex flex-col transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-auto
+        fixed inset-y-0 left-0 z-50 w-64 md:w-72 bg-white border-r border-slate-200 p-4 md:p-6 flex flex-col
+        transition-transform duration-300 ease-in-out shadow-lg lg:shadow-none
+        lg:translate-x-0 lg:static lg:inset-auto lg:z-auto
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="flex items-center justify-between mb-10">
-          <Link href="/dashboard" className="flex flex-col items-center gap-4 group w-full pt-4">
+        {/* Logo */}
+        <div className="flex items-center justify-between mb-8 md:mb-10">
+          <Link href="/dashboard" className="flex flex-col items-center gap-3 group w-full pt-2">
             <div className="relative">
-              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-[2.5rem] blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
-              <img 
-                src="/ombotico.png" 
-                alt="OmBot" 
-                className="relative w-24 h-24 object-contain transition-all duration-500 group-hover:scale-110 drop-shadow-xl" 
+              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
+              <img
+                src="/ombotico.png"
+                alt="OmBot"
+                className="relative w-16 md:w-24 h-16 md:h-24 object-contain transition-all duration-500 group-hover:scale-105 drop-shadow-xl"
               />
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-black text-3xl tracking-tighter text-slate-900 leading-none">omBot</span>
-              <span className="text-[10px] text-blue-600 uppercase tracking-[0.2em] font-black mt-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100/50">Order Management Bot</span>
+              <span className="font-black text-2xl md:text-3xl tracking-tighter text-slate-900 leading-none">omBot</span>
+              <span className="text-[9px] md:text-[10px] text-blue-600 uppercase tracking-widest font-bold mt-1.5 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100/50">Order Management Bot</span>
             </div>
           </Link>
-          <button className="lg:hidden p-2 hover:bg-secondary rounded-lg" onClick={() => setIsSidebarOpen(false)}>
-            <X size={20} />
+          <button
+            className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <X size={20} className="text-slate-600" />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto pr-1 custom-scrollbar no-scrollbar pb-4">
           <SidebarLink href="/dashboard" icon={<Home size={18} />} exact onClick={() => setIsSidebarOpen(false)}>
             Overview
           </SidebarLink>
@@ -250,8 +245,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Credits & Points
           </SidebarLink>
 
-          <div className="pt-6 pb-2 px-4">
-            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Catalog</span>
+          <div className="pt-5 pb-1.5 px-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Catalog</span>
           </div>
           <SidebarLink href="/dashboard/catalog/product" icon={<Package size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Products
@@ -263,8 +258,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Inventory
           </SidebarLink>
 
-          <div className="pt-6 pb-2 px-4">
-            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">User & Store</span>
+          <div className="pt-5 pb-1.5 px-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User & Store</span>
           </div>
           <SidebarLink href="/dashboard/user" icon={<Users size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Users
@@ -273,8 +268,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Messages
           </SidebarLink>
 
-          <div className="pt-6 pb-2 px-4">
-            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Settings</span>
+          <div className="pt-5 pb-1.5 px-3">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settings</span>
           </div>
           <SidebarLink href="/dashboard/settings/store" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Store Profile
@@ -284,14 +279,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-border">
-          <div className="p-4 bg-secondary/50 rounded-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+        {/* User Profile Footer */}
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="p-3 bg-slate-50 rounded-xl flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
               {profile?.me?.user?.full_name?.[0] ?? 'U'}
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold truncate">{profile?.me?.user?.full_name}</span>
-              <span className="text-[10px] text-muted-foreground truncate">{profile?.me?.user?.store_name}</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-sm font-semibold text-slate-800 truncate">{profile?.me?.user?.full_name}</span>
+              <span className="text-[11px] text-slate-500 truncate">{profile?.me?.user?.store_name}</span>
             </div>
           </div>
         </div>
@@ -299,26 +295,28 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 lg:px-8 py-4 glass border-b border-border">
-          <div className="flex items-center gap-4">
-            <button 
-              className="lg:hidden p-2 hover:bg-secondary rounded-xl transition-colors"
+        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+          <div className="flex items-center gap-3 md:gap-4">
+            <button
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors"
               onClick={() => setIsSidebarOpen(true)}
             >
-              <Menu size={24} />
+              <Menu size={22} className="text-slate-700" />
             </button>
-            <h2 className="text-lg font-bold tracking-tight text-slate-900">{getPageTitle(pathname)}</h2>
+            <h2 className="text-base md:text-lg font-bold tracking-tight text-slate-800">{getPageTitle(pathname)}</h2>
           </div>
 
-          <div className="flex items-center gap-3 md:gap-6">
-            <Link 
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Budget Pill */}
+            <Link
               href="/dashboard/points"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group flex-shrink-0"
             >
-              <Coins size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
+              <Coins size={15} className="text-amber-500" />
               <div className="flex flex-col items-start leading-none">
-                <span className="text-[10px] font-bold uppercase tracking-tight opacity-70">Budget</span>
+                <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">Budget</span>
                 <span className="text-sm font-black tracking-tight">{profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
               </div>
             </Link>
@@ -334,28 +332,30 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 animate-in relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
           <div className="max-w-7xl mx-auto h-full">
             {children}
           </div>
         </main>
 
         {/* Footer */}
-        <footer className="py-6 px-8 bg-card border-t border-border text-center lg:text-left flex flex-col lg:flex-row lg:justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">
-            © 2025 <span className="font-bold text-foreground">OmBot</span>. Built with ❤️ for Indonesia.
-          </p>
-          <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-             <span>Efficiency</span>
-             <span className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-             <span>Reliability</span>
-             <span className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-             <span>Growth</span>
+        <footer className="py-4 md:py-6 px-6 md:px-8 bg-white border-t border-slate-100 text-center lg:text-left">
+          <div className="flex flex-col md:flex-row md:justify-between items-center gap-2 md:gap-4">
+            <p className="text-xs text-slate-400">
+              &copy; {new Date().getFullYear()} <span className="font-bold text-slate-600">OmBot</span>. Built with care for Indonesia.
+            </p>
+            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-300">
+              <span>Efficiency</span>
+              <span className="w-0.5 h-0.5 bg-slate-300 rounded-full" />
+              <span>Reliability</span>
+              <span className="w-0.5 h-0.5 bg-slate-300 rounded-full" />
+              <span>Growth</span>
+            </div>
           </div>
         </footer>
       </div>
 
-      {/* Modals & Overlays */}
+      {/* Store Picker Modal */}
       {storeModal && (
         <StorePicker
           stores={stores}
@@ -364,11 +364,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         />
       )}
 
+      {/* Loading Overlay */}
       {loadingStore && (
         <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center z-[100]">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl flex items-center gap-3 animate-in">
-            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm font-semibold">Changing your store...</span>
+          <div className="bg-white p-5 rounded-2xl shadow-2xl flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-semibold text-slate-700">Changing your store...</span>
           </div>
         </div>
       )}
