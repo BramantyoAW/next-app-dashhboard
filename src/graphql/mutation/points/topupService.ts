@@ -5,6 +5,9 @@ const GET_SNAP_TOKEN = `
     getMidtransSnapToken(store_id: $store_id, amount: $amount) {
       token
       redirect_url
+      order_id
+      client_key
+      is_production
     }
   }
 `;
