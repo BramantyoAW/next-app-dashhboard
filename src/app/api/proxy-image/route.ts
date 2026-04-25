@@ -40,6 +40,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Handle local development/Docker internal IPs
+  if (fetchUrl.startsWith('http://127.0.0.1:8000') || fetchUrl.startsWith('http://localhost:8000')) {
+    fetchUrl = fetchUrl.replace('http://127.0.0.1:8000', BACKEND_BASE).replace('http://localhost:8000', BACKEND_BASE);
+  }
+
   // Cloudflare Access Headers (if provided in ENV)
   const cfId = process.env.CF_ACCESS_CLIENT_ID;
   const cfSecret = process.env.CF_ACCESS_CLIENT_SECRET;
