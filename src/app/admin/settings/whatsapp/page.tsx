@@ -68,7 +68,7 @@ export default function WhatsappSettingsPage() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setSettings({
       ...settings,
       [e.target.name]: e.target.value,
@@ -135,7 +135,8 @@ export default function WhatsappSettingsPage() {
               />
               <p className="text-xs text-slate-500">Nama session yang terdaftar di wwebjs</p>
             </div>
-          </div>
+
+            </div>
 
           <button
             type="submit"

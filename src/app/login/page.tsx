@@ -7,6 +7,9 @@ import { registerService } from '@/graphql/mutation/register';
 import { myStoresService } from '@/graphql/query/myStores';
 import { chooseStoreService } from '@/graphql/mutation/chooseStore';
 import StorePicker from '@/components/StorePicker';
+import TermsModal from '@/components/TermsModal';
+import { getPublicAppSettingsService } from '@/graphql/query/settings/getPublicAppSettings';
+import { useEffect } from 'react';
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -27,7 +30,25 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<any>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Terms & Conditions states
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsContent, setTermsContent] = useState('');
+
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        const res = await getPublicAppSettingsService(['syarat_ketentuan']);
+        const terms = res.getPublicAppSettings.find((s: any) => s.key === 'syarat_ketentuan');
+        if (terms) setTermsContent(terms.value);
+      } catch (err) {
+        console.error('Failed to fetch terms:', err);
+      }
+    };
+    fetchTerms();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +94,12 @@ export default function LoginPage() {
     setLoading(true);
     setErrors({});
     setSuccessMessage(null);
+
+    if (!agreedTerms) {
+      setErrors({ general: 'Anda harus menyetujui Syarat & Ketentuan untuk melanjutkan.' });
+      setLoading(false);
+      return;
+    }
 
     if (!image) {
       setErrors({ general: 'Logo/Gambar Toko wajib diunggah.' });
@@ -298,6 +325,42 @@ export default function LoginPage() {
               )}
             </div>
 
+            {isRegister && (
+              /* Terms & Conditions Checkbox */
+              <div className="flex items-start space-x-3 py-2">
+                <div className="flex items-center h-5">
+                  <input
+                    id="terms"
+                    type="checkbox"
+                    className={`h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer ${
+                      errors.general && !agreedTerms ? 'border-red-400 ring-2 ring-red-100' : ''
+                    }`}
+                    checked={agreedTerms}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setShowTermsModal(true);
+                      } else {
+                        setAgreedTerms(false);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="text-sm leading-5">
+                  <label htmlFor="terms" className="text-slate-600 font-medium cursor-pointer">
+                    Saya setuju dengan{' '}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-blue-600 font-bold hover:underline underline-offset-4 decoration-2 decoration-blue-200"
+                    >
+                      Syarat & Ketentuan
+                    </button>
+                    {' '}layanan omBot.
+                  </label>
+                </div>
+              </div>
+            )}
+
             <button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 mt-4 flex items-center justify-center space-x-2"
@@ -309,7 +372,11 @@ export default function LoginPage() {
 
           <div className="text-center">
             <button
-              onClick={() => setIsRegister(!isRegister)}
+              onClick={() => {
+                setIsRegister(!isRegister);
+                setAgreedTerms(false);
+                setErrors({});
+              }}
               className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
             >
               {isRegister ? 'Sudah punya akun? Login di sini' : 'Belum punya akun? Daftar di sini'}
@@ -323,6 +390,19 @@ export default function LoginPage() {
           stores={stores}
           onPick={handlePickStore}
           onCancel={() => setStores(null)}
+        />
+      )}
+
+      {showTermsModal && (
+        <TermsModal
+          htmlContent={termsContent}
+          onCancel={() => {
+            setShowTermsModal(false);
+          }}
+          onApprove={() => {
+            setAgreedTerms(true);
+            setShowTermsModal(false);
+          }}
         />
       )}
     </div>

@@ -14,7 +14,8 @@ import {
   ChevronRight,
   CreditCard,
   History,
-  Phone
+  Phone,
+  ShieldCheck
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -124,6 +125,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/whatsapp" icon={<Phone size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Whatsapp Config
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/terms" icon={<ShieldCheck size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Syarat & Ketentuan
           </AdminSidebarLink>
         </nav>
 

@@ -43,25 +43,48 @@ export default function PointsPage() {
 
   useEffect(() => {
     loadData();
-    
-    // Load Midtrans Snap Script
-    const script = document.createElement('script');
-    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-    script.setAttribute('data-client-key', 'SB-Mid-client-...'); // Will be handled by service
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
   }, [storeId]);
+
+  /**
+   * Dynamically loads the correct Midtrans Snap.js script
+   * based on whether the backend is configured for production or sandbox.
+   */
+  const loadSnapScript = (isProduction: boolean, clientKey: string): Promise<void> => {
+    const snapUrl = isProduction
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+    // If already loaded with the same src, skip
+    const existing = document.querySelector(`script[src="${snapUrl}"]`) as HTMLScriptElement | null;
+    if (existing) {
+      return Promise.resolve();
+    }
+
+    // Remove any previously loaded Snap script (in case mode switched)
+    const oldScripts = document.querySelectorAll('script[src*="midtrans.com/snap/snap.js"]');
+    oldScripts.forEach(s => s.remove());
+    // Reset snap object so it re-initializes
+    delete (window as any).snap;
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = snapUrl;
+      script.setAttribute('data-client-key', clientKey);
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Midtrans Snap script'));
+      document.body.appendChild(script);
+    });
+  };
 
   const handleTopup = async () => {
     setTopupLoading(true);
     try {
       const token = localStorage.getItem('token') || '';
       const res = await getMidtransSnapTokenService(token, storeId, topupAmount);
-      const snapToken = res.getMidtransSnapToken.token;
-      const orderId = res.getMidtransSnapToken.order_id || ''; 
+      const { token: snapToken, order_id: orderId, client_key: clientKey, is_production: isProduction } = res.getMidtransSnapToken;
+
+      // Load the correct Snap.js before calling snap.pay
+      await loadSnapScript(isProduction, clientKey);
 
       if (window.snap) {
         window.snap.pay(snapToken, {
