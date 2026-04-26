@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 
-const BAALEYS_BASE = process.env.NEXT_PUBLIC_BAILEYS_URL ?? 'http://localhost:3001'
+const BAALEYS_BASE = '/api/baileys'
 
 type WAStatus = 'not_initialized' | 'connecting' | 'open' | 'close'
 type TGStatus = 'not_initialized' | 'connecting' | 'connected' | 'error'
@@ -119,6 +119,7 @@ export default function GatewaySettingsPage() {
       if (!res.ok) return
       const data = await res.json()
       setTgStatus(data.connected ? 'connected' : 'not_initialized')
+      if (data.token) setTgToken(data.token)
     } catch (_) {}
   }, [merchantId])
 

@@ -1,6 +1,33 @@
+# Dependency Directories
 node_modules
-.next
-.git
+vendor
+
+# Laravel Specific
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/cache/*
+storage/app/private/temp/*
+bootstrap/cache/*
+.phpunit.result.cache
+
+# Docker & Config
 .env
+.env.*
 Dockerfile
+docker-compose.yml
 .dockerignore
+
+# Frontend/Build Artifacts
+.next
+out
+dist
+build
+.npm
+npm-debug.log
+
+# Version Control & IDE
+.git
+.gitignore
+.idea
+.vscode
+.DS_Store
