@@ -7,12 +7,14 @@ export default function UserMenu({
   userName,
   storeName,
   storeImage,
+  isStaff,
   onLogout,
   onChangeStore,
 }: {
   userName: string
   storeName?: string
   storeImage?: string
+  isStaff?: boolean
   onLogout: () => void
   onChangeStore: () => void
 }) {
@@ -287,31 +289,35 @@ export default function UserMenu({
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider truncate">{storeName}</p>
            </div>
            
-           <button
-             onClick={() => {
-               setOpen(false)
-               onChangeStore()
-             }}
-             className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-secondary rounded-xl flex items-center gap-3 transition-colors group"
-           >
-             <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
-               <Store size={16} />
-             </div>
-             <span className="font-medium">Switch Outlet</span>
-           </button>
+           {!isStaff && (
+             <>
+               <button
+                 onClick={() => {
+                   setOpen(false)
+                   onChangeStore()
+                 }}
+                 className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-secondary rounded-xl flex items-center gap-3 transition-colors group"
+               >
+                 <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                   <Store size={16} />
+                 </div>
+                 <span className="font-medium">Switch Outlet</span>
+               </button>
 
-           <button
-             onClick={() => {
-               setOpen(false)
-               setShowAddStore(true)
-             }}
-             className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-secondary rounded-xl flex items-center gap-3 transition-colors group"
-           >
-             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-               <Plus size={16} />
-             </div>
-             <span className="font-medium">Add New Store</span>
-           </button>
+               <button
+                 onClick={() => {
+                   setOpen(false)
+                   setShowAddStore(true)
+                 }}
+                 className="w-full text-left px-3 py-2.5 text-sm text-slate-700 hover:bg-secondary rounded-xl flex items-center gap-3 transition-colors group"
+               >
+                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                   <Plus size={16} />
+                 </div>
+                 <span className="font-medium">Add New Store</span>
+               </button>
+             </>
+           )}
 
            <button
              onClick={() => {

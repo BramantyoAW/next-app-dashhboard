@@ -44,21 +44,6 @@ export default function ChatHeader({ merchantName, merchantImage, isOnline = fal
         </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1">
-        <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-700">
-          <Phone size={18} />
-        </button>
-        <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-700">
-          <Video size={18} />
-        </button>
-        <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-700">
-          <Search size={18} />
-        </button>
-        <button className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-700">
-          <MoreVertical size={18} />
-        </button>
-      </div>
     </div>
   )
 }
