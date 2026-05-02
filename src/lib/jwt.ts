@@ -14,4 +14,10 @@ export function decodeJwt(token: string): any | null {
     const v = p?.store_id;
     return typeof v === 'number' ? v : (v ? Number(v) : null);
   }
+
+  export function extractStoreRole(token: string | null): string | null {
+    if (!token) return null;
+    const p = decodeJwt(token);
+    return p?.store_role ?? null;
+  }
   

@@ -74,6 +74,7 @@ export default function UserPage() {
     full_name: "",
     email: "",
     phone: "",
+    password: "",
   });
   const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
   const [createLoading, setCreateLoading] = useState(false);
@@ -155,7 +156,7 @@ export default function UserPage() {
       await createMemberStore(token, storeId, "staff", formCreate);
       toast.success("User created successfully!");
       setShowCreateModal(false);
-      setFormCreate({ username: "", full_name: "", email: "", phone: "" });
+      setFormCreate({ username: "", full_name: "", email: "", phone: "", password: "" });
       loadUsers();
     } catch (err: any) {
       setCreateErrors(parseFieldErrors(err));
@@ -223,7 +224,7 @@ export default function UserPage() {
             onClick={() => {
               setShowCreateModal(true);
               setCreateErrors({});
-              setFormCreate({ username: "", full_name: "", email: "", phone: "" });
+              setFormCreate({ username: "", full_name: "", email: "", phone: "", password: "" });
             }}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-200 active:scale-95"
           >
@@ -421,10 +422,11 @@ export default function UserPage() {
             
             <div className="p-8 space-y-5">
               {[
-                { key: 'username', label: 'Unique Username', icon: <User size={18}/> },
-                { key: 'full_name', label: 'Full Display Name', icon: <User size={18}/> },
-                { key: 'email', label: 'Email Address', icon: <Mail size={18}/> },
-                { key: 'phone', label: 'Phone Number', icon: <Phone size={18}/> },
+                { key: 'username', label: 'Unique Username', icon: <User size={18}/>, type: 'text' },
+                { key: 'full_name', label: 'Full Display Name', icon: <User size={18}/>, type: 'text' },
+                { key: 'email', label: 'Email Address', icon: <Mail size={18}/>, type: 'text' },
+                { key: 'phone', label: 'Phone Number', icon: <Phone size={18}/>, type: 'text' },
+                { key: 'password', label: 'Password (optional)', icon: <Shield size={18}/>, type: 'password' },
               ].map((f) => (
                 <div key={f.key} className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{f.label}</label>
@@ -433,7 +435,8 @@ export default function UserPage() {
                       {f.icon}
                     </div>
                     <input
-                      type="text"
+                      type={f.type}
+                      placeholder={f.key === 'password' ? 'Leave blank to auto-generate' : ''}
                       className={`w-full h-12 bg-slate-50 border ${createErrors[f.key] ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-indigo-500'} rounded-2xl pl-12 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-medium`}
                       value={(formCreate as any)[f.key]}
                       onChange={(e) => setFormCreate({...formCreate, [f.key]: e.target.value})}
@@ -499,17 +502,20 @@ export default function UserPage() {
                 </div>
               ))}
               
-              {editUser.role === 'owner' && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password (optional)</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password (optional)</label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">
+                    <Shield size={18}/>
+                  </div>
                   <input
                     type="password"
                     placeholder="Leave blank to keep current"
-                    className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl px-4 text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-medium"
+                    className="w-full h-12 bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-medium"
                     onChange={(e) => setEditUser({ ...editUser, password: e.target.value })}
                   />
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">

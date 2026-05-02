@@ -8,10 +8,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   async rewrites() {
+    const backendUrl = process.env.GRAPHQL_URL?.replace('/graphql', '') || 'http://nginx-server:80';
     return [
       {
         source: '/graphql',
         destination: process.env.GRAPHQL_URL || 'http://nginx-server:80/graphql',
+      },
+      {
+        source: '/api/chat/:path*',
+        destination: `${backendUrl}/api/chat/:path*`,
       },
       {
         source: '/api/wwebjs/proxy',

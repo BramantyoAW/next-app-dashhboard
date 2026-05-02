@@ -12,6 +12,7 @@ const PROFILE_QUERY = gql`
         store_image
         store_phone
         store_address
+        store_role
       }
       expires_in
       expired_status

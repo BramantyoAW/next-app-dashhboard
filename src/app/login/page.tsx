@@ -6,6 +6,7 @@ import { loginService } from '@/graphql/mutation/login';
 import { registerService } from '@/graphql/mutation/register';
 import { myStoresService } from '@/graphql/query/myStores';
 import { chooseStoreService } from '@/graphql/mutation/chooseStore';
+import { extractStoreRole, extractStoreId } from '@/lib/jwt';
 import StorePicker from '@/components/StorePicker';
 import TermsModal from '@/components/TermsModal';
 import { getPublicAppSettingsService } from '@/graphql/query/settings/getPublicAppSettings';
@@ -68,6 +69,16 @@ export default function LoginPage() {
       }
 
       const s = await myStoresService(token);
+
+      // Early check: if JWT already has store_role=staff (single store auto-claim),
+      // redirect straight to chat without showing store picker
+      const earlyStoreRole = extractStoreRole(token);
+      const earlyStoreId = extractStoreId(token);
+      if (earlyStoreRole === 'staff' && earlyStoreId) {
+        localStorage.setItem('token', token);
+        router.push(`/chat/${earlyStoreId}`);
+        return;
+      }
 
       if (!s.myStores || s.myStores.length === 0) {
         localStorage.setItem('token', token);
@@ -146,9 +157,17 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const chosen = await chooseStoreService(loginToken, storeId);
-      localStorage.setItem('token', chosen.chooseStore.access_token);
+      const newToken = chosen.chooseStore.access_token;
+      localStorage.setItem('token', newToken);
       setStores(null);
-      router.push('/dashboard');
+
+      // Check store_role from the new JWT — staff goes to chat
+      const storeRole = extractStoreRole(newToken);
+      if (storeRole === 'staff') {
+        router.push(`/chat/${storeId}`);
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       console.error('chooseStore failed:', err);
       alert(err?.message || 'Gagal memilih store.');

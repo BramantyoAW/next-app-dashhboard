@@ -61,6 +61,21 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
       try {
         const res = await getProfile(token!);
         setProfile(res);
+
+        // Redirect staff users to chat gateway
+        const { extractStoreRole, extractStoreId } = await import('@/lib/jwt');
+        const jwtStoreRole = extractStoreRole(token);
+        const jwtStoreId = extractStoreId(token);
+        
+        const profileRole = res?.me?.user?.store_role;
+        const profileId = res?.me?.user?.store_id;
+        
+        const role = jwtStoreRole || profileRole;
+        const sid = jwtStoreId || profileId;
+
+        if (role === 'staff' && sid && window.location.pathname.startsWith('/dashboard')) {
+          router.replace(`/chat/${sid}`);
+        }
       } catch (err) {
         handleForceLogout()
       }
@@ -147,6 +162,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const [stores, setStores] = useState<{ id: number; name: string }[]>([])
   const [loadingStore, setLoadingStore] = useState(false)
 
+  const isStaff = profile?.me?.user?.store_role === 'staff';
+
   const handleLogout = () => {
     localStorage.removeItem('token')
     router.push('/login')
@@ -192,6 +209,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (path.startsWith('/dashboard/settings/configuration')) return 'Configuration'
     if (path.startsWith('/dashboard/settings')) return 'Settings'
     if (path.startsWith('/conversations')) return 'Conversations'
+    if (path.startsWith('/chat')) return profile?.me?.user?.store_name ?? 'Chat'
     return 'Dashboard Overview'
   }
 
@@ -199,7 +217,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex bg-slate-50">
 
       {/* Sidebar Overlay */}
-      {isSidebarOpen && (
+      {!isStaff && isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
           onClick={() => setIsSidebarOpen(false)}
@@ -207,6 +225,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Sidebar */}
+      {!isStaff && (
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 md:w-72 bg-white border-r border-slate-200 p-4 md:p-6 flex flex-col
         transition-transform duration-300 ease-in-out shadow-lg lg:shadow-none
@@ -303,6 +322,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
+      )}
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -310,17 +330,20 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
           <div className="flex items-center gap-3 md:gap-4">
+            {!isStaff && (
             <button
               className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu size={22} className="text-slate-700" />
             </button>
+            )}
             <h2 className="text-base md:text-lg font-bold tracking-tight text-slate-800">{getPageTitle(pathname)}</h2>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
             {/* Budget Pill */}
+            {!isStaff && (
             <Link
               href="/dashboard/points"
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group flex-shrink-0"
@@ -331,11 +354,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 <span className="text-sm font-black tracking-tight">{profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
               </div>
             </Link>
+            )}
 
             <UserMenu
               userName={profile?.me?.user?.full_name ?? 'User'}
               storeName={profile?.me?.user?.store_name ?? 'Belum pilih toko'}
               storeImage={profile?.me?.user?.store_image ? resolveImageUrl(profile.me.user.store_image) : undefined}
+              isStaff={isStaff}
               onLogout={handleLogout}
               onChangeStore={handleOpenChangeStore}
             />
@@ -343,13 +368,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 relative">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className={`flex-1 overflow-y-auto relative ${pathname.startsWith('/chat') ? 'p-0' : 'p-4 md:p-6 lg:p-8'}`}>
+          <div className={`${pathname.startsWith('/chat') ? 'w-full' : 'max-w-7xl mx-auto'} h-full`}>
             {children}
           </div>
         </main>
 
         {/* Footer */}
+        {!pathname.startsWith('/chat') && (
         <footer className="py-4 md:py-6 px-6 md:px-8 bg-white border-t border-slate-100 text-center lg:text-left">
           <div className="flex flex-col md:flex-row md:justify-between items-center gap-2 md:gap-4">
             <p className="text-xs text-slate-400">
@@ -364,6 +390,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </footer>
+        )}
       </div>
 
       {/* Store Picker Modal */}

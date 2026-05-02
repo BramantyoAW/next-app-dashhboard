@@ -28,6 +28,7 @@ export async function createMemberStore(
     full_name: string;
     email: string;
     phone: string;
+    password?: string;
   }
 ) {
   return await graphqlClient.request(
