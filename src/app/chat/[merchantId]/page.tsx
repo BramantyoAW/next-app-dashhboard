@@ -7,6 +7,7 @@ import ChatHeader from '@/components/chat/ChatHeader'
 import ChatInput from '@/components/chat/ChatInput'
 import { ShoppingBag, Loader2, WifiOff, MessageCircle } from 'lucide-react'
 
+// CHANGED: Update tipe ChatMessage sesuai requirements
 type ChatMessage = {
   id: string
   direction: 'inbound' | 'outbound'
@@ -15,6 +16,10 @@ type ChatMessage = {
   type: string
   created_at: string
   username: string | null
+  // Tambah field baru
+  buttons?: string[]
+  file_url?: string
+  file_name?: string
 }
 
 export default function ChatPage({ params }: { params: { merchantId: string } }) {
@@ -33,7 +38,6 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
   const lastMessageCount = useRef(0)
-
 
   const fetchMessages = useCallback(async (showLoading = false) => {
     if (!storeId) return
@@ -94,7 +98,7 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, type: string = 'text', fileUrl?: string) => {
     if (!storeId) return
 
     setSending(true)
@@ -102,17 +106,26 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
     // Optimistic update
     const tempMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
-      direction: 'inbound',
+      direction: 'inbound', // Browser chat outbound to system is 'inbound' direction to webhook
       text,
       status: 'pending',
-      type: 'text',
+      type: type,
       created_at: new Date().toISOString(),
       username: profile?.me?.user?.full_name ?? 'You',
+      file_url: fileUrl,
+      file_name: type !== 'text' ? text : undefined
     }
     setMessages(prev => [...prev, tempMsg])
 
     try {
       const token = localStorage.getItem('token') || ''
+      const payload: any = {
+        text,
+        store_id: storeId,
+        type: type,
+      }
+      if (fileUrl) payload.file_url = fileUrl
+
       const res = await fetch(`/api/chat/send`, {
         method: 'POST',
         headers: {
@@ -120,10 +133,7 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          text,
-          store_id: storeId,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -145,6 +155,84 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
     }
   }
 
+  // CHANGED: File upload handler
+  const handleFileUpload = async (file: File) => {
+    if (!storeId) return
+    setSending(true)
+    
+    // Determine type
+    const isImage = file.type.startsWith('image/')
+    const type = isImage ? 'image' : 'file'
+    const tempUrl = URL.createObjectURL(file)
+
+    // 1. Optimistic bubble
+    const tempMsg: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      direction: 'inbound',
+      text: file.name, // Usually use text field for caption or filename
+      status: 'pending',
+      type: type,
+      created_at: new Date().toISOString(),
+      username: profile?.me?.user?.full_name ?? 'You',
+      file_url: tempUrl,
+      file_name: file.name
+    }
+    setMessages(prev => [...prev, tempMsg])
+
+    try {
+      const token = localStorage.getItem('token') || ''
+      
+      // 2. Kirim ke endpoint yang SAMA dengan teks biasa
+      // POST /api/chat/send — sudah handle FormData di Laravel
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('store_id', String(storeId))
+      formData.append('channel', 'browser')
+      formData.append('type', type)
+
+      const sendRes = await fetch(`/api/chat/send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // Accept is optional, let browser set Content-Type with boundary for FormData
+        },
+        body: formData,
+      })
+
+      if (!sendRes.ok) throw new Error(`HTTP ${sendRes.status}`)
+
+      // Response might contain the real uploaded URL if the API returns it
+      const resData = await sendRes.json()
+      const uploadedUrl = resData.file_url || tempUrl
+
+      // Update temp message status and URL
+      setMessages(prev =>
+        prev.map(m => m.id === tempMsg.id ? { ...m, status: 'done', file_url: uploadedUrl } : m)
+      )
+      
+      setTimeout(() => fetchMessages(false), 2000)
+    } catch (err) {
+      console.error('[Chat] Upload/Send error:', err)
+      setMessages(prev =>
+        prev.map(m => m.id === tempMsg.id ? { ...m, status: 'failed' } : m)
+      )
+    } finally {
+      // Clean up local preview URL
+      setTimeout(() => URL.revokeObjectURL(tempUrl), 10000)
+      setSending(false)
+    }
+  }
+
+  // CHANGED: Button click handler (dari bubble bot)
+  const handleButtonClick = (msgId: string, buttonText: string) => {
+    // Sembunyikan buttons di bubble tersebut
+    setMessages(prev => 
+      prev.map(m => m.id === msgId ? { ...m, buttons: [] } : m)
+    )
+    // Kirim pesan biasa
+    handleSend(buttonText)
+  }
+
   // Group messages by date
   const getDateLabel = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -158,13 +246,16 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-72px)] w-full bg-white">
+    <div className="flex flex-col h-[calc(100vh-72px)] w-full bg-white relative">
 
       {/* Chat Header */}
       <ChatHeader
         merchantName={merchantName}
         merchantImage={merchantImage}
         isOnline={isPolling}
+        // CHANGED: Lempar props baru
+        storeId={storeId}
+        channel="browser"
       />
 
       {/* Connection Status Banner */}
@@ -233,6 +324,7 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
                       </span>
                     </div>
                   )}
+                  {/* CHANGED: Update props yang dilempar ke ChatBubble */}
                   <ChatBubble
                     text={msg.text}
                     isOwn={msg.direction === 'inbound'}
@@ -243,6 +335,12 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
                       msg.status === 'failed' ? 'sent' :
                       'sent'
                     }
+                    buttons={msg.buttons}
+                    type={msg.type}
+                    fileUrl={msg.file_url}
+                    fileName={msg.file_name}
+                    senderName={msg.direction !== 'inbound' ? merchantName : undefined}
+                    onButtonClick={(btnText) => handleButtonClick(msg.id, btnText)}
                   />
                 </React.Fragment>
               )
@@ -250,12 +348,12 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
 
             {/* Typing indicator placeholder */}
             {sending && (
-              <div className="flex justify-start mb-2">
-                <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+              <div className="flex justify-end mb-2">
+                <div className="bg-gradient-brand border border-blue-500 rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
                   <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </div>
@@ -268,7 +366,9 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
 
       {/* Input Area */}
       <ChatInput
-        onSend={handleSend}
+        onSend={(text) => handleSend(text)}
+        // CHANGED: Lempar handleFileUpload ke ChatInput
+        onFileUpload={handleFileUpload}
         disabled={sending || loading}
         placeholder="Ketik pesan di sini..."
       />
