@@ -22,7 +22,6 @@ import {
   X,
   Coins,
   Store,
-  MessagesSquare,
   Zap
 } from 'lucide-react'
 
@@ -132,7 +131,9 @@ function SidebarLink({
   onClick?: () => void
 }) {
   const pathname = usePathname()
-  const isActive = exact ? pathname === href : pathname.startsWith(href)
+  const isActive = exact
+    ? pathname === href
+    : pathname === href || (pathname.startsWith(href + '/'))
 
   return (
     <Link
@@ -208,7 +209,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (path.startsWith('/dashboard/settings/store')) return 'Store Profile'
     if (path.startsWith('/dashboard/settings/configuration')) return 'Configuration'
     if (path.startsWith('/dashboard/settings')) return 'Settings'
-    if (path.startsWith('/conversations')) return 'Conversations'
     if (path.startsWith('/chat')) return profile?.me?.user?.store_name ?? 'Chat'
     return 'Dashboard Overview'
   }
@@ -284,15 +284,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <div className="pt-5 pb-1.5 px-3">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User & Store</span>
           </div>
-          <SidebarLink href="/dashboard/user" icon={<Users size={18} />} onClick={() => setIsSidebarOpen(false)}>
+          <SidebarLink href="/dashboard/user" icon={<Users size={18} />} exact onClick={() => setIsSidebarOpen(false)}>
             Users
           </SidebarLink>
           <SidebarLink href="/dashboard/user/message" icon={<MessageCircle size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Messages
-          </SidebarLink>
-
-          <SidebarLink href="/conversations" icon={<MessagesSquare size={18} />} onClick={() => setIsSidebarOpen(false)}>
-            Conversations
           </SidebarLink>
 
           <div className="pt-5 pb-1.5 px-3">
