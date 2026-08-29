@@ -47,7 +47,7 @@ export async function updateProduct(
     description?: string
     price: number
     image: string
-    attributes: { attribute_id: string; value: string }[]
+    attributes: { name: string; value: string }[]
   }
 ): Promise<UpdateProductResponse> {
   if (!token) throw new Error("Token not found")

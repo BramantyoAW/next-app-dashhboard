@@ -11,7 +11,6 @@ export const GET_PRODUCT_BY_ID = gql`
       image
       description
       attributes {
-        id
         name
         value
       }
@@ -20,7 +19,6 @@ export const GET_PRODUCT_BY_ID = gql`
 `
 
 export type ProductAttribute = {
-  id: string
   name: string
   value: string
 }

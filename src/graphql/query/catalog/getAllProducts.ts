@@ -20,6 +20,10 @@ const GET_ALL_PRODUCTS_QUERY = gql`
           name
           value
         }
+        outlets {
+          id
+          name
+        }
       }
       pagination {
         total
@@ -44,6 +48,7 @@ interface Product {
   image: string
   description: string
   attributes: Attribute[]
+  outlets?: { id: number; name: string }[]
 }
 
 interface GetAllProductsResponse {

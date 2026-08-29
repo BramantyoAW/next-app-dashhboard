@@ -1,22 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { extractStoreId } from '@/lib/jwt';
+import { getActiveStoreId } from '@/lib/jwt';
 import { getProductStock } from '@/graphql/query/inventory/getProductStock';
 import { adjustProductStock } from '@/graphql/mutation/inventory/adjustProductStock';
 import { toast } from 'sonner';
 
-// 🔹 Definisikan type log
-type StockLog = {
-  change: number;
-  source: string;
-  note?: string | null;
-  created_at: string;
-};
-
+/**
+ * Stok PRODUK level produk (bukan per varian) + tombol Adjust.
+ * Riwayat/perubahan stok ditampilkan di component terpisah `StockHistory`
+ * (gabungan produk + varian) — supaya tidak dobel.
+ */
 export function StockCard({ productId, onSuccess }: { productId: number, onSuccess?: () => void }) {
   const [qty, setQty] = useState<number>(0);
-  const [logs, setLogs] = useState<StockLog[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ change: 0, source: 'restock', note: '' });
   const [loading, setLoading] = useState(true);
@@ -24,20 +20,15 @@ export function StockCard({ productId, onSuccess }: { productId: number, onSucce
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem('token');
-      const storeId = extractStoreId(token);
-      if (!token || !storeId) return;
+      const storeId = getActiveStoreId(token);
+      if (!token || !storeId) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        const res = await getProductStock(token, productId);
+        const res = await getProductStock(token, productId, storeId);
         setQty(res.productStock?.current_qty ?? 0);
-
-        const apiLogs: StockLog[] = (res.productStock?.logs ?? []).map((l: any) => ({
-          change: l.change,
-          source: l.source,
-          note: l.note ?? null,
-          created_at: l.created_at,
-        }));
-        setLogs(apiLogs);
       } finally {
         setLoading(false);
       }
@@ -47,6 +38,7 @@ export function StockCard({ productId, onSuccess }: { productId: number, onSucce
   const submitAdjust = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
+    const storeId = getActiveStoreId(token);
     setOpen(false);
 
     try {
@@ -55,20 +47,10 @@ export function StockCard({ productId, onSuccess }: { productId: number, onSucce
         chg: Number(form.change),
         src: form.source,
         note: form.note || undefined,
+        storeId,
       });
       setQty(res.adjustProductStock.current_qty);
-
-      // prepend log baru
-      const newLog: StockLog = {
-        change: form.change,
-        source: form.source,
-        note: form.note || null,
-        created_at: new Date().toISOString(),
-      };
-      setLogs(prev => [newLog, ...prev]);
-
       if (onSuccess) onSuccess();
-
       toast.success('Stock updated');
     } catch (e) {
       toast.error('Gagal update stok');
@@ -93,37 +75,6 @@ export function StockCard({ productId, onSuccess }: { productId: number, onSucce
         >
           Adjust
         </button>
-      </div>
-
-      {/* Logs */}
-      <h4 className="mt-6 font-semibold">Stock History</h4>
-      <div className="mt-2 border rounded-lg max-h-64 overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-2 text-left">Date</th>
-              <th className="p-2 text-left">Change</th>
-              <th className="p-2 text-left">Source</th>
-              <th className="p-2 text-left">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((l, i) => (
-              <tr key={i} className="border-t">
-                <td className="p-2">{new Date(l.created_at).toLocaleString()}</td>
-                <td
-                  className={`p-2 font-medium ${
-                    l.change >= 0 ? 'text-emerald-600' : 'text-red-600'
-                  }`}
-                >
-                  {l.change >= 0 ? `+${l.change}` : l.change}
-                </td>
-                <td className="p-2">{l.source}</td>
-                <td className="p-2">{l.note || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       {/* Modal adjust */}
