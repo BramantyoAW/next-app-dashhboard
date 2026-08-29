@@ -4,10 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginService } from '@/graphql/mutation/login';
 import { registerService } from '@/graphql/mutation/register';
-import { myStoresService } from '@/graphql/query/myStores';
-import { chooseStoreService } from '@/graphql/mutation/chooseStore';
 import { extractStoreRole, extractStoreId } from '@/lib/jwt';
-import StorePicker from '@/components/StorePicker';
+import { setAuthToken } from '@/lib/auth';
 import TermsModal from '@/components/TermsModal';
 import { getPublicAppSettingsService } from '@/graphql/query/settings/getPublicAppSettings';
 import { useEffect } from 'react';
@@ -25,8 +23,6 @@ export default function LoginPage() {
   const [description, setDescription] = useState('');
   const [image, setImage] = useState<File | null>(null);
 
-  const [stores, setStores] = useState<{ id: number; name: string }[] | null>(null);
-  const [loginToken, setLoginToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -63,31 +59,23 @@ export default function LoginPage() {
       const role = res.login.user.role;
 
       if (role === "admin") {
-        localStorage.setItem("token", token);
+        setAuthToken(token);
         router.push("/admin/dashboard");
         return;
       }
 
-      const s = await myStoresService(token);
+      setAuthToken(token);
 
-      // Early check: if JWT already has store_role=staff (single store auto-claim),
-      // redirect straight to chat without showing store picker
+      // Staff (single-store auto-claim) langsung ke chat outlet-nya.
       const earlyStoreRole = extractStoreRole(token);
       const earlyStoreId = extractStoreId(token);
       if (earlyStoreRole === 'staff' && earlyStoreId) {
-        localStorage.setItem('token', token);
         router.push(`/chat/${earlyStoreId}`);
         return;
       }
 
-      if (!s.myStores || s.myStores.length === 0) {
-        localStorage.setItem('token', token);
-        router.push('/dashboard');
-        return;
-      }
-
-      setLoginToken(token);
-      setStores(s.myStores);
+      // Owner: langsung masuk dashboard tunggal (SEMUA outlet), tanpa pilih merchant.
+      router.push('/dashboard');
     } catch (err: any) {
       const validation = err?.extensions?.validation;
       if (validation) {
@@ -147,30 +135,6 @@ export default function LoginPage() {
       } else {
         setErrors({ general: err.message || 'Registrasi gagal. Silahkan coba lagi.' });
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePickStore = async (storeId: number) => {
-    if (!loginToken) return;
-    setLoading(true);
-    try {
-      const chosen = await chooseStoreService(loginToken, storeId);
-      const newToken = chosen.chooseStore.access_token;
-      localStorage.setItem('token', newToken);
-      setStores(null);
-
-      // Check store_role from the new JWT — staff goes to chat
-      const storeRole = extractStoreRole(newToken);
-      if (storeRole === 'staff') {
-        router.push(`/chat/${storeId}`);
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err: any) {
-      console.error('chooseStore failed:', err);
-      alert(err?.message || 'Gagal memilih store.');
     } finally {
       setLoading(false);
     }
@@ -403,14 +367,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      {stores && (
-        <StorePicker
-          stores={stores}
-          onPick={handlePickStore}
-          onCancel={() => setStores(null)}
-        />
-      )}
 
       {showTermsModal && (
         <TermsModal

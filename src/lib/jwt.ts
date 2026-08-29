@@ -20,4 +20,18 @@ export function decodeJwt(token: string): any | null {
     const p = decodeJwt(token);
     return p?.store_role ?? null;
   }
+
+  /**
+   * Store id "aktif" di dashboard tunggal (tanpa switch store global).
+   * Prioritas: localStorage activeStoreId (pilihan user per sesi) → JWT store_id (fallback lama).
+   * Dipakai oleh halaman-halaman yang butuh store id tanpa dropdown sendiri.
+   */
+  export function getActiveStoreId(token: string | null): number | null {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem('activeStoreId');
+      const n = saved ? Number(saved) : NaN;
+      if (!Number.isNaN(n) && n > 0) return n;
+    }
+    return extractStoreId(token);
+  }
   

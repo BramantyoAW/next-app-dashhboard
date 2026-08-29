@@ -20,10 +20,11 @@ export async function POST(request: NextRequest) {
     let body: any;
 
     if (contentType.includes('multipart/form-data')) {
-      // File upload: forward the FormData as-is
-      const formData = await request.formData();
-      body = formData;
-      // Don't set Content-Type for FormData — fetch will auto-set it with the correct boundary
+      // File upload: forward body MENTAH (ReadableStream) + Content-Type asli
+      // agar boundary & stream file utuh sampai ke backend. Construct-ulang
+      // FormData (request.formData()) merusak file binary → "file does not exist".
+      forwardHeaders['Content-Type'] = contentType;
+      body = request.body; // ReadableStream | null
     } else {
       // Regular JSON GraphQL request
       forwardHeaders['Content-Type'] = 'application/json';
@@ -35,7 +36,9 @@ export async function POST(request: NextRequest) {
     const backendResponse = await fetch(backendUrl, {
       method: 'POST',
       headers: forwardHeaders,
-      body,
+      body: body ?? undefined,
+      // @ts-ignore — duplex dibutuhkan utk streaming body ke fetch (undici)
+      duplex: 'half',
     });
 
     const responseText = await backendResponse.text();
