@@ -40,15 +40,11 @@ export function VariantPicker({ attributes, onChange }: Props) {
     [groups, selected],
   );
 
-  // Kanonikal variant_key untuk checkout, mis. "Ukuran:250g|Kemasan:Biji".
-  // Urutan mengikuti urutan grup (kelompok attributes by name).
   const variantKey = useMemo(
     () => groups.map(([name, _values]) => `${name}:${selected[name] ?? ''}`).join('|'),
     [groups, selected],
   );
 
-  // Laporkan default (nilai pertama tiap group) begitu komponen siap,
-  // supaya "Tambah" tanpa klik tetap menyertakan varian.
   useEffect(() => {
     onChange?.({ summary, variant_key: variantKey });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,7 +65,7 @@ export function VariantPicker({ attributes, onChange }: Props) {
     <div className="space-y-4">
       {groups.map(([name, values]) => (
         <div key={name}>
-          <div className="mb-2 text-sm font-semibold text-neutral-800">{name}</div>
+          <div className="mb-2 text-sm font-bold text-slate-800">{name}</div>
           <div className="flex flex-wrap gap-2">
             {values.map((value) => {
               const active = (selected[name] ?? values[0]) === value;
@@ -78,10 +74,10 @@ export function VariantPicker({ attributes, onChange }: Props) {
                   key={value}
                   type="button"
                   onClick={() => pick(name, value)}
-                  className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition ${
                     active
-                      ? 'border-transparent text-white'
-                      : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400'
+                      ? 'border-transparent text-white shadow-sm'
+                      : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
                   }`}
                   style={active ? { background: 'var(--brand)' } : undefined}
                 >
@@ -92,8 +88,8 @@ export function VariantPicker({ attributes, onChange }: Props) {
           </div>
         </div>
       ))}
-      <div className="rounded-lg bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
-        <span className="font-semibold">Varian:</span> {summary}
+      <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <span className="font-bold">Varian:</span> {summary}
       </div>
     </div>
   );

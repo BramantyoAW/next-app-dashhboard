@@ -17,13 +17,6 @@ type Props = {
   variantPrices?: Record<string, number>;
 };
 
-/**
- * Client wrapper untuk detail produk yang punya varian: mengelola pilihan varian
- * dan meneruskannya ke AddToCartButton sebagai `variant` (display) +
- * `variant_key` (kunci kanonikal utk checkout/stok). Jika varian terpilih punya
- * gambar (variantImages), gambar utama produk diganti; jika punya harga
- * (variantPrices), harga utama & harga item cart ikut berubah.
- */
 export function ProductActions({ hash, itemProps, attributes, variantImages = {}, variantPrices = {} }: Props) {
   const [selection, setSelection] = useState<{ summary: string; variant_key: string }>({ summary: '', variant_key: '' });
   const [price, setPrice] = useState(itemProps.price);
@@ -46,7 +39,7 @@ export function ProductActions({ hash, itemProps, attributes, variantImages = {}
   return (
     <div className="space-y-4">
       <VariantPicker attributes={attributes} onChange={handleVariantChange} />
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <AddToCartButton
           hash={hash}
           item={{
@@ -59,7 +52,7 @@ export function ProductActions({ hash, itemProps, attributes, variantImages = {}
         />
         <Link
           href={`/storefront/${hash}/cart?checkout=1`}
-          className="inline-flex items-center justify-center rounded-lg border px-4 py-2 text-sm hover:bg-neutral-50"
+          className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-5 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
         >
           Beli Sekarang
         </Link>

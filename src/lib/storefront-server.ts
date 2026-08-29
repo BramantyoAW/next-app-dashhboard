@@ -12,6 +12,7 @@ export type WebStoreResolved = {
   is_active: boolean;
   logo_url: string | null;
   banner_url: string | null;
+  notify_whatsapp: string | null;
   pages?: { id: string; slug: string; title: string; is_published: boolean }[];
 };
 
@@ -27,7 +28,7 @@ export async function getWebStoreByHashServer(hash: string): Promise<WebStoreRes
   const query = `query($hash: String!) {
     webStoreByHash(hash: $hash) {
       id owner_id store_id slug subdomain_hash
-      store_name theme_color tagline is_active logo_url banner_url
+      store_name theme_color tagline is_active logo_url banner_url notify_whatsapp
       pages { id slug title is_published }
     }
   }`;
@@ -54,6 +55,7 @@ export async function getWebStoreByHashServer(hash: string): Promise<WebStoreRes
       is_active: ws.is_active,
       logo_url: ws.logo_url ?? null,
       banner_url: ws.banner_url ?? null,
+      notify_whatsapp: ws.notify_whatsapp ?? null,
       pages: ws.pages ?? [],
     };
   } catch {

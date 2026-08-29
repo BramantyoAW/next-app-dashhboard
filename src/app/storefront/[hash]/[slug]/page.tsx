@@ -1,16 +1,7 @@
-import {
-  gqlFetchServer,
-} from '@/lib/gql-server';
+import { gqlFetchServer } from '@/lib/gql-server';
 import { notFound } from 'next/navigation';
 import { StorefrontPageRenderer } from '@/components/storefront/StorefrontPageRenderer';
-
-type SP = {
-  id: string;
-  price_override: number | null;
-  image: string | null;
-  is_active: boolean;
-  master_product: { id: string; sku: string; name: string; description: string | null; price: number; image: string | null };
-};
+import { ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 
 /**
  * Renders a custom dynamic storefront page built with the page builder
@@ -33,13 +24,10 @@ export default async function StorefrontPage({
   });
   const pages = wsData?.webStoreByHash?.pages ?? [];
   const page = pages.find((p) => p.slug === slug);
-  if (!page) {
-    notFound();
-  }
+  if (!page) notFound();
   const blocks = (page.blocks ?? []) as { type: string; [key: string]: unknown }[];
 
-  // Fetch products too so a `products` block on any page works.
-  const data = await gqlFetchServer<{ storefrontProducts: SP[] }>({
+  const data = await gqlFetchServer<{ storefrontProducts: StorefrontProduct[] }>({
     query: `query($slug: String!, $page: Int, $limit: Int) {
       storefrontProducts(web_store_slug: $slug, page: $page, limit: $limit) {
         id price_override image is_active
@@ -51,9 +39,14 @@ export default async function StorefrontPage({
   const products = (data?.storefrontProducts ?? []).filter((p) => p.is_active);
 
   return (
-    <div>
-      <h1 className="mb-5 text-xl font-bold text-slate-900">{page.title}</h1>
+    <div className="space-y-8">
+      <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">{page.title}</h1>
       {await StorefrontPageRenderer({ blocks, hash, products })}
+      {products.length > 0 && (
+        <section>
+          <ProductGrid hash={hash} products={products} />
+        </section>
+      )}
     </div>
   );
 }

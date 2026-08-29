@@ -17,20 +17,20 @@ export function StorefrontAuthButton({ hash }: { hash: string }) {
           setAuthed(false);
           window.location.href = `/storefront/${hash}`;
         }}
-        className="flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-neutral-100"
+        className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100"
       >
-        <User className="h-4 w-4" />
-        <span>Logout</span>
+        <User className="h-[18px] w-[18px]" />
+        <span className="hidden sm:inline">Logout</span>
       </button>
     );
   }
   return (
     <Link
       href={`/storefront/${hash}/sign-in`}
-      className="flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-neutral-100"
+      className="flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100"
     >
-      <User className="h-4 w-4" />
-      <span>Masuk</span>
+      <User className="h-[18px] w-[18px]" />
+      <span className="hidden sm:inline">Masuk</span>
     </Link>
   );
 }

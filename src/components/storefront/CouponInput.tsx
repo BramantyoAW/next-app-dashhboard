@@ -23,7 +23,6 @@ export function CouponInput({ hash, subtotal, onCouponApplied }: Props) {
   const [busy, setBusy] = useState(false);
   const [touchedCode, setTouchedCode] = useState<string | null>(null);
 
-  // If the subtotal drops below a threshold and a coupon is applied, revalidate.
   useEffect(() => {
     if (!applied || applied.code !== touchedCode) return;
     let cancelled = false;
@@ -84,33 +83,32 @@ export function CouponInput({ hash, subtotal, onCouponApplied }: Props) {
   }
 
   return (
-    <div className="rounded-xl border bg-white p-4">
-      <h2 className="text-lg font-semibold">Kupon Diskon</h2>
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 className="text-base font-extrabold tracking-tight text-slate-900">Kupon Diskon</h2>
 
       {applied ? (
-        <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
           <BadgeCheck size={16} className="shrink-0 text-emerald-600" />
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <span className="font-mono text-sm font-bold text-emerald-700">{applied.code}</span>
-            <span className="ml-2 text-sm text-emerald-700">
-              -{formatIDR(applied.discount)}
-            </span>
+            <span className="ml-2 text-sm text-emerald-700">-{formatIDR(applied.discount)}</span>
           </div>
           <button
             type="button"
             onClick={() => reset()}
-            className="shrink-0 rounded-md p-1 text-emerald-600 hover:bg-emerald-100 transition-colors"
+            className="shrink-0 rounded-md p-1 text-emerald-600 transition-colors hover:bg-emerald-100"
             aria-label="Hapus kupon"
           >
             <X size={15} />
           </button>
         </div>
       ) : (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <div className="relative flex-1">
-            <Tag size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <Tag size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              className="w-full rounded-lg border py-2 pl-8 pr-3 text-sm uppercase tracking-wide"
+              className="w-full rounded-xl border border-slate-200 py-2.5 pl-8 pr-3 text-sm uppercase tracking-wide outline-none focus:ring-2"
+              style={{ ['--tw-ring-color' as never]: 'var(--brand)' }}
               placeholder="Masukkan kode kupon"
               value={code}
               onChange={(e) => {
@@ -130,7 +128,7 @@ export function CouponInput({ hash, subtotal, onCouponApplied }: Props) {
             type="button"
             onClick={apply}
             disabled={busy || !code.trim()}
-            className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 transition hover:opacity-90"
             style={{ background: 'var(--brand)' }}
           >
             {busy ? <Loader2 size={16} className="animate-spin" /> : 'Pakai'}
@@ -138,7 +136,7 @@ export function CouponInput({ hash, subtotal, onCouponApplied }: Props) {
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
     </div>
   );
 }

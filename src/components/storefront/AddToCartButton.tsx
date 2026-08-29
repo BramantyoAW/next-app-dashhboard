@@ -14,10 +14,10 @@ export function AddToCartButton({ hash, item }: { hash: string; item: Omit<CartI
         setDone(true);
         setTimeout(() => setDone(false), 1200);
       }}
-      className="flex w-full items-center justify-center gap-1 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-black disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
       style={{ background: 'var(--brand)' }}
     >
-      {done ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+      {done ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
       <span>{done ? 'Ditambahkan' : 'Tambah'}</span>
     </button>
   );

@@ -19,12 +19,12 @@ export function StorefrontCartBadge({ hash }: { hash: string }) {
   return (
     <Link
       href={`/storefront/${hash}/cart`}
-      className="relative flex items-center gap-1 rounded px-2 py-1 text-sm hover:bg-neutral-100"
+      className="relative flex items-center gap-1 rounded-full px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100"
       aria-label="Keranjang"
     >
-      <ShoppingCart className="h-4 w-4" />
+      <ShoppingCart className="h-[18px] w-[18px]" />
       {count > 0 && (
-        <span className="ml-0.5 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-white" style={{ background: 'var(--brand, #111)' }}>
           {count}
         </span>
       )}
