@@ -3,9 +3,11 @@ export async function gqlFetch<T>(
   variables: Record<string, any> = {},
   token?: string
 ): Promise<T> {
-  const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_URL?.trim();
+  // Server components need an absolute URL; the browser uses the relative
+  // /api/graphql proxy. GRAPHQL_URL is only defined server-side.
+  const endpoint = process.env.GRAPHQL_URL?.trim() || process.env.NEXT_PUBLIC_GRAPHQL_URL?.trim();
   if (!endpoint) {
-    throw new Error('NEXT_PUBLIC_GRAPHQL_URL is empty.');
+    throw new Error('GRAPHQL_URL / NEXT_PUBLIC_GRAPHQL_URL is empty.');
   }
 
   // Recursive helper to find all files and their paths
