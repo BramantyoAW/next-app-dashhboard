@@ -4,7 +4,7 @@ import { StorefrontHeader, StorefrontMobileSearch, StorefrontFeatureStrip } from
 import { StorefrontFooter } from '@/components/storefront/ui/StorefrontFooter';
 import { getWebStoreByHashServer } from '@/lib/storefront-server';
 import { storefrontMetadata } from '@/lib/storefront-metadata';
-import { normalizeTheme, themeToCss } from '@/lib/webTheme';
+import { normalizeTheme, themeToCss, normalizeChrome } from '@/lib/webTheme';
 
 export async function generateMetadata({
   params,
@@ -30,7 +30,9 @@ export default async function StorefrontLayout({
 
   const brand = webStore.theme_color || '#111111';
   // Tema global (font, warna, radius, custom CSS) dari settings.theme.
-  const theme = normalizeTheme((webStore.settings as any)?.theme ?? null);
+  const settings = (webStore.settings ?? {}) as any;
+  const theme = normalizeTheme(settings.theme ?? null);
+  const chrome = normalizeChrome(settings.chrome ?? null);
   const themeCss = themeToCss(theme);
   const navPages = (webStore.pages ?? [])
     .filter((p) => p.is_published !== false && p.slug !== 'home')
@@ -49,15 +51,17 @@ export default async function StorefrontLayout({
         logoUrl={webStore.logo_url}
         brand={brand}
         navPages={navPages.map((p) => ({ slug: p.slug, title: p.title }))}
+        chrome={chrome as any}
       />
-      <StorefrontMobileSearch hash={hash} brand={brand} />
-      <StorefrontFeatureStrip waPhone={webStore.notify_whatsapp} />
+      {chrome.header.show_search && <StorefrontMobileSearch hash={hash} brand={brand} />}
+      {chrome.header.show_feature_strip && <StorefrontFeatureStrip waPhone={webStore.notify_whatsapp} />}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>
       <StorefrontFooter
         hash={hash}
         storeName={webStore.store_name}
         brand={brand}
         navPages={navPages.map((p) => ({ slug: p.slug, title: p.title }))}
+        chrome={chrome as any}
       />
     </div>
   );

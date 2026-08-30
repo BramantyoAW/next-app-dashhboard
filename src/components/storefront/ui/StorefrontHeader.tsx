@@ -6,6 +6,7 @@ import { waLink } from '@/lib/storefront-ui';
  * Storefront header (generic). Theme color comes from --brand (set by layout
  * from the web store's theme_color). Renders nav pages the owner published,
  * a search box, order link, cart badge and auth button.
+ * Config dari `chrome.header` (Setup): search/orders bisa disembunyikan owner.
  */
 export function StorefrontHeader({
   hash,
@@ -13,12 +14,14 @@ export function StorefrontHeader({
   logoUrl,
   brand,
   navPages,
+  chrome,
 }: {
   hash: string;
   storeName: string;
   logoUrl: string | null;
   brand: string;
   navPages: { slug: string; title: string }[];
+  chrome?: { header: { show_search: boolean; show_orders: boolean } };
 }) {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
@@ -46,22 +49,26 @@ export function StorefrontHeader({
         </nav>
 
         <form action={`/storefront/${hash}`} method="get" className="ml-auto hidden max-w-xs flex-1 sm:block">
-          <input
-            type="search"
-            name="q"
-            placeholder="Cari produk…"
-            className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-sm outline-none transition focus:border-transparent focus:bg-white focus:ring-2"
-            style={{ ['--tw-ring-color' as never]: brand }}
-          />
+          {(chrome?.header?.show_search ?? true) && (
+            <input
+              type="search"
+              name="q"
+              placeholder="Cari produk…"
+              className="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-sm outline-none transition focus:border-transparent focus:bg-white focus:ring-2"
+              style={{ ['--tw-ring-color' as never]: brand }}
+            />
+          )}
         </form>
 
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
-          <Link
-            href={`/storefront/${hash}/orders`}
-            className="hidden rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:inline-block"
-          >
-            Pesanan
-          </Link>
+          {(chrome?.header?.show_orders ?? true) && (
+            <Link
+              href={`/storefront/${hash}/orders`}
+              className="hidden rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:inline-block"
+            >
+              Pesanan
+            </Link>
+          )}
           <CartBadge hash={hash} />
           <AuthButton hash={hash} />
         </div>

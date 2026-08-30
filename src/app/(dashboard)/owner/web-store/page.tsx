@@ -7,7 +7,7 @@ import { upsertWebStore, uploadWebStoreMedia } from '@/graphql/mutation/webstore
 import { myStoresService } from '@/graphql/query/myStores';
 import type { WebStore, ShippingMethod } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
-import { defaultTheme, normalizeTheme, THEME_PRESETS, FONT_OPTIONS, type WebTheme } from '@/lib/webTheme';
+import { defaultTheme, normalizeTheme, THEME_PRESETS, FONT_OPTIONS, defaultChrome, normalizeChrome, type WebTheme, type WebChrome } from '@/lib/webTheme';
 import {
   Globe,
   Loader2,
@@ -28,7 +28,8 @@ import {
   ImagePlus,
   Upload,
   Trash2,
-  ArrowLeft
+  ArrowLeft,
+  LayoutGrid
 } from 'lucide-react';
 import { WebStoreStatusBadge } from '@/components/web-store/WebStoreStatusBadge';
 import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPreviewButton';
@@ -55,6 +56,8 @@ export default function OwnerWebStoreSetupPage() {
   const [themeColor, setThemeColor] = useState('#0ea5e9');
   // Tema global (font, warna, radius, custom CSS).
   const [theme, setTheme] = useState<WebTheme>(defaultTheme());
+  // Header & Footer config global.
+  const [chrome, setChrome] = useState<WebChrome>(defaultChrome());
   const [tagline, setTagline] = useState('');
   const [active, setActive] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -95,6 +98,8 @@ export default function OwnerWebStoreSetupPage() {
           setThemeColor(w.theme_color ?? '#0ea5e9');
           // Tema global dari settings.theme (fallback default).
           setTheme(normalizeTheme((w.settings as any)?.theme ?? null));
+          // Header & Footer config dari settings.chrome.
+          setChrome(normalizeChrome((w.settings as any)?.chrome ?? null));
           setTagline(w.tagline ?? '');
           setActive(!!w.is_active);
           setCustomDomain(w.custom_domain ?? '');
@@ -138,6 +143,7 @@ export default function OwnerWebStoreSetupPage() {
           ...(ws?.settings ?? {}),
           shipping_methods: shippingMethods,
           theme,
+          chrome,
         },
         payment_methods: paymentMethods,
         custom_domain: customDomain.trim() || null,
@@ -522,7 +528,137 @@ export default function OwnerWebStoreSetupPage() {
               </div>
             </Field>
 
-            {/* Field 7: Pembayaran & Notifikasi */}
+            {/* Field 6.6: Header & Footer */}
+            <Field label="Header & Footer (Global)" icon={<LayoutGrid size={16} className="text-slate-400" />}>
+              <div className="space-y-4">
+                {/* Header */}
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Header</span>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {([
+                      ['show_search', 'Tampilkan pencarian'],
+                      ['show_feature_strip', 'Tampilkan strip info'],
+                      ['show_orders', 'Tampilkan link Pesanan'],
+                    ] as const).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 cursor-pointer hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={chrome.header[key]}
+                          onChange={(e) => setChrome({ ...chrome, header: { ...chrome.header, [key]: e.target.checked } })}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="border-t border-slate-100 pt-4">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Footer</span>
+                  <div className="mt-2 space-y-3">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400">Teks Tentang Toko</span>
+                      <textarea
+                        value={chrome.footer.about_text}
+                        onChange={(e) => setChrome({ ...chrome, footer: { ...chrome.footer, about_text: e.target.value } })}
+                        rows={2}
+                        className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Deskripsi singkat toko di footer..."
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400">Teks Hak Cipta (kosong = otomatis)</span>
+                      <input
+                        type="text"
+                        value={chrome.footer.copyright_text}
+                        onChange={(e) => setChrome({ ...chrome, footer: { ...chrome.footer, copyright_text: e.target.value } })}
+                        className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="© 2026 Toko Saya"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400">Badge Pembayaran (pisahkan dengan koma)</span>
+                      <input
+                        type="text"
+                        value={chrome.footer.payments.join(', ')}
+                        onChange={(e) => setChrome({
+                          ...chrome,
+                          footer: {
+                            ...chrome.footer,
+                            payments: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                          },
+                        })}
+                        className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="BCA, QRIS, COD, Gopay"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400">Sosial Media (opsional)</span>
+                      <div className="mt-1 space-y-2">
+                        {chrome.footer.socials.map((s, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={s.platform}
+                              onChange={(e) => {
+                                const socials = [...chrome.footer.socials];
+                                socials[i] = { ...s, platform: e.target.value };
+                                setChrome({ ...chrome, footer: { ...chrome.footer, socials } });
+                              }}
+                              placeholder="Instagram"
+                              className="w-1/3 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={s.url}
+                              onChange={(e) => {
+                                const socials = [...chrome.footer.socials];
+                                socials[i] = { ...s, url: e.target.value };
+                                setChrome({ ...chrome, footer: { ...chrome.footer, socials } });
+                              }}
+                              placeholder="https://instagram.com/toko"
+                              className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setChrome({
+                                ...chrome,
+                                footer: { ...chrome.footer, socials: chrome.footer.socials.filter((_, j) => j !== i) },
+                              })}
+                              className="px-2 text-rose-500 hover:bg-rose-50 rounded-lg"
+                              aria-label="Hapus sosial"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setChrome({
+                            ...chrome,
+                            footer: { ...chrome.footer, socials: [...chrome.footer.socials, { platform: '', url: '' }] },
+                          })}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-700"
+                        >
+                          + Tambah sosial media
+                        </button>
+                      </div>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={chrome.footer.show_powered_by}
+                        onChange={(e) => setChrome({ ...chrome, footer: { ...chrome.footer, show_powered_by: e.target.checked } })}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      Tampilkan "Powered by om-bot.com"
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </Field>
+
             <Field label="Metode Pembayaran & Notifikasi" icon={<ShieldCheck size={16} className="text-slate-400" />}>
               <div className="space-y-4">
                 {/* Payment methods list */}

@@ -77,6 +77,62 @@ export function defaultTheme(): WebTheme {
   };
 }
 
+/**
+ * Konfigurasi global Header & Footer (disimpan di web_store.settings.chrome).
+ * Owner bisa atur lewat Setup — tanpa perlu sentuh blok per halaman.
+ */
+export type WebChrome = {
+  header: {
+    show_search: boolean;
+    show_feature_strip: boolean;
+    show_orders: boolean;
+  };
+  footer: {
+    about_text: string;
+    payments: string[];
+    socials: { platform: string; url: string }[];
+    show_powered_by: boolean;
+    copyright_text: string;
+  };
+};
+
+export function defaultChrome(): WebChrome {
+  return {
+    header: {
+      show_search: true,
+      show_feature_strip: true,
+      show_orders: true,
+    },
+    footer: {
+      about_text: 'Belanja mudah, antar cepat, pembayaran fleksibel. Pesan langsung dari toko online kami.',
+      payments: ['BCA', 'QRIS', 'COD'],
+      socials: [],
+      show_powered_by: true,
+      copyright_text: '',
+    },
+  };
+}
+
+/** Normalisasi chrome dari JSON (toleran nilai parsial). */
+export function normalizeChrome(raw: unknown): WebChrome {
+  const c = (raw ?? {}) as Partial<WebChrome>;
+  const d = defaultChrome();
+  return {
+    header: {
+      show_search: c.header?.show_search ?? d.header.show_search,
+      show_feature_strip: c.header?.show_feature_strip ?? d.header.show_feature_strip,
+      show_orders: c.header?.show_orders ?? d.header.show_orders,
+    },
+    footer: {
+      about_text: c.footer?.about_text ?? d.footer.about_text,
+      payments: Array.isArray(c.footer?.payments) && c.footer.payments.length > 0 ? c.footer.payments : d.footer.payments,
+      socials: Array.isArray(c.footer?.socials) ? c.footer.socials : [],
+      show_powered_by: c.footer?.show_powered_by ?? d.footer.show_powered_by,
+      copyright_text: c.footer?.copyright_text ?? '',
+    },
+  };
+}
+
 /** Normalisasi theme dari JSON (toleran terhadap nilai parsial). */
 export function normalizeTheme(raw: unknown): WebTheme {
   const t = (raw ?? {}) as Partial<WebTheme>;
