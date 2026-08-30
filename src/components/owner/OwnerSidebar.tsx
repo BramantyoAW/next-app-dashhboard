@@ -9,7 +9,7 @@ const MAIN_NAV = [
 ];
 
 const WEB_STORE_NAV = [
-  { href: '/owner/web-store', label: 'Setup', icon: Globe },
+  { href: '/owner/web-store', label: 'Setup', icon: Globe, exact: true },
   { href: '/owner/web-store/pages', label: 'Halaman (Builder)', icon: FileText },
   { href: '/owner/web-store/products', label: 'Master Products', icon: Package },
   { href: '/owner/web-store/categories', label: 'Kategori', icon: FolderTree },
@@ -92,7 +92,7 @@ export function OwnerSidebar({
               Web Store
             </span>
           </div>
-          {WEB_STORE_NAV.map((i) => renderLink(i.href, i.label, i.icon))}
+          {WEB_STORE_NAV.map((i) => renderLink(i.href, i.label, i.icon, i.exact))}
 
           <div className="pt-5 pb-1.5 px-3">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
