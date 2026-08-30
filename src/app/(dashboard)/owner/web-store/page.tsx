@@ -231,7 +231,7 @@ export default function OwnerWebStoreSetupPage() {
             </h2>
 
             {/* Field 1: Store Sumber */}
-            <Field label="Store Fisik Sumber Inventaris" icon={<Store size={16} className="text-slate-400" />}>
+            <Field label="Store Fisik Sumber Inventaris *" icon={<Store size={16} className="text-slate-400" />}>
               <select
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
                 value={selectedStoreId}
