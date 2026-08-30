@@ -13,7 +13,7 @@ import { toast } from 'sonner';
  * `storeId` opsional: bila diberikan, adjust di outlet itu (per-outlet);
  * fallback ke store aktif.
  */
-export function StockCard({ productId, onSuccess, storeId }: { productId: number, onSuccess?: () => void, storeId?: number | string }) {
+export function StockCard({ productId, onSuccess, storeId, storeName }: { productId: number, onSuccess?: () => void, storeId?: number | string, storeName?: string | null }) {
   const [qty, setQty] = useState<number>(0);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ change: 0, source: 'restock', note: '' });
@@ -72,6 +72,9 @@ export function StockCard({ productId, onSuccess, storeId }: { productId: number
 
   return (
     <div className="p-4 bg-white rounded-xl shadow">
+      {storeName && (
+        <p className="text-xs font-bold text-indigo-600 mb-2">Outlet: {storeName}</p>
+      )}
       {/* Header qty + button */}
       <div className="flex items-center justify-between">
         <div>

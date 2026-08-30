@@ -12,7 +12,6 @@ import {
   Package,
   Search,
   Upload,
-  RefreshCw,
   History,
   X,
   FileDown,
@@ -165,7 +164,7 @@ export default function InventoryPage() {
                     </th>
                   ))}
                   <th className="px-6 py-5 font-bold text-indigo-600 uppercase tracking-widest text-[10px] text-center">Total</th>
-                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Actions</th>
+                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Riwayat</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,12 +214,18 @@ export default function InventoryPage() {
                                   setAdjustStoreId(o.id)
                                   setSelectedProduct({ ...item, mode: 'update' })
                                 }}
-                                className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1.5 rounded-lg text-sm font-black transition-all hover:ring-2 hover:ring-indigo-300 cursor-pointer ${
-                                  qty <= 0 ? 'text-slate-300 bg-slate-50' : qty <= 10 ? 'text-rose-600 bg-rose-50' : 'text-slate-900 bg-slate-50'
+                                className={`group/stock inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1.5 rounded-lg text-sm font-black transition-all cursor-pointer border border-dashed hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm active:scale-95 ${
+                                  qty <= 0
+                                    ? 'text-slate-400 bg-slate-50 border-slate-200'
+                                    : qty <= 10
+                                      ? 'text-rose-600 bg-rose-50 border-rose-200'
+                                      : 'text-slate-900 bg-slate-50 border-slate-200'
                                 }`}
-                                title={`Klik untuk adjust stok ${o.name}`}
+                                title={`Klik angka untuk adjust stok di ${o.name}`}
                               >
-                                {qty}
+                                <span className="underline decoration-dotted underline-offset-2 group-hover/stock:no-underline">
+                                  {qty}
+                                </span>
                               </button>
                             </td>
                           )
@@ -238,19 +243,9 @@ export default function InventoryPage() {
                                 fetchLogs(item.master_product_id)
                               }}
                               className="p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all title-tooltip"
-                              title="View History"
+                              title="Lihat Riwayat Stok"
                             >
                               <History size={18} />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setAdjustStoreId(null)
-                                setSelectedProduct({ ...item, mode: 'update' })
-                              }}
-                              className="px-4 py-2 bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
-                            >
-                              <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
-                              Update
                             </button>
                           </div>
                         </td>

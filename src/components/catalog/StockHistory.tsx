@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getActiveStoreId } from '@/lib/jwt';
-import { getProductStock } from '@/graphql/query/inventory/getProductStock';
-import { getProductVariantStocks } from '@/graphql/query/inventory/getProductVariantStocks';
+import { getStockLogs, getVariantStockLogs } from '@/graphql/query/inventory/getLogs';
 import { formatVariantKey } from '@/lib/variants';
 
 type LogEntry = {
@@ -14,43 +12,22 @@ type LogEntry = {
   source: string;
   note?: string | null;
   created_at: string;
+  store_id?: string | null;
+  store_name?: string | null;
 };
 
 /**
- * Stock History GABUNGAN: riwayat stok produk (product_stock_logs) + riwayat
- * stok per varian (product_variant_stock_logs), diurutkan terbaru di atas.
- * Dipakai di detail produk, di bawah section "Stok & Gambar per Varian".
+ * Stock History GABUNGAN SEMUA OUTLET: riwayat stok produk
+ * (product_stock_logs) + riwayat stok per varian (product_variant_stock_logs),
+ * diurutkan terbaru di atas. Setiap entri menampilkan outlet asal perubahan
+ * (feedback bug #2 — history jelas per outlet).
  */
 export function StockHistory({ productId }: { productId: number }) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  // storeId efektif: dari pilihan outlet aktif, atau fallback outlet pertama user.
-  const [storeId, setStoreId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-      const fromLocal = getActiveStoreId(token);
-      if (fromLocal) { setStoreId(fromLocal); return; }
-      try {
-        const { myStoresService } = await import('@/graphql/query/myStores');
-        const res = await myStoresService(token);
-        const first = res.myStores?.[0];
-        if (first) {
-          setStoreId(first.id);
-          localStorage.setItem('activeStoreId', String(first.id));
-        }
-      } catch { /* ignore */ }
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      if (!storeId) {
-        setLoading(false);
-        return;
-      }
       const token = localStorage.getItem('token');
       if (!token) {
         setLoading(false);
@@ -59,40 +36,43 @@ export function StockHistory({ productId }: { productId: number }) {
 
       const all: LogEntry[] = [];
       try {
-        const res = await getProductStock(token, productId, storeId);
-        const pLogs = (res.productStock?.logs ?? []).map((l, i) => ({
-          id: `p-${i}`,
-          type: 'product' as const,
-          change: l.change,
-          source: l.source,
-          note: l.note ?? null,
-          created_at: l.created_at,
-        }));
-        all.push(...pLogs);
+        const pLogs = await getStockLogs(token, String(productId));
+        pLogs.forEach((l, i) => {
+          all.push({
+            id: `p-${l.id}-${i}`,
+            type: 'product' as const,
+            change: l.change,
+            source: l.source,
+            note: l.note ?? null,
+            created_at: l.created_at,
+            store_id: l.store_id ?? null,
+            store_name: l.store?.name ?? null,
+          });
+        });
       } catch { /* ignore */ }
 
       try {
-        const vRes = await getProductVariantStocks(token, storeId, productId);
-        for (const vs of vRes.productVariantStocks ?? []) {
-          (vs.logs ?? []).forEach((l, li) => {
-            all.push({
-              id: `v-${vs.id}-${li}-${l.created_at}`,
-              type: 'variant',
-              variant_key: vs.variant_key,
-              change: l.change,
-              source: l.source ?? 'manual-adjust',
-              note: l.note ?? null,
-              created_at: l.created_at,
-            });
+        const vLogs = await getVariantStockLogs(token, String(productId));
+        vLogs.forEach((l, i) => {
+          all.push({
+            id: `v-${l.id}-${i}`,
+            type: 'variant' as const,
+            variant_key: l.variant_stock?.variant_key ?? undefined,
+            change: l.change,
+            source: l.source ?? 'manual-adjust',
+            note: l.note ?? null,
+            created_at: l.created_at,
+            store_id: l.store_id ?? null,
+            store_name: l.store?.name ?? null,
           });
-        }
+        });
       } catch { /* ignore */ }
 
       all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setLogs(all);
       setLoading(false);
     })();
-  }, [productId, storeId]);
+  }, [productId]);
 
   if (loading) {
     return <div className="p-4 text-sm text-gray-400">Memuat riwayat stok…</div>;
@@ -102,7 +82,7 @@ export function StockHistory({ productId }: { productId: number }) {
     <div className="mt-10">
       <h2 className="text-lg font-semibold">Stock History</h2>
       <p className="text-xs text-gray-500 mb-3">
-        Riwayat perubahan stok produk &amp; tiap varian (terbaru di atas).
+        Riwayat perubahan stok produk &amp; tiap varian di semua outlet (terbaru di atas).
       </p>
       {logs.length === 0 ? (
         <div className="bg-white rounded-xl border p-6 text-sm text-gray-400 text-center">
@@ -117,6 +97,7 @@ export function StockHistory({ productId }: { productId: number }) {
                   <th className="p-3">Tanggal</th>
                   <th className="p-3">Item</th>
                   <th className="p-3">Perubahan</th>
+                  <th className="p-3">Outlet</th>
                   <th className="p-3">Sumber</th>
                   <th className="p-3">Catatan</th>
                 </tr>
@@ -140,6 +121,15 @@ export function StockHistory({ productId }: { productId: number }) {
                     </td>
                     <td className={`p-3 font-bold tabular-nums ${l.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {l.change >= 0 ? `+${l.change}` : l.change}
+                    </td>
+                    <td className="p-3">
+                      {l.store_name ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">
+                          {l.store_name}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="p-3 text-gray-600">{l.source}</td>
                     <td className="p-3 text-gray-400">{l.note || '-'}</td>

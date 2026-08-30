@@ -15,15 +15,23 @@ type Props = {
   attributes: { name: string; value: string }[];
   /** Outlet target (opsional) — override pilihan outlet aktif. */
   storeId?: number | string | null;
+  /** Nama outlet (untuk label). */
+  storeName?: string | null;
+  /** Dipanggil setelah commit berhasil (mis. refresh outlet di parent). */
+  onSaved?: () => void;
 };
 
 type RowState = {
   variant_key: string;
   qty: number;
-  /** Nilai qty yang tersimpan di backend (acuan untuk hitung delta saat blur). */
+  /** Nilai qty yang tersimpan di backend (acuan untuk hitung delta saat simpan). */
   baseQty: number;
   image?: string | null;
+  /** Nilai image yang tersimpan di backend. */
+  baseImage?: string | null;
   price?: number | null;
+  /** Nilai price yang tersimpan di backend. */
+  basePrice?: number | null;
   loading: boolean;
 };
 
@@ -32,15 +40,21 @@ type RowState = {
  * - Produk TANPA varian: komponen ini tidak dipakai; stok produk di StockCard.
  * - Produk DENGAN varian: generate semua kombinasi dari attributes, lalu
  *   baca/tulis qty & image di product_variant_stocks (per store).
+ *
+ * UX (feedback bug #1): TIDAK auto-commit saat value berubah — semua perubahan
+ * qty/harga/gambar dikumpulkan sebagai draft dan di-commit bersamaan lewat
+ * tombol "Simpan Perubahan" ke outlet target (prop storeId).
  */
-export function VariantStockManager({ productId, attributes, storeId }: Props) {
+export function VariantStockManager({ productId, attributes, storeId, storeName, onSaved }: Props) {
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   // attributes efektif: pakai props, atau fetch dari getProductById jika props kosong
   const [fetchedAttrs, setFetchedAttrs] = useState<{ name: string; value: string }[]>([]);
   // storeId efektif: dari prop storeId, pilihan outlet aktif, atau fetch myStores → store pertama
   const [resolvedStoreId, setResolvedStoreId] = useState<number | null>(null);
+  const [resolvedStoreName, setResolvedStoreName] = useState<string | null>(storeName ?? null);
 
   useEffect(() => {
     (async () => {
@@ -56,6 +70,7 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
         const first = res.myStores?.[0];
         if (first) {
           setResolvedStoreId(first.id);
+          setResolvedStoreName(first.name);
           localStorage.setItem('activeStoreId', String(first.id));
         }
       } catch { /* ignore */ }
@@ -93,14 +108,14 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
     }
     (async () => {
       const token = localStorage.getItem('token');
-      const storeId = resolvedStoreId;
-      if (!token || !storeId) {
+      const sid = resolvedStoreId;
+      if (!token || !sid) {
         setLoading(false);
         return;
       }
 
       try {
-        const res = await getProductVariantStocks(token, storeId, productId);
+        const res = await getProductVariantStocks(token, sid, productId);
         const map: Record<string, RowState> = {};
         for (const c of combinations) {
           const found = res.productVariantStocks?.find(s => s.variant_key === c);
@@ -110,7 +125,9 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
             qty,
             baseQty: qty,
             image: found?.image ?? null,
-            price: found?.price ?? null,
+            baseImage: found?.image ?? null,
+            price: found?.price != null ? Number(found.price) : null,
+            basePrice: found?.price != null ? Number(found.price) : null,
             loading: false,
           };
         }
@@ -123,74 +140,89 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
     })();
   }, [productId, combinations, resolvedStoreId]);
 
-  const setQty = useCallback((key: string, change: number) => {
-    (async () => {
-      const token = localStorage.getItem('token');
-      const storeId = resolvedStoreId;
-      if (!token || !storeId) return;
-      setRows(prev => ({ ...prev, [key]: { ...prev[key], loading: true } }));
-      try {
-        const res = await adjustProductVariantStock(token, {
-          masterProductId: productId,
-          storeId,
-          variantKey: key,
-          change,
-          source: 'manual-adjust',
-        });
-        const newQty = res.adjustProductVariantStock.qty;
-        setRows(prev => ({ ...prev, [key]: { ...prev[key], qty: newQty, baseQty: newQty, loading: false } }));
-        toast.success(`Stok varian diupdate (${formatVariantKey(key)})`);
-      } catch (e: any) {
-        setRows(prev => ({ ...prev, [key]: { ...prev[key], loading: false } }));
-        const msg = e?.response?.errors?.[0]?.message || e?.message || 'Gagal update stok varian';
-        toast.error(msg);
-      }
-    })();
-  }, [productId, resolvedStoreId]);
+  /** Update draft qty (lokal, belum commit). */
+  const setDraftQty = useCallback((key: string, qty: number) => {
+    setRows(prev => (prev[key] ? { ...prev, [key]: { ...prev[key], qty: Math.max(0, qty) } } : prev));
+  }, []);
 
-  const setPrice = useCallback((key: string, price: number | null) => {
-    (async () => {
-      const token = localStorage.getItem('token');
-      const storeId = resolvedStoreId;
-      if (!token || !storeId) return;
-      try {
-        const res = await adjustProductVariantStock(token, {
-          masterProductId: productId,
-          storeId,
-          variantKey: key,
-          change: 0,
-          price,
-        });
-        setRows(prev => ({ ...prev, [key]: { ...prev[key], price: res.adjustProductVariantStock.price ?? prev[key].price } }));
-        toast.success(`Harga varian tersimpan (${formatVariantKey(key)})`);
-      } catch (e) {
-        toast.error('Gagal simpan harga varian');
-      }
-    })();
-  }, [productId, resolvedStoreId]);
+  /** Update draft price (lokal, belum commit). */
+  const setDraftPrice = useCallback((key: string, price: number | null) => {
+    setRows(prev => (prev[key] ? { ...prev, [key]: { ...prev[key], price } } : prev));
+  }, []);
 
-  const setImage = useCallback((key: string, image: string) => {
-    (async () => {
-      const token = localStorage.getItem('token');
-      const storeId = resolvedStoreId;
-      if (!token || !storeId) return;
-      try {
-        const res = await adjustProductVariantStock(token, {
-          masterProductId: productId,
-          storeId,
-          variantKey: key,
-          change: 0,
-          image,
-        });
-        // Hanya update image — JANGAN sentuh qty/price dari response (mutation
-        // change:0 bisa punya qty stale bila berbarengan dgn update stok).
-        setRows(prev => ({ ...prev, [key]: { ...prev[key], image: res.adjustProductVariantStock.image ?? prev[key].image } }));
-        toast.success('Gambar varian tersimpan');
-      } catch (e) {
-        toast.error('Gagal simpan gambar varian');
+  /** Update draft image URL (lokal, belum commit). */
+  const setDraftImage = useCallback((key: string, image: string | null) => {
+    setRows(prev => (prev[key] ? { ...prev, [key]: { ...prev[key], image } } : prev));
+  }, []);
+
+  /**
+   * Commit SEMUA perubahan sekaligus ke outlet target. Per baris:
+   * - qty: delta = draft - baseQty (0 jika tak berubah).
+   * - price: kirim bila berubah dari base (null = fallback harga produk).
+   * - image: kirim bila berubah dari base (null = hapus).
+   */
+  const handleSave = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    const sid = resolvedStoreId;
+    if (!token || !sid) {
+      toast.error('Tidak ada outlet aktif');
+      return;
+    }
+
+    const dirty = Object.values(rows).filter(r => {
+      const qtyChanged = r.qty !== r.baseQty;
+      const priceChanged = (r.price ?? null) !== (r.basePrice ?? null);
+      const imageChanged = (r.image ?? null) !== (r.baseImage ?? null);
+      return qtyChanged || priceChanged || imageChanged;
+    });
+
+    if (dirty.length === 0) {
+      toast.info('Tidak ada perubahan untuk disimpan');
+      return;
+    }
+
+    setSaving(true);
+    let ok = 0;
+    try {
+      for (const r of dirty) {
+        const delta = r.qty - r.baseQty;
+        try {
+          const res = await adjustProductVariantStock(token, {
+            masterProductId: productId,
+            storeId: sid,
+            variantKey: r.variant_key,
+            change: delta,
+            price: r.price,
+            image: r.image,
+          });
+          const saved = res.adjustProductVariantStock;
+          setRows(prev => ({
+            ...prev,
+            [r.variant_key]: {
+              ...prev[r.variant_key],
+              qty: saved.qty ?? r.qty,
+              baseQty: saved.qty ?? r.qty,
+              price: saved.price != null ? Number(saved.price) : null,
+              basePrice: saved.price != null ? Number(saved.price) : null,
+              image: saved.image ?? null,
+              baseImage: saved.image ?? null,
+              loading: false,
+            },
+          }));
+          ok++;
+        } catch (e: any) {
+          const msg = e?.response?.errors?.[0]?.message || e?.message || 'Gagal simpan';
+          toast.error(`Gagal simpan ${formatVariantKey(r.variant_key)}: ${msg}`);
+        }
       }
-    })();
-  }, [productId, resolvedStoreId]);
+      if (ok > 0) {
+        toast.success(`Stok varian tersimpan (${ok} baris)`);
+        if (onSaved) onSaved();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }, [rows, resolvedStoreId, productId, onSaved]);
 
   const handleImageUpload = useCallback(async (key: string, file: File) => {
     const token = localStorage.getItem('token');
@@ -198,22 +230,28 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
     setUploadingKey(key);
     try {
       const url = await uploadProductImage(token, file);
-      await setImage(key, url);
+      setDraftImage(key, url);
+      toast.success('Gambar ter-upload — klik Simpan Perubahan untuk menyimpan');
     } catch (e) {
       toast.error('Upload gambar varian gagal');
     } finally {
       setUploadingKey(null);
     }
-  }, [setImage]);
+  }, [setDraftImage]);
 
   if (combinations.length === 0) return null;
 
   return (
     <div className="mt-10">
       <h2 className="text-lg font-semibold">Stok, Harga & Gambar per Varian</h2>
-      <p className="text-xs text-gray-500 mb-3">
-        Setiap kombinasi varian punya stok, harga & gambar sendiri. Harga kosong = pakai harga produk. Produk tanpa varian dikelola di halaman Inventory.
+      <p className="text-xs text-gray-500 mb-1">
+        Setiap kombinasi varian punya stok, harga & gambar sendiri. Harga kosong = pakai harga produk.
       </p>
+      {resolvedStoreId && (
+        <p className="text-xs font-bold text-indigo-600 mb-3">
+          Outlet: {resolvedStoreName ?? `#${resolvedStoreId}`}
+        </p>
+      )}
 
       {loading ? (
         <div className="p-6 text-sm text-gray-400">Memuat kombinasi varian…</div>
@@ -232,9 +270,17 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
               {combinations.map(key => {
                 const row = rows[key];
                 const isUploading = uploadingKey === key;
+                const dirty = row && (
+                  row.qty !== row.baseQty ||
+                  (row.price ?? null) !== (row.basePrice ?? null) ||
+                  (row.image ?? null) !== (row.baseImage ?? null)
+                );
                 return (
-                  <tr key={key} className="border-b last:border-0">
-                    <td className="p-3 font-semibold text-gray-700">{formatVariantKey(key)}</td>
+                  <tr key={key} className={`border-b last:border-0 ${dirty ? 'bg-amber-50/60' : ''}`}>
+                    <td className="p-3 font-semibold text-gray-700">
+                      {formatVariantKey(key)}
+                      {dirty && <span className="ml-1.5 text-[10px] font-bold text-amber-600">• belum disimpan</span>}
+                    </td>
                     <td className="p-3">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs text-gray-400">Rp</span>
@@ -242,12 +288,12 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
                           type="number"
                           min={0}
                           placeholder="Harga produk"
-                          defaultValue={row?.price != null ? String(row.price) : ''}
-                          onBlur={e => {
+                          value={row?.price != null ? String(row.price) : ''}
+                          onChange={e => {
                             const v = e.target.value.trim();
                             const num = v === '' ? null : Number(v);
                             if (num !== null && Number.isNaN(num)) return;
-                            if (num !== row?.price) setPrice(key, num);
+                            setDraftPrice(key, num);
                           }}
                           className="border rounded px-2 py-1.5 text-xs w-full"
                         />
@@ -257,7 +303,7 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setQty(key, -1)}
+                          onClick={() => setDraftQty(key, (row?.qty ?? 0) - 1)}
                           disabled={row?.loading || (row?.qty ?? 0) <= 0}
                           className="w-8 h-8 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition font-bold"
                         >
@@ -269,26 +315,15 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
                           pattern="[0-9]*"
                           value={row?.qty ?? 0}
                           onChange={e => {
-                            // Hanya izinkan angka
                             const v = e.target.value.replace(/\D/g, '');
-                            setRows(prev => ({ ...prev, [key]: { ...prev[key], qty: v === '' ? 0 : Number(v) } }));
-                          }}
-                          onBlur={e => {
-                            const target = Number(e.target.value);
-                            // Delta dihitung dari baseQty (nilai tersimpan backend),
-                            // bukan qty lokal yang sudah berubah di onChange.
-                            const diff = target - (row?.baseQty ?? 0);
-                            if (diff !== 0) setQty(key, diff);
-                          }}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                            setDraftQty(key, v === '' ? 0 : Number(v));
                           }}
                           className="w-16 text-center font-bold tabular-nums border border-gray-200 rounded-lg px-1 py-1.5 focus:outline-none focus:border-blue-400"
                           aria-label={`Stok varian ${formatVariantKey(key)}`}
                         />
                         <button
                           type="button"
-                          onClick={() => setQty(key, 1)}
+                          onClick={() => setDraftQty(key, (row?.qty ?? 0) + 1)}
                           disabled={row?.loading}
                           className="w-8 h-8 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition font-bold"
                         >
@@ -310,11 +345,8 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
                         <input
                           type="text"
                           placeholder="URL gambar varian"
-                          defaultValue={row?.image ?? ''}
-                          onBlur={e => {
-                            const v = e.target.value.trim();
-                            if (v && v !== row?.image) setImage(key, v);
-                          }}
+                          value={row?.image ?? ''}
+                          onChange={e => setDraftImage(key, e.target.value.trim() || null)}
                           className="border rounded px-2 py-1.5 text-xs w-full"
                         />
                         <label className="text-[11px] text-blue-600 hover:underline cursor-pointer whitespace-nowrap">
@@ -336,6 +368,19 @@ export function VariantStockManager({ productId, attributes, storeId }: Props) {
               })}
             </tbody>
           </table>
+          <div className="p-3 bg-gray-50 border-t flex items-center justify-end gap-2">
+            <span className="text-[11px] text-gray-400 mr-auto">
+              Perubahan baru tersimpan setelah klik tombol.
+            </span>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 transition"
+            >
+              {saving ? 'Menyimpan…' : 'Simpan Perubahan'}
+            </button>
+          </div>
         </div>
       )}
     </div>

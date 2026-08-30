@@ -42,6 +42,8 @@ export default function EditProductPage() {
   // === Multi-outlet (feedback #1): daftar merchant/outlet produk + updatable ===
   const [outlets, setOutlets] = useState<MyStore[]>([])
   const [selectedOutlets, setSelectedOutlets] = useState<number[]>([])
+  // Bump utk memaksa StockHistory re-fetch setelah Simpan stok.
+  const [historyVersion, setHistoryVersion] = useState(0)
 
   // Load daftar outlet milik user (untuk checkbox).
   useEffect(() => {
@@ -108,6 +110,25 @@ export default function EditProductPage() {
     setSelectedOutlets(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     )
+
+  /** Refresh daftar outlet aktif dari BE (dipakai setelah ubah stok, supaya
+      is_active store_products ikut sinkron). */
+  const reloadOutletStocks = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      graphqlClient.setHeader('Authorization', `Bearer ${token}`)
+      const res = await graphqlClient.request<GetProductByIdResponse>(GET_PRODUCT_BY_ID, { id })
+      const p = res.getProductById
+      const activeStores = (p.store_products || [])
+        .filter((sp: any) => sp?.is_active)
+        .map((sp: any) => Number(sp.store_id))
+      if (activeStores.length > 0) setSelectedOutlets(activeStores)
+      setHistoryVersion(v => v + 1)
+    } catch (e) {
+      console.error('Failed to reload outlets:', e)
+    }
+  }
 
   const handleAttributeChange = (index: number, field: 'name' | 'value', value: string) => {
     const newAttrs = [...formData.attributes]
@@ -427,18 +448,30 @@ export default function EditProductPage() {
         </form>
 
         {/* STOK PARENT — HANYA utk produk TANPA varian.
-            Produk ber-varian stoknya dikelola per-varian di bawah. */}
+            Produk ber-varian stoknya dikelola per-varian di bawah.
+            Stok diedit di OUTLET pertama yang dicentang (bukan store aktif). */}
         {formData.attributes?.filter((a: any) => a?.name || a?.value).length === 0 && (
           <div className="mt-10">
-            <StockCard productId={Number(id)} />
+            <StockCard
+              productId={Number(id)}
+              storeId={selectedOutlets[0]}
+              storeName={outlets.find(o => Number(o.id) === Number(selectedOutlets[0]))?.name ?? null}
+              onSuccess={reloadOutletStocks}
+            />
           </div>
         )}
 
         {/* STOK & GAMBAR PER VARIAN (utk produk ber-varian) */}
-        <VariantStockManager productId={Number(id)} attributes={formData.attributes || []} />
+        <VariantStockManager
+          productId={Number(id)}
+          attributes={formData.attributes || []}
+          storeId={selectedOutlets[0]}
+          storeName={outlets.find(o => Number(o.id) === Number(selectedOutlets[0]))?.name ?? null}
+          onSaved={reloadOutletStocks}
+        />
 
         {/* STOCK HISTORY (produk + varian) */}
-        <StockHistory productId={Number(id)} />
+        <StockHistory key={historyVersion} productId={Number(id)} />
 
         {/* TOMBOL SAVE DI PALING BAWAH */}
         <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end">
