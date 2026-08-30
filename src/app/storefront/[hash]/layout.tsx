@@ -4,6 +4,7 @@ import { StorefrontHeader, StorefrontMobileSearch, StorefrontFeatureStrip } from
 import { StorefrontFooter } from '@/components/storefront/ui/StorefrontFooter';
 import { getWebStoreByHashServer } from '@/lib/storefront-server';
 import { storefrontMetadata } from '@/lib/storefront-metadata';
+import { normalizeTheme, themeToCss } from '@/lib/webTheme';
 
 export async function generateMetadata({
   params,
@@ -28,6 +29,9 @@ export default async function StorefrontLayout({
   if (!webStore || !webStore.is_active) notFound();
 
   const brand = webStore.theme_color || '#111111';
+  // Tema global (font, warna, radius, custom CSS) dari settings.theme.
+  const theme = normalizeTheme((webStore.settings as any)?.theme ?? null);
+  const themeCss = themeToCss(theme);
   const navPages = (webStore.pages ?? [])
     .filter((p) => p.is_published !== false && p.slug !== 'home')
     .slice(0, 5);
@@ -35,8 +39,10 @@ export default async function StorefrontLayout({
   return (
     <div
       style={{ ['--brand' as never]: brand } as React.CSSProperties}
-      className="flex min-h-screen flex-col bg-slate-50 text-slate-900"
+      className="storefront-root flex min-h-screen flex-col bg-slate-50 text-slate-900"
     >
+      {/* Tema global store: CSS vars + custom CSS owner */}
+      <style dangerouslySetInnerHTML={{ __html: themeCss }} />
       <StorefrontHeader
         hash={hash}
         storeName={webStore.store_name}

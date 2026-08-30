@@ -23,6 +23,20 @@ export function BlockFieldInput({
     'w-full px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   switch (field.kind) {
+    case 'code':
+      return (
+        <div>
+          {label}
+          <textarea
+            value={String(value ?? '')}
+            onChange={(e) => onChange(e.target.value)}
+            rows={6}
+            placeholder={field.placeholder}
+            spellCheck={false}
+            className={`${inputCls} font-mono text-xs leading-relaxed`}
+          />
+        </div>
+      );
     case 'textarea':
       return (
         <div>

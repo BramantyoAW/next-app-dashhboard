@@ -7,6 +7,7 @@ import { upsertWebStore, uploadWebStoreMedia } from '@/graphql/mutation/webstore
 import { myStoresService } from '@/graphql/query/myStores';
 import type { WebStore, ShippingMethod } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
+import { defaultTheme, normalizeTheme, THEME_PRESETS, FONT_OPTIONS, type WebTheme } from '@/lib/webTheme';
 import {
   Globe,
   Loader2,
@@ -52,6 +53,8 @@ export default function OwnerWebStoreSetupPage() {
   const [storeName, setStoreName] = useState('');
   const [subdomainHash, setSubdomainHash] = useState('');
   const [themeColor, setThemeColor] = useState('#0ea5e9');
+  // Tema global (font, warna, radius, custom CSS).
+  const [theme, setTheme] = useState<WebTheme>(defaultTheme());
   const [tagline, setTagline] = useState('');
   const [active, setActive] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -90,6 +93,8 @@ export default function OwnerWebStoreSetupPage() {
           setStoreName(w.store_name);
           setSubdomainHash(w.subdomain_hash ?? '');
           setThemeColor(w.theme_color ?? '#0ea5e9');
+          // Tema global dari settings.theme (fallback default).
+          setTheme(normalizeTheme((w.settings as any)?.theme ?? null));
           setTagline(w.tagline ?? '');
           setActive(!!w.is_active);
           setCustomDomain(w.custom_domain ?? '');
@@ -132,6 +137,7 @@ export default function OwnerWebStoreSetupPage() {
         settings: {
           ...(ws?.settings ?? {}),
           shipping_methods: shippingMethods,
+          theme,
         },
         payment_methods: paymentMethods,
         custom_domain: customDomain.trim() || null,
@@ -392,6 +398,128 @@ export default function OwnerWebStoreSetupPage() {
               <p className="text-xs text-slate-500 mt-1.5">
                 Logo tampil di header toko, banner di halaman depan storefront (PNG/JPG).
               </p>
+            </Field>
+
+            {/* Field 6.5: Tampilan Global (Tema) */}
+            <Field label="Tampilan Global (Font, Warna, CSS Kustom)" icon={<Palette size={16} className="text-slate-400" />}>
+              <div className="space-y-4">
+                {/* Preset tema */}
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preset Tema</span>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    {THEME_PRESETS.map((p) => {
+                      const active =
+                        theme.font === p.theme.font &&
+                        theme.colors.brand === p.theme.colors.brand &&
+                        theme.colors.bg === p.theme.colors.bg &&
+                        theme.radius === p.theme.radius;
+                      return (
+                        <button
+                          key={p.name}
+                          type="button"
+                          onClick={() => setTheme({ ...theme, ...p.theme, custom_css: theme.custom_css })}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            active
+                              ? 'border-slate-900 bg-slate-900 text-white'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle" style={{ backgroundColor: p.theme.colors.brand }} />
+                          {p.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Font */}
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Font</span>
+                  <select
+                    value={theme.font}
+                    onChange={(e) => setTheme({ ...theme, font: e.target.value })}
+                    className="mt-1.5 w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    {FONT_OPTIONS.map((f) => (
+                      <option key={f.value} value={f.value}>{f.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Warna */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {([
+                    ['brand', 'Warna Brand'],
+                    ['bg', 'Latar'],
+                    ['text', 'Teks'],
+                    ['muted', 'Teks Redup'],
+                  ] as const).map(([key, label]) => (
+                    <div key={key}>
+                      <span className="text-[11px] font-semibold text-slate-400">{label}</span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input
+                          type="color"
+                          value={theme.colors[key]}
+                          onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, [key]: e.target.value } })}
+                          className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                        />
+                        <input
+                          type="text"
+                          value={theme.colors[key]}
+                          onChange={(e) => setTheme({ ...theme, colors: { ...theme.colors, [key]: e.target.value } })}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono uppercase"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Radius & tombol */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Radius Sudut (px)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={48}
+                      value={theme.radius}
+                      onChange={(e) => setTheme({ ...theme, radius: Number(e.target.value) || 0 })}
+                      className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gaya Tombol</span>
+                    <select
+                      value={theme.buttonStyle}
+                      onChange={(e) => setTheme({ ...theme, buttonStyle: e.target.value as WebTheme['buttonStyle'] })}
+                      className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium"
+                    >
+                      <option value="rounded">Membulat</option>
+                      <option value="pill">Pill</option>
+                      <option value="square">Kotak</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Custom CSS */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CSS Kustom (lanjutan)</span>
+                    <span className="text-[10px] text-slate-400">Opsional — untuk power user</span>
+                  </div>
+                  <textarea
+                    value={theme.custom_css}
+                    onChange={(e) => setTheme({ ...theme, custom_css: e.target.value })}
+                    rows={6}
+                    spellCheck={false}
+                    placeholder={'.hero-title { font-size: 48px; }'}
+                    className="mt-1.5 w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    CSS ini berlaku di seluruh halaman storefront. Pakai variabel seperti <code className="text-slate-500">var(--brand)</code> bila perlu.
+                  </p>
+                </div>
+              </div>
             </Field>
 
             {/* Field 7: Pembayaran & Notifikasi */}

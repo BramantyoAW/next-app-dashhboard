@@ -5,6 +5,7 @@ import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
 import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { normalizeBlock } from '@/lib/blockSchema';
 import { ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
+import { CustomBlockRenderer, VideoEmbed } from '@/components/storefront/CustomBlockRenderer';
 
 type Block = {
   type: string;
@@ -131,6 +132,44 @@ export async function StorefrontPageRenderer({
                   ))}
                 </div>
               </section>
+            );
+          case 'custom':
+            return <CustomBlockRenderer key={idx} html={String(b.html ?? '')} css={String(b.css ?? '')} js={String(b.js ?? '')} />;
+          case 'image':
+            return (
+              <section
+                key={idx}
+                className="flex justify-center"
+                style={{ justifyContent: style.align === 'center' ? 'center' : style.align === 'right' ? 'flex-end' : 'flex-start' }}
+              >
+                <img
+                  src={String(b.image_url ?? '')}
+                  alt={String(b.alt ?? '')}
+                  className="rounded-2xl object-cover shadow-sm"
+                  style={{
+                    maxWidth: style.max_width ?? '100%',
+                    width: '100%',
+                    borderRadius: style.radius != null ? `${style.radius}px` : undefined,
+                  }}
+                />
+              </section>
+            );
+          case 'video':
+            return (
+              <section key={idx} className="overflow-hidden rounded-2xl shadow-sm" style={{ aspectRatio: style.aspect ?? '16 / 9', borderRadius: style.radius != null ? `${style.radius}px` : undefined }}>
+                <VideoEmbed url={String(b.video_url ?? '')} />
+              </section>
+            );
+          case 'divider':
+            return (
+              <hr
+                key={idx}
+                className="w-full border-0"
+                style={{
+                  borderTop: `${style.height ?? 1}px solid ${style.color ?? '#e2e8f0'}`,
+                  margin: style.margin ?? '24px 0',
+                }}
+              />
             );
           default:
             return null;

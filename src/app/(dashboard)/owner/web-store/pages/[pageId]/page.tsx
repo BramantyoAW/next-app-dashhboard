@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, serializeBlocks, type StructuralBlock } from '@/lib/blockSchema';
 import { BlockFieldInput, BlockRemoveButton } from '@/components/owner/BlockFieldInput';
+import { CustomBlockRenderer } from '@/components/storefront/CustomBlockRenderer';
 
 /**
  * Editor halaman web store — schema-driven section builder.
@@ -195,6 +196,44 @@ function BlockLivePreview({ block }: { block: StructuralBlock }) {
               </div>
             ))}
           </div>
+        </div>
+      );
+    case 'custom':
+      return (
+        <div className="p-2">
+          <CustomBlockRenderer
+            html={String(b.html ?? '')}
+            css={String(b.css ?? '')}
+            js=""
+          />
+        </div>
+      );
+    case 'image':
+      return b.image_url ? (
+        <div className="p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={String(b.image_url)}
+            alt={String(b.alt ?? '')}
+            className="rounded-lg max-h-40 object-cover w-full"
+            style={{ borderRadius: s.radius != null ? `${s.radius}px` : undefined }}
+          />
+        </div>
+      ) : (
+        <div className="p-4 text-xs text-slate-400 text-center">Blok Gambar — isi URL gambar</div>
+      );
+    case 'video':
+      return (
+        <div className="p-2">
+          <div className="rounded-lg bg-slate-100 flex items-center justify-center h-24 text-xs text-slate-400">
+            {b.video_url ? '▶ Video: ' + String(b.video_url) : 'Blok Video — isi URL (YouTube/MP4)'}
+          </div>
+        </div>
+      );
+    case 'divider':
+      return (
+        <div className="p-2">
+          <hr style={{ borderTop: `${s.height ?? 1}px solid ${s.color ?? '#e2e8f0'}`, margin: s.margin ?? '24px 0' }} />
         </div>
       );
     default:

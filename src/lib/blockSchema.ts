@@ -4,6 +4,9 @@ import {
   MousePointerClick,
   HelpCircle,
   Image as ImageIcon,
+  Code2,
+  PlayCircle,
+  Minus,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -26,6 +29,7 @@ import {
 export type FieldKind =
   | 'text'
   | 'textarea'
+  | 'code'
   | 'color'
   | 'number'
   | 'select'
@@ -40,7 +44,7 @@ export type FieldDef = {
   placeholder?: string;
   options?: { value: string; label: string }[];
   /** Untuk repeater: skema item (mis. FAQ items). */
-  item?: { key: string; label: string; kind: 'text' | 'textarea' }[];
+  item?: { key: string; label: string; kind: 'text' | 'textarea' | 'code' }[];
   itemLabel?: string;
   min?: number;
   max?: number;
@@ -54,6 +58,11 @@ export type BlockStyle = {
   padding?: string | null;
   radius?: number | null;
   align?: 'left' | 'center' | 'right' | null;
+  max_width?: string | null;
+  aspect?: string | null;
+  height?: number | null;
+  color?: string | null;
+  margin?: string | null;
 };
 
 export type BlockDef = {
@@ -69,7 +78,7 @@ export type BlockDef = {
 };
 
 /** Tipe blok yang didukung renderer. */
-export type BlockType = 'hero' | 'text' | 'products' | 'cta' | 'faq';
+export type BlockType = 'hero' | 'text' | 'products' | 'cta' | 'faq' | 'custom' | 'image' | 'video' | 'divider';
 
 /** Blok struktural (props + style). */
 export type StructuralBlock = {
@@ -207,6 +216,85 @@ export const BLOCK_DEFS: BlockDef[] = [
     ],
     style: [],
   },
+  {
+    type: 'custom',
+    label: 'HTML / CSS / JS Kustom',
+    description: 'Tulis HTML, CSS & JavaScript sendiri — tampilan bebas (power user)',
+    icon: Code2,
+    defaults: {
+      html: '<div class="custom-box">\n  <h2>Section Kustom</h2>\n  <p>Tulis HTML apa pun di sini.</p>\n</div>',
+      css: '.custom-box { padding: 40px 24px; text-align: center; border-radius: 16px; background: #f8fafc; }\n.custom-box h2 { color: #1e293b; }',
+      js: '// console.log("custom block loaded");',
+    },
+    props: [
+      { key: 'html', label: 'HTML', kind: 'code', placeholder: '<div>...</div>' },
+      { key: 'css', label: 'CSS (scoped)', kind: 'code', placeholder: '.class { ... }' },
+      { key: 'js', label: 'JavaScript', kind: 'code', placeholder: '// jalankan saat blok tampil' },
+    ],
+    style: [],
+  },
+  {
+    type: 'image',
+    label: 'Gambar',
+    description: 'Gambar tunggal dengan opsi rasio & efek',
+    icon: ImageIcon,
+    defaults: {
+      image_url: '',
+      alt: '',
+      radius: 16,
+      max_width: '100%',
+    },
+    props: [
+      { key: 'image_url', label: 'URL Gambar', kind: 'image', placeholder: 'https://...' },
+      { key: 'alt', label: 'Teks Alternatif', kind: 'text' },
+      { key: 'link_url', label: 'Link (opsional)', kind: 'url', placeholder: 'https://...' },
+    ],
+    style: [
+      { key: 'radius', label: 'Radius Sudut', kind: 'number', min: 0, max: 64 },
+      { key: 'max_width', label: 'Lebar Maks (px / %)', kind: 'text', placeholder: '100%' },
+      { key: 'align', label: 'Perataan', kind: 'select', options: [
+        { value: 'left', label: 'Kiri' },
+        { value: 'center', label: 'Tengah' },
+        { value: 'right', label: 'Kanan' },
+      ] },
+    ],
+  },
+  {
+    type: 'video',
+    label: 'Video',
+    description: 'Embed video (YouTube / MP4)',
+    icon: PlayCircle,
+    defaults: {
+      video_url: '',
+      aspect: '16/9',
+    },
+    props: [
+      { key: 'video_url', label: 'URL Video (YouTube / MP4)', kind: 'url', placeholder: 'https://youtube.com/...' },
+    ],
+    style: [
+      { key: 'aspect', label: 'Rasio', kind: 'select', options: [
+        { value: '16/9', label: '16:9' },
+        { value: '4/3', label: '4:3' },
+        { value: '1/1', label: '1:1' },
+      ] },
+      { key: 'radius', label: 'Radius Sudut', kind: 'number', min: 0, max: 64 },
+    ],
+  },
+  {
+    type: 'divider',
+    label: 'Pembatas (Divider)',
+    description: 'Garis pemisah antar bagian',
+    icon: Minus,
+    defaults: {
+      height: 1,
+    },
+    props: [],
+    style: [
+      { key: 'height', label: 'Ketebalan', kind: 'number', min: 1, max: 12 },
+      { key: 'color', label: 'Warna Garis', kind: 'color' },
+      { key: 'margin', label: 'Margin (atas/bawah)', kind: 'text', placeholder: '24px 0' },
+    ],
+  },
 ];
 
 export const DEF_MAP: Record<string, BlockDef> = Object.fromEntries(
@@ -222,6 +310,10 @@ const DEFAULT_STYLE: Record<string, BlockStyle> = {
   products: {},
   cta: { bg_color: '#4f46e5', text_color: '#ffffff' },
   faq: {},
+  custom: {},
+  image: { align: 'center' },
+  video: {},
+  divider: { color: '#e2e8f0', margin: '24px 0' },
 };
 
 function deepClone<T>(v: T): T {

@@ -1,0 +1,134 @@
+/**
+ * Tema global web store — disimpan di web_store.settings.theme (JSON).
+ * Dipakai setup page (editor) & storefront (CSS variables).
+ *
+ * Struktur:
+ * {
+ *   font: 'system' | 'serif' | 'mono' | 'inter' | 'poppins' | 'playfair',
+ *   colors: { brand, bg, text, muted },
+ *   radius: number,        // border radius global (px)
+ *   button: { radius, style },  // 'rounded' | 'square' | 'pill'
+ *   custom_css: string,    // CSS kustom owner, di-inject <style>
+ * }
+ */
+export type WebTheme = {
+  font: string;
+  colors: { brand: string; bg: string; text: string; muted: string };
+  radius: number;
+  buttonStyle: 'rounded' | 'square' | 'pill';
+  custom_css: string;
+};
+
+export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css'> }[] = [
+  {
+    name: 'Modern (default)',
+    theme: {
+      font: 'system',
+      colors: { brand: '#0ea5e9', bg: '#ffffff', text: '#0f172a', muted: '#64748b' },
+      radius: 12,
+      buttonStyle: 'rounded',
+    },
+  },
+  {
+    name: 'Elegan',
+    theme: {
+      font: 'serif',
+      colors: { brand: '#b45309', bg: '#faf9f7', text: '#292524', muted: '#78716c' },
+      radius: 4,
+      buttonStyle: 'square',
+    },
+  },
+  {
+    name: 'Bold',
+    theme: {
+      font: 'system',
+      colors: { brand: '#dc2626', bg: '#ffffff', text: '#111827', muted: '#6b7280' },
+      radius: 0,
+      buttonStyle: 'pill',
+    },
+  },
+  {
+    name: 'Fresh',
+    theme: {
+      font: 'system',
+      colors: { brand: '#16a34a', bg: '#f0fdf4', text: '#14532d', muted: '#4b7a5a' },
+      radius: 16,
+      buttonStyle: 'rounded',
+    },
+  },
+];
+
+export const FONT_OPTIONS: { value: string; label: string; css: string }[] = [
+  { value: 'system', label: 'System (default)', css: 'ui-sans-serif, system-ui, sans-serif' },
+  { value: 'serif', label: 'Serif (klasik)', css: 'Georgia, "Times New Roman", serif' },
+  { value: 'mono', label: 'Monospace', css: '"SF Mono", Menlo, monospace' },
+  { value: 'inter', label: 'Inter (modern)', css: '"Inter", ui-sans-serif, sans-serif' },
+  { value: 'poppins', label: 'Poppins (rounded)', css: '"Poppins", ui-sans-serif, sans-serif' },
+  { value: 'playfair', label: 'Playfair (elegan)', css: '"Playfair Display", Georgia, serif' },
+];
+
+export function defaultTheme(): WebTheme {
+  return {
+    font: 'system',
+    colors: { brand: '#0ea5e9', bg: '#ffffff', text: '#0f172a', muted: '#64748b' },
+    radius: 12,
+    buttonStyle: 'rounded',
+    custom_css: '',
+  };
+}
+
+/** Normalisasi theme dari JSON (toleran terhadap nilai parsial). */
+export function normalizeTheme(raw: unknown): WebTheme {
+  const t = (raw ?? {}) as Partial<WebTheme>;
+  const d = defaultTheme();
+  const colors = {
+    ...d.colors,
+    ...((t.colors ?? {}) as Partial<WebTheme['colors']>),
+  };
+  return {
+    font: t.font ?? d.font,
+    colors: {
+      brand: colors.brand || d.colors.brand,
+      bg: colors.bg || d.colors.bg,
+      text: colors.text || d.colors.text,
+      muted: colors.muted || d.colors.muted,
+    },
+    radius: typeof t.radius === 'number' ? t.radius : d.radius,
+    buttonStyle: t.buttonStyle ?? d.buttonStyle,
+    custom_css: t.custom_css ?? '',
+  };
+}
+
+/** Font CSS untuk @font-face/import (Google Fonts) — hanya jika pakai font eksternal. */
+export function fontImport(theme: WebTheme): string | null {
+  switch (theme.font) {
+    case 'inter':
+      return '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap");';
+    case 'poppins':
+      return '@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap");';
+    case 'playfair':
+      return '@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&display=swap");';
+    default:
+      return null;
+  }
+}
+
+/** Konversi theme → string CSS (CSS variables + custom CSS). */
+export function themeToCss(theme: WebTheme): string {
+  const f = FONT_OPTIONS.find((o) => o.value === theme.font)?.css ?? 'ui-sans-serif, system-ui, sans-serif';
+  const importCss = fontImport(theme);
+  const radius =
+    theme.buttonStyle === 'pill' ? '9999px' : theme.buttonStyle === 'square' ? '0px' : `${theme.radius}px`;
+  return `${importCss ? importCss + '\n' : ''}:root {
+  --brand: ${theme.colors.brand};
+  --brand-contrast: #ffffff;
+  --bg: ${theme.colors.bg};
+  --text: ${theme.colors.text};
+  --muted: ${theme.colors.muted};
+  --font: ${f};
+  --radius: ${theme.radius}px;
+  --btn-radius: ${radius};
+}
+body, .storefront-root { font-family: var(--font); background: var(--bg); color: var(--text); }
+${theme.custom_css || ''}`;
+}
