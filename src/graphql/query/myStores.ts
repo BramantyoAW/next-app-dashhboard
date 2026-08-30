@@ -9,7 +9,6 @@ query {
     description
     phone
     address
-    points
     role
     product_count
     stock_total
@@ -26,7 +25,6 @@ export type MyStore = {
   description?: string | null;
   phone?: string | null;
   address?: string | null;
-  points?: number;
   role?: string | null;
   product_count?: number;
   stock_total?: number;

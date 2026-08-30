@@ -202,7 +202,6 @@ export default function AdminStoresPage() {
               <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">ID</th>
               <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Image</th>
               <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Store Name</th>
-              <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Points</th>
               <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Created</th>
               <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -226,14 +225,6 @@ export default function AdminStoresPage() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="font-bold text-slate-900">{store.name}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <Coins size={16} />
-                    </div>
-                    <span className="font-black text-slate-900">{store.points?.toLocaleString() ?? 0}</span>
-                  </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-500">
                   {new Date(store.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -466,17 +457,13 @@ export default function AdminStoresPage() {
 
             <div className="p-8 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Total Points</span>
-                  <span className="text-lg font-black text-blue-600">{selectedStore?.points?.toLocaleString() ?? 0}</span>
-                </div>
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-slate-200"
+                >
+                  Close
+                </button>
               </div>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-slate-200"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

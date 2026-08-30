@@ -8,7 +8,6 @@ import {
   Store,
   Package,
   Boxes,
-  Coins,
   RefreshCw,
   Loader2,
   BadgeCheck,
@@ -167,9 +166,6 @@ export default function MerchantPage() {
                       </span>
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-600 text-[11px] font-bold">
                         <Boxes size={12} /> {store.stock_total ?? 0} Stok
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-600 text-[11px] font-bold">
-                        <Coins size={12} /> {store.points ?? 0} Poin
                       </span>
                     </div>
                   </div>
