@@ -12,6 +12,7 @@ import {
   Truck,
   XCircle,
   Search,
+  Store,
 } from 'lucide-react';
 import { getWebOrders, type WebOrder } from '@/graphql/query/order/webOrders';
 import { updateOrderStatus } from '@/graphql/mutation/order/updateOrderStatus';
@@ -241,6 +242,11 @@ export default function WebOrdersPage() {
                       <div key={it.id} className="flex justify-between px-3 py-2 text-sm">
                         <span className="pr-2 text-slate-700">
                           {it.name} × {it.qty}
+                          {it.store && (
+                            <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-bold">
+                              <Store size={9} /> {it.store.name}
+                            </span>
+                          )}
                         </span>
                         <span className="font-medium text-slate-800">{formatIDR(it.subtotal)}</span>
                       </div>

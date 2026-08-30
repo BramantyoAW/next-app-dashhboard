@@ -10,35 +10,44 @@ import { toast } from 'sonner';
  * Stok PRODUK level produk (bukan per varian) + tombol Adjust.
  * Riwayat/perubahan stok ditampilkan di component terpisah `StockHistory`
  * (gabungan produk + varian) — supaya tidak dobel.
+ * `storeId` opsional: bila diberikan, adjust di outlet itu (per-outlet);
+ * fallback ke store aktif.
  */
-export function StockCard({ productId, onSuccess }: { productId: number, onSuccess?: () => void }) {
+export function StockCard({ productId, onSuccess, storeId }: { productId: number, onSuccess?: () => void, storeId?: number | string }) {
   const [qty, setQty] = useState<number>(0);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ change: 0, source: 'restock', note: '' });
   const [loading, setLoading] = useState(true);
 
+  const effectiveStoreId = () => {
+    if (storeId) return String(storeId);
+    const token = localStorage.getItem('token');
+    return getActiveStoreId(token);
+  };
+
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem('token');
-      const storeId = getActiveStoreId(token);
-      if (!token || !storeId) {
+      const sid = effectiveStoreId();
+      if (!token || !sid) {
         setLoading(false);
         return;
       }
 
       try {
-        const res = await getProductStock(token, productId, storeId);
+        const res = await getProductStock(token, productId, sid);
         setQty(res.productStock?.current_qty ?? 0);
       } finally {
         setLoading(false);
       }
     })();
-  }, [productId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, storeId]);
 
   const submitAdjust = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    const storeId = getActiveStoreId(token);
+    const sid = effectiveStoreId();
     setOpen(false);
 
     try {
@@ -47,7 +56,7 @@ export function StockCard({ productId, onSuccess }: { productId: number, onSucce
         chg: Number(form.change),
         src: form.source,
         note: form.note || undefined,
-        storeId,
+        storeId: sid,
       });
       setQty(res.adjustProductStock.current_qty);
       if (onSuccess) onSuccess();

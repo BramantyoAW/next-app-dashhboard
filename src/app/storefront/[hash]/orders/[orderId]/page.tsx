@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { formatIDR } from '@/lib/cart';
 
-type Item = { id: string; name: string | null; qty: number; price: number; subtotal: number };
+type Item = { id: string; store_id?: string | null; name: string | null; qty: number; price: number; subtotal: number; store?: { id: string; name: string } | null };
 type Order = {
   id: string;
   order_number: string;
@@ -57,7 +57,7 @@ export default async function StorefrontOrderDetailPage({
         id order_number status total_amount created_at discount shipping_cost
         shipping_address
         additional_data
-        items { id name qty price subtotal }
+        items { id store_id name qty price subtotal store { id name } }
       }
     }`,
     variables: { id: orderId },
@@ -117,6 +117,11 @@ export default async function StorefrontOrderDetailPage({
             <li key={i.id} className="flex justify-between py-2.5 text-sm">
               <span className="pr-2 font-medium text-slate-700">
                 {i.name} × {i.qty}
+                {i.store && (
+                  <span className="ml-1.5 inline-block rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
+                    {i.store.name}
+                  </span>
+                )}
               </span>
               <span className="font-semibold text-slate-800">{formatIDR(i.subtotal)}</span>
             </li>

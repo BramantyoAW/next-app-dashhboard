@@ -10,6 +10,7 @@ import {
 } from '@/graphql/query/catalog/getProductById'
 import { updateProduct } from '@/graphql/mutation/catalog/updateProduct'
 import { uploadProductImage } from '@/graphql/mutation/catalog/uploadProductImage'
+import { myStoresService, MyStore } from '@/graphql/query/myStores'
 import { getActiveStoreId } from '@/lib/jwt'
 import { resolveImageUrl } from '@/lib/imageUtils'
 import { toast } from 'sonner'
@@ -38,6 +39,25 @@ export default function EditProductPage() {
     attributes: [],
   })
 
+  // === Multi-outlet (feedback #1): daftar merchant/outlet produk + updatable ===
+  const [outlets, setOutlets] = useState<MyStore[]>([])
+  const [selectedOutlets, setSelectedOutlets] = useState<number[]>([])
+
+  // Load daftar outlet milik user (untuk checkbox).
+  useEffect(() => {
+    async function loadOutlets() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
+        const res = await myStoresService(token)
+        setOutlets(res.myStores || [])
+      } catch (e) {
+        console.error('Failed to load outlets:', e)
+      }
+    }
+    loadOutlets()
+  }, [])
+
   useEffect(() => {
     async function fetchProduct() {
       try {
@@ -65,6 +85,12 @@ export default function EditProductPage() {
           image: p.image || '',
           attributes: attrs,
         })
+
+        // Outlet aktif = store_products dengan is_active=true.
+        const activeStores = (p.store_products || [])
+          .filter((sp: any) => sp?.is_active)
+          .map((sp: any) => Number(sp.store_id))
+        setSelectedOutlets(activeStores)
       } catch (err) {
         console.error('Failed to fetch product:', err)
       } finally {
@@ -77,6 +103,11 @@ export default function EditProductPage() {
 
   const handleChange = (field: string, value: any) =>
     setFormData((prev: any) => ({ ...prev, [field]: value }))
+
+  const toggleOutlet = (id: number) =>
+    setSelectedOutlets(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
 
   const handleAttributeChange = (index: number, field: 'name' | 'value', value: string) => {
     const newAttrs = [...formData.attributes]
@@ -137,9 +168,16 @@ export default function EditProductPage() {
       const storeId = getActiveStoreId(token)
       if (!token || !storeId) throw new Error('Token/store not found')
 
+      if (selectedOutlets.length === 0) {
+        setFormError('Pilih minimal 1 outlet (merchant) untuk produk ini.')
+        toast.error('Pilih minimal 1 outlet')
+        return
+      }
+
       const res = await updateProduct(token, {
         id,
         store_id: String(storeId),
+        store_ids: selectedOutlets.length > 0 ? selectedOutlets : undefined,
         sku: formData.sku,
         name: formData.name,
         description: formData.description,
@@ -310,6 +348,40 @@ export default function EditProductPage() {
                 {formData.image && !localPreview && (
                   <p className="text-xs text-gray-400 mt-1">Gambar tersimpan. Upload file baru untuk mengganti.</p>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* MULTI-OUTLET (feedback #1): daftar merchant/outlet + updatable */}
+          <div className="border-t pt-4 mt-4">
+            <label className="font-medium mb-1 block">
+              Merchant / Outlet <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-2">
+              Produk ini dijual di outlet mana? Uncheck outlet → produk tidak lagi dijual di outlet itu (tetap tersimpan datanya).
+            </p>
+            {outlets.length === 0 ? (
+              <p className="text-xs text-gray-400">Memuat outlet...</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {outlets.map(o => (
+                  <label
+                    key={o.id}
+                    className={`flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                      selectedOutlets.includes(Number(o.id))
+                        ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedOutlets.includes(Number(o.id))}
+                      onChange={() => toggleOutlet(Number(o.id))}
+                      className="accent-indigo-600"
+                    />
+                    <span className="text-sm font-medium truncate">{o.name}</span>
+                  </label>
+                ))}
               </div>
             )}
           </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react'
-import { getAllInventory } from '@/graphql/query/inventory/getAllInventory'
-import { getActiveStoreId } from '@/lib/jwt'
+import { getInventoryPooled, InventoryPooledItem } from '@/graphql/query/inventory/getInventoryPooled'
 import { myStoresService, MyStore } from '@/graphql/query/myStores'
 import { getStockLogs } from '@/graphql/query/inventory/getLogs'
 import { toast } from 'sonner'
@@ -18,7 +17,6 @@ import {
   X,
   FileDown,
   ChevronRight,
-  ChevronDown,
   Store,
   Loader2,
   AlertCircle,
@@ -28,16 +26,16 @@ import { Pagination } from '@/components/ui/Pagination'
 export default function InventoryPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
-  const [inventory, setInventory] = useState<any[]>([])
+  const [inventory, setInventory] = useState<InventoryPooledItem[]>([])
   const [pagination, setPagination] = useState<any>(null)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(20)
   const [logs, setLogs] = useState<any[]>([])
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
+  const [adjustStoreId, setAdjustStoreId] = useState<number | string | null>(null)
 
-  // === Pilih Outlet per halaman (inventory tetap per outlet) ===
+  // === Outlet milik user (utk header kolom per merchant) ===
   const [outlets, setOutlets] = useState<MyStore[]>([])
-  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null)
 
   useEffect(() => {
     async function loadOutlets() {
@@ -46,12 +44,6 @@ export default function InventoryPage() {
         if (!token) return
         const res = await myStoresService(token)
         setOutlets(res.myStores || [])
-        const defaultId = getActiveStoreId(token)
-        if (defaultId && res.myStores?.some(s => s.id === defaultId)) {
-          setSelectedStoreId(defaultId)
-        } else if (res.myStores?.length) {
-          setSelectedStoreId(res.myStores[0].id)
-        }
       } catch (e) {
         console.error('Failed to load outlets:', e)
       }
@@ -59,14 +51,13 @@ export default function InventoryPage() {
     loadOutlets()
   }, [])
 
-  // Fetch inventory list
+  // Fetch inventory POOLED (per merchant + total)
   const fetchInventory = async (p = page, limit = perPage) => {
     try {
       const token = localStorage.getItem('token')
       if (!token) throw new Error('Token not found')
-      const storeId = selectedStoreId ?? getActiveStoreId(token)
       setLoading(true)
-      const res = await getAllInventory(token, String(storeId), search, p, limit)
+      const res = await getInventoryPooled(token, search, p, limit)
       setInventory(res.data)
       setPagination(res.pagination)
     } catch (err: any) {
@@ -104,15 +95,6 @@ export default function InventoryPage() {
     return () => window.removeEventListener('storeRefreshed', handleStoreRefresh)
   }, [search, page, perPage])
 
-  // Fetch ulang saat ganti outlet
-  useEffect(() => {
-    if (selectedStoreId) {
-      setPage(1)
-      fetchInventory(1, perPage)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStoreId])
-
   // Reset to page 1 when search changes
   useEffect(() => {
     setPage(1)
@@ -132,19 +114,10 @@ export default function InventoryPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Pilih Outlet */}
-            <div className="relative">
-              <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <select
-                value={selectedStoreId ?? ''}
-                onChange={(e) => setSelectedStoreId(Number(e.target.value))}
-                className="h-11 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 appearance-none cursor-pointer focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
-              >
-                {outlets.map(o => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+            {/* Semua outlet (pooled view) */}
+            <div className="flex items-center gap-2 px-4 h-11 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600">
+              <Store size={15} className="text-slate-400" />
+              {outlets.length} Outlet
             </div>
             <button
               onClick={() => setSelectedProduct({ mode: 'import' })}
@@ -186,14 +159,19 @@ export default function InventoryPage() {
                 <tr className="bg-slate-50/50 border-b border-slate-100">
                   <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px]">Product Information</th>
                   <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">SKU Code</th>
-                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">Stok / Varian</th>
+                  {outlets.map(o => (
+                    <th key={o.id} className="px-4 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">
+                      {o.name.length > 12 ? o.name.slice(0, 12) + '…' : o.name}
+                    </th>
+                  ))}
+                  <th className="px-6 py-5 font-bold text-indigo-600 uppercase tracking-widest text-[10px] text-center">Total</th>
                   <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-20 text-center">
+                    <td colSpan={3 + outlets.length} className="py-20 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <Loader2 className="animate-spin text-indigo-600" size={32} />
                         <p className="text-slate-400 font-bold tracking-tight">Fetching inventory data...</p>
@@ -202,7 +180,7 @@ export default function InventoryPage() {
                   </tr>
                 ) : inventory.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-20 text-center">
+                    <td colSpan={3 + outlets.length} className="py-20 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <Package className="text-slate-200" size={48} />
                         <p className="text-slate-400 font-bold tracking-tight text-lg">No inventory data found</p>
@@ -212,34 +190,52 @@ export default function InventoryPage() {
                 ) : (
                   inventory.map((item) => {
                     return (
-                      <tr key={item.product_id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                      <tr key={item.master_product_id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
                         <td className="px-6 py-5">
-                          <div className="font-bold text-slate-900">{item.product?.name}</div>
-                          <div className="text-xs text-slate-400 font-medium lowercase">Item ID: {item.product_id}</div>
+                          <div className="font-bold text-slate-900">{item.name}</div>
+                          <div className="text-xs text-slate-400 font-medium lowercase">Item ID: {item.master_product_id}</div>
+                          {item.has_variant && (
+                            <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-black tracking-wide">
+                              Varian
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-5 text-center">
                           <span className="px-3 py-1.5 bg-slate-100 rounded-lg font-mono text-xs text-slate-600 font-bold">
-                            {item.product?.sku || 'N/A'}
+                            {item.sku || 'N/A'}
                           </span>
                         </td>
+                        {outlets.map(o => {
+                          const cell = item.per_store?.find((p: any) => Number(p.store_id) === Number(o.id))
+                          const qty = cell?.qty ?? 0
+                          return (
+                            <td key={o.id} className="px-4 py-5 text-center">
+                              <button
+                                onClick={() => {
+                                  setAdjustStoreId(o.id)
+                                  setSelectedProduct({ ...item, mode: 'update' })
+                                }}
+                                className={`inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1.5 rounded-lg text-sm font-black transition-all hover:ring-2 hover:ring-indigo-300 cursor-pointer ${
+                                  qty <= 0 ? 'text-slate-300 bg-slate-50' : qty <= 10 ? 'text-rose-600 bg-rose-50' : 'text-slate-900 bg-slate-50'
+                                }`}
+                                title={`Klik untuk adjust stok ${o.name}`}
+                              >
+                                {qty}
+                              </button>
+                            </td>
+                          )
+                        })}
                         <td className="px-6 py-5 text-center">
-                          {item.has_variant ? (
-                            <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-black tracking-wide inline-flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                              Varian
-                            </span>
-                          ) : (
-                            <span className={`text-base font-black ${item.current_qty <= 10 ? 'text-rose-600' : 'text-slate-900'}`}>
-                              {item.current_qty ?? 0}
-                            </span>
-                          )}
+                          <span className={`text-base font-black ${item.total_qty <= 0 ? 'text-rose-600' : 'text-indigo-600'}`}>
+                            {item.total_qty ?? 0}
+                          </span>
                         </td>
                         <td className="px-6 py-5">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => {
                                 setSelectedProduct({ ...item, mode: 'logs' })
-                                fetchLogs(item.product_id)
+                                fetchLogs(item.master_product_id)
                               }}
                               className="p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all title-tooltip"
                               title="View History"
@@ -247,7 +243,10 @@ export default function InventoryPage() {
                               <History size={18} />
                             </button>
                             <button
-                              onClick={() => setSelectedProduct({ ...item, mode: 'update' })}
+                              onClick={() => {
+                                setAdjustStoreId(null)
+                                setSelectedProduct({ ...item, mode: 'update' })
+                              }}
                               className="px-4 py-2 bg-slate-100 hover:bg-indigo-600 text-slate-700 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95"
                             >
                               <RefreshCw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
@@ -336,7 +335,12 @@ export default function InventoryPage() {
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Stock Correction</h2>
-                <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{selectedProduct.product?.name}</p>
+                <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{selectedProduct.name}</p>
+                {adjustStoreId && (
+                  <p className="text-xs font-bold text-emerald-600 mt-1">
+                    Outlet: {outlets.find(o => Number(o.id) === Number(adjustStoreId))?.name ?? `#${adjustStoreId}`}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setSelectedProduct(null)}
@@ -352,12 +356,12 @@ export default function InventoryPage() {
                   <p className="text-xs text-slate-500 font-bold mb-4">
                     Produk ini punya varian — stok dikelola per varian (bukan parent).
                   </p>
-                  <VariantStockManager productId={Number(selectedProduct.product_id)} attributes={[]} />
+                  <VariantStockManager productId={Number(selectedProduct.master_product_id)} attributes={[]} storeId={adjustStoreId ?? undefined} />
                 </>
               ) : (
-                <StockCard productId={Number(selectedProduct.product_id)} onSuccess={fetchInventory} />
+                <StockCard productId={Number(selectedProduct.master_product_id)} onSuccess={fetchInventory} storeId={adjustStoreId ?? undefined} />
               )}
-              <StockHistory productId={Number(selectedProduct.product_id)} />
+              <StockHistory productId={Number(selectedProduct.master_product_id)} />
             </div>
           </div>
         </div>

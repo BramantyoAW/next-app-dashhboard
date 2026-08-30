@@ -17,10 +17,15 @@ export const GET_WEB_ORDERS = gql`
         created_at
         items {
           id
+          store_id
           name
           qty
           price
           subtotal
+          store {
+            id
+            name
+          }
         }
         customer {
           id
@@ -40,10 +45,12 @@ export const GET_WEB_ORDERS = gql`
 
 export type WebOrderItem = {
   id: string;
+  store_id?: string | null;
   name: string | null;
   qty: number;
   price: number;
   subtotal: number;
+  store?: { id: string; name: string } | null;
 };
 
 export type WebOrderCustomer = {

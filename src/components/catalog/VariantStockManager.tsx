@@ -13,6 +13,8 @@ type Props = {
   productId: number;
   /** Daftar baris atribut (definisi varian) — dipakai utk generate kombinasi. */
   attributes: { name: string; value: string }[];
+  /** Outlet target (opsional) — override pilihan outlet aktif. */
+  storeId?: number | string | null;
 };
 
 type RowState = {
@@ -31,19 +33,20 @@ type RowState = {
  * - Produk DENGAN varian: generate semua kombinasi dari attributes, lalu
  *   baca/tulis qty & image di product_variant_stocks (per store).
  */
-export function VariantStockManager({ productId, attributes }: Props) {
+export function VariantStockManager({ productId, attributes, storeId }: Props) {
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(true);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   // attributes efektif: pakai props, atau fetch dari getProductById jika props kosong
   const [fetchedAttrs, setFetchedAttrs] = useState<{ name: string; value: string }[]>([]);
-  // storeId efektif: dari pilihan outlet aktif, atau fetch myStores → store pertama
+  // storeId efektif: dari prop storeId, pilihan outlet aktif, atau fetch myStores → store pertama
   const [resolvedStoreId, setResolvedStoreId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
+      if (storeId) { setResolvedStoreId(Number(storeId)); return; }
       const fromLocal = getActiveStoreId(token);
       if (fromLocal) { setResolvedStoreId(fromLocal); return; }
       // Fallback: ambil outlet pertama milik user (dashboard tunggal tanpa pilihan).
@@ -57,7 +60,7 @@ export function VariantStockManager({ productId, attributes }: Props) {
         }
       } catch { /* ignore */ }
     })();
-  }, []);
+  }, [storeId]);
 
   const effectiveAttrs = attributes.length > 0 ? attributes : fetchedAttrs;
   const combinations = useMemo(() => buildVariantCombinations(effectiveAttrs), [effectiveAttrs]);

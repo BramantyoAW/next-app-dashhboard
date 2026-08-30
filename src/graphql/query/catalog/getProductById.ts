@@ -14,6 +14,10 @@ export const GET_PRODUCT_BY_ID = gql`
         name
         value
       }
+      store_products {
+        store_id
+        is_active
+      }
     }
   }
 `
@@ -31,6 +35,7 @@ export type Product = {
   image: string
   description: string
   attributes: ProductAttribute[]
+  store_products?: { store_id: string; is_active: boolean }[]
 }
 
 export interface GetProductByIdResponse {
