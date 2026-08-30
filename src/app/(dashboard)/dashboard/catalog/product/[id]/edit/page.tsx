@@ -16,6 +16,7 @@ import { resolveImageUrl } from '@/lib/imageUtils'
 import { toast } from 'sonner'
 import { StockCard } from '@/components/catalog/StockCard'
 import { VariantStockManager } from '@/components/catalog/VariantStockManager'
+import { OutletSelect } from '@/components/catalog/OutletSelect'
 import { StockHistory } from '@/components/catalog/StockHistory'
 
 export default function EditProductPage() {
@@ -42,6 +43,8 @@ export default function EditProductPage() {
   // === Multi-outlet (feedback #1): daftar merchant/outlet produk + updatable ===
   const [outlets, setOutlets] = useState<MyStore[]>([])
   const [selectedOutlets, setSelectedOutlets] = useState<number[]>([])
+  // Outlet tujuan EDIT STOK — select terpisah dari checkbox, biar tidak ambigu.
+  const [stockOutletId, setStockOutletId] = useState<number | null>(null)
   // Bump utk memaksa StockHistory re-fetch setelah Simpan stok.
   const [historyVersion, setHistoryVersion] = useState(0)
 
@@ -93,6 +96,8 @@ export default function EditProductPage() {
           .filter((sp: any) => sp?.is_active)
           .map((sp: any) => Number(sp.store_id))
         setSelectedOutlets(activeStores)
+        // Outlet tujuan edit stok: default outlet aktif pertama.
+        setStockOutletId(prev => prev ?? activeStores[0] ?? null)
       } catch (err) {
         console.error('Failed to fetch product:', err)
       } finally {
@@ -124,6 +129,11 @@ export default function EditProductPage() {
         .filter((sp: any) => sp?.is_active)
         .map((sp: any) => Number(sp.store_id))
       if (activeStores.length > 0) setSelectedOutlets(activeStores)
+      // Jaga agar outlet edit stok tetap valid (masih aktif).
+      setStockOutletId(prev => {
+        if (prev == null) return activeStores[0] ?? null
+        return activeStores.includes(prev) ? prev : activeStores[0] ?? null
+      })
       setHistoryVersion(v => v + 1)
     } catch (e) {
       console.error('Failed to reload outlets:', e)
@@ -449,13 +459,20 @@ export default function EditProductPage() {
 
         {/* STOK PARENT — HANYA utk produk TANPA varian.
             Produk ber-varian stoknya dikelola per-varian di bawah.
-            Stok diedit di OUTLET pertama yang dicentang (bukan store aktif). */}
+            Stok diedit di outlet yang DIPILIH via select (stockOutletId),
+            terpisah dari checkbox Merchant/Outlet (toggle aktif/nonaktif). */}
         {formData.attributes?.filter((a: any) => a?.name || a?.value).length === 0 && (
           <div className="mt-10">
+            <OutletSelect
+              outlets={outlets}
+              value={stockOutletId}
+              onChange={setStockOutletId}
+              label="Edit Stok di Outlet"
+            />
             <StockCard
               productId={Number(id)}
-              storeId={selectedOutlets[0]}
-              storeName={outlets.find(o => Number(o.id) === Number(selectedOutlets[0]))?.name ?? null}
+              storeId={stockOutletId ?? undefined}
+              storeName={outlets.find(o => Number(o.id) === Number(stockOutletId))?.name ?? null}
               onSuccess={reloadOutletStocks}
             />
           </div>
@@ -465,9 +482,11 @@ export default function EditProductPage() {
         <VariantStockManager
           productId={Number(id)}
           attributes={formData.attributes || []}
-          storeId={selectedOutlets[0]}
-          storeName={outlets.find(o => Number(o.id) === Number(selectedOutlets[0]))?.name ?? null}
+          storeId={stockOutletId}
+          storeName={outlets.find(o => Number(o.id) === Number(stockOutletId))?.name ?? null}
           onSaved={reloadOutletStocks}
+          outlets={outlets}
+          onOutletChange={setStockOutletId}
         />
 
         {/* STOCK HISTORY (produk + varian) */}

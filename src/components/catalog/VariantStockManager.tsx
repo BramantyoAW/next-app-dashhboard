@@ -7,6 +7,7 @@ import { getProductVariantStocks } from '@/graphql/query/inventory/getProductVar
 import { adjustProductVariantStock } from '@/graphql/mutation/inventory/adjustProductVariantStock';
 import { uploadProductImage } from '@/graphql/mutation/catalog/uploadProductImage';
 import { buildVariantCombinations, formatVariantKey } from '@/lib/variants';
+import { OutletSelect } from '@/components/catalog/OutletSelect';
 import { toast } from 'sonner';
 
 type Props = {
@@ -19,6 +20,10 @@ type Props = {
   storeName?: string | null;
   /** Dipanggil setelah commit berhasil (mis. refresh outlet di parent). */
   onSaved?: () => void;
+  /** Opsi outlet untuk select eksplisit (edit page). Bila kosong, select tak dirender. */
+  outlets?: { id: number | string; name: string }[];
+  /** Dipanggil saat user memilih outlet di select. */
+  onOutletChange?: (id: number | null) => void;
 };
 
 type RowState = {
@@ -45,7 +50,7 @@ type RowState = {
  * qty/harga/gambar dikumpulkan sebagai draft dan di-commit bersamaan lewat
  * tombol "Simpan Perubahan" ke outlet target (prop storeId).
  */
-export function VariantStockManager({ productId, attributes, storeId, storeName, onSaved }: Props) {
+export function VariantStockManager({ productId, attributes, storeId, storeName, onSaved, outlets, onOutletChange }: Props) {
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -244,9 +249,23 @@ export function VariantStockManager({ productId, attributes, storeId, storeName,
   return (
     <div className="mt-10">
       <h2 className="text-lg font-semibold">Stok, Harga & Gambar per Varian</h2>
-      <p className="text-xs text-gray-500 mb-1">
+      <p className="text-xs text-gray-500 mb-3">
         Setiap kombinasi varian punya stok, harga & gambar sendiri. Harga kosong = pakai harga produk.
       </p>
+      {/* Select outlet tujuan EDIT STOK (terpisah dari checkbox Merchant/Outlet) */}
+      {outlets && outlets.length > 0 && (
+        <OutletSelect
+          outlets={outlets}
+          value={resolvedStoreId}
+          onChange={id => {
+            if (onOutletChange) onOutletChange(id);
+            setResolvedStoreId(id);
+            const o = outlets.find(x => Number(x.id) === Number(id));
+            setResolvedStoreName(o?.name ?? null);
+          }}
+          label="Edit Stok di Outlet"
+        />
+      )}
       {resolvedStoreId && (
         <p className="text-xs font-bold text-indigo-600 mb-3">
           Outlet: {resolvedStoreName ?? `#${resolvedStoreId}`}
