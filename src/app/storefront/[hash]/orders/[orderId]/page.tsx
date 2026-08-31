@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { formatIDR } from '@/lib/cart';
@@ -51,6 +51,7 @@ export default async function StorefrontOrderDetailPage({
   const { hash, orderId } = await params;
   const cookieStore = await cookies();
   const token = cookieStore.get('customer_token')?.value;
+  if (!token) redirect(`/storefront/${hash}/sign-in?next=/storefront/${hash}/orders/${orderId}`);
   const data = await gqlFetchServer<{ getOrderById: Order | null }>({
     query: `query($id: ID!) {
       getOrderById(id: $id) {

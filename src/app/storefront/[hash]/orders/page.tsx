@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { formatIDR } from '@/lib/cart';
@@ -22,6 +23,7 @@ export default async function StorefrontOrdersPage({
   const { hash } = await params;
   const cookieStore = await cookies();
   const token = cookieStore.get('customer_token')?.value;
+  if (!token) redirect(`/storefront/${hash}/sign-in?next=/storefront/${hash}/account`);
   const data = await gqlFetchServer<{ customerMe: { orders: Order[] } | null }>({
     query: `query {
       customerMe {
