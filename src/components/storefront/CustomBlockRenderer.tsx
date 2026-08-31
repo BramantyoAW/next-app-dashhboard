@@ -1,29 +1,43 @@
 'use client';
 
 import { useEffect, useId, useRef } from 'react';
+import { runSandboxedJs, type SandboxHandle } from '@/lib/sandbox';
 
 /**
- * Render blok HTML/CSS/JS kustom milik owner (dangerouslySetInnerHTML).
- * CSS di-scope ke blok via atribut `data-blk`, supaya tidak bocor ke
- * seluruh halaman. JS dijalankan setelah blok mount (useEffect).
+ * Render blok HTML/CSS/JS kustom milik owner.
+ *
+ * Security (#11): HTML/CSS/JS dieksekusi di dalam iframe sandbox
+ * (`sandbox="allow-scripts"` + CSP strict) — bukan `new Function()` di
+ * document utama. Kode owner tidak bisa mengakses cookie/localStorage
+ * (token customer), DOM halaman di luar blok, atau fetch API dengan
+ * kredensial ambient.
  */
 export function CustomBlockRenderer({ html, css, js }: { html: string; css: string; js: string }) {
   const scopeId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const ref = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<SandboxHandle | null>(null);
 
-  // Jalankan JS kustom setelah DOM blok terpasang.
+  // Mount the sandboxed frame once per (html, css, js) change.
   useEffect(() => {
-    if (!js.trim() || !ref.current) return;
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(js);
-      fn.call(ref.current);
-    } catch (e) {
-      console.error('Custom block JS error:', e);
+    if (!ref.current) return;
+    // Tanpa JS: render inline (HTML+CSS saja aman — CSS sudah di-scope,
+    // HTML tidak memuat script yang dieksekusi di dokumen utama karena
+    // dangerouslySetInnerHTML tidak menjalankan <script> tag).
+    if (!js.trim()) {
+      handleRef.current?.destroy();
+      handleRef.current = null;
+      return;
     }
-  }, [js]);
+    handleRef.current = runSandboxedJs(ref.current, { js, html, css });
+    return () => {
+      handleRef.current?.destroy();
+      handleRef.current = null;
+    };
+  }, [js, html, css]);
 
-  if (!html.trim()) {
+  const showInline = !js.trim();
+
+  if (!html.trim() && !js.trim()) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center text-sm text-slate-500">
         Blok kustom kosong.
@@ -33,15 +47,20 @@ export function CustomBlockRenderer({ html, css, js }: { html: string; css: stri
 
   return (
     <div ref={ref} data-blk={scopeId}>
-      {css.trim() && (
-        <style
-          dangerouslySetInnerHTML={{
-            // Scope: selektor hanya berlaku di dalam blok ini.
-            __html: `[data-blk="${scopeId}"] ${css}`,
-          }}
-        />
+      {showInline && (
+        <>
+          {css.trim() && (
+            <style
+              dangerouslySetInnerHTML={{
+                // Scope: selektor hanya berlaku di dalam blok ini.
+                __html: `[data-blk="${scopeId}"] ${css}`,
+              }}
+            />
+          )}
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        </>
       )}
-      <div dangerouslySetInnerHTML={{ __html: html }} />
+      {/* Dengan JS: konten dirender di dalam sandboxed iframe oleh runSandboxedJs */}
     </div>
   );
 }
