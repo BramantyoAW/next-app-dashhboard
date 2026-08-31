@@ -7,6 +7,7 @@ import { upsertWebStore, upsertWebPage, uploadWebStoreMedia } from '@/graphql/mu
 import { myStoresService } from '@/graphql/query/myStores';
 import type { WebStore, WebPage, ShippingMethod } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
+import { normalizeBlock, serializeBlock, type StructuralBlock } from '@/lib/blockSchema';
 import { defaultTheme, normalizeTheme, THEME_PRESETS, FONT_OPTIONS, defaultChrome, normalizeChrome, type WebTheme, type WebChrome } from '@/lib/webTheme';
 import {
   Globe,
@@ -37,6 +38,39 @@ import { WebStoreAiAssistant } from '@/components/web-store/WebStoreAiAssistant'
 import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 
 type StoreType = { id: string | number; name: string };
+
+/** Incremental block operations proposed by the AI assistant (#7). */
+type BlockOp =
+  | { op: 'append_blocks' | 'prepend_blocks' | 'replace_blocks'; blocks: unknown[] }
+  | { op: 'update_block'; id: string; props?: Record<string, unknown>; style?: Record<string, unknown> }
+  | { op: 'remove_block'; id: string }
+  | { op: 'reorder_blocks'; ids: string[] };
+
+/** Convert raw AI blocks into normalized structural blocks with fresh ids. */
+function toStructural(raw: unknown[] | undefined, startIndex: number): StructuralBlock[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((b, i) => {
+    const obj = (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
+    // LLMs sometimes emit props as a bare array; repair to object form so the
+    // normalizer can map values onto the block definition's prop keys.
+    if (Array.isArray(obj.props)) {
+      const arr = obj.props as unknown[];
+      const props: Record<string, unknown> = {};
+      if (arr.length > 0 && arr.every((it) => it && typeof it === 'object' && !Array.isArray(it))) {
+        // Heuristic: repeater-style content → expose the list under common keys.
+        const keys = ['items', 'faqs', 'slides', 'images', 'links', 'variants'];
+        const list = arr;
+        for (const k of keys) props[k] = list;
+      } else {
+        for (const it of arr) {
+          if (it && typeof it === 'object' && !Array.isArray(it)) Object.assign(props, it);
+        }
+      }
+      obj.props = props;
+    }
+    return normalizeBlock(obj, startIndex + i);
+  });
+}
 
 const COLOR_PRESETS = [
   { name: 'Sky Blue', hex: '#0ea5e9' },
@@ -133,30 +167,141 @@ export default function OwnerWebStoreSetupPage() {
   }, []);
 
   function applyAiChanges(changes: AiChangeSuggestion[]) {
+    let applied = 0;
+    let skipped = 0;
+
     for (const change of changes) {
       if ((change.field === 'theme' || change.field === 'web_store.theme') && change.to && typeof change.to === 'object') {
         setTheme((prev) => normalizeTheme({ ...prev, ...(change.to as Record<string, unknown>) }));
+        applied++;
       } else if ((change.field === 'chrome' || change.field === 'web_store.chrome') && change.to && typeof change.to === 'object') {
         setChrome((prev) => normalizeChrome({ ...prev, ...(change.to as Record<string, unknown>) }));
+        applied++;
       } else if ((change.field === 'theme_color' || change.field === 'web_store.theme_color') && typeof change.to === 'string') {
         setThemeColor(change.to);
+        applied++;
       } else if ((change.field === 'pages' || change.field === 'web_store.pages') && Array.isArray(change.to)) {
         setDraftPages(change.to as WebPage[]);
         setPagesDirty(true);
+        applied++;
       } else if ((change.field === 'current_page' || change.field === 'page') && change.to && typeof change.to === 'object') {
         const value = change.to as { slug?: string; blocks?: WebPage['blocks']; title?: string; is_published?: boolean };
         if (value.slug) {
           setDraftPages((prev) => prev.map((p) => p.slug === value.slug ? { ...p, ...value } : p));
           setPagesDirty(true);
+          applied++;
         }
       } else if (change.field.startsWith('page:') && change.to && typeof change.to === 'object') {
         const value = change.to as { slug?: string; blocks?: WebPage['blocks']; title?: string; is_published?: boolean };
         const slug = change.field.slice(5);
         setDraftPages((prev) => prev.map((p) => p.slug === slug ? { ...p, ...value, slug: value.slug ?? p.slug } : p));
         setPagesDirty(true);
+        applied++;
+      } else if (change.field.startsWith('block_ops') && change.to && typeof change.to === 'object') {
+        const payload = change.to as { slug?: string; ops?: BlockOp[] };
+        const slug = payload.slug ?? change.field.slice('block_ops:'.length);
+        if (!slug || !Array.isArray(payload.ops)) {
+          skipped++;
+          continue;
+        }
+        const result = applyBlockOps(slug, payload.ops);
+        if (result === 0) skipped++;
+        else applied++;
+      } else {
+        skipped++;
       }
     }
-    setStatus({ kind: 'ok', msg: 'Usulan AI diterapkan ke draft. Klik Simpan Perubahan untuk menyimpan.' });
+
+    if (applied > 0) {
+      setStatus({ kind: 'ok', msg: `Usulan AI diterapkan ke draft (${applied} perubahan${skipped > 0 ? `, ${skipped} dilewati` : ''}). Klik Simpan Perubahan untuk menyimpan.` });
+    } else {
+      setStatus({ kind: 'err', msg: 'Tidak ada usulan AI yang bisa diterapkan — halaman target tidak ditemukan atau ops kosong.' });
+    }
+  }
+
+  /**
+   * Apply incremental block operations (#7) to a page draft.
+   * Returns the number of ops applied; 0 when the page was not found.
+   */
+  function applyBlockOps(slug: string, ops: BlockOp[]): number {
+    const idx = draftPages.findIndex((p) => p.slug === slug);
+    if (idx === -1) return 0;
+    const page = draftPages[idx];
+    // Round-trip through the schema normalizer so legacy/flat blocks,
+    // missing ids and unknown types behave the same as manual editing.
+    const structural: StructuralBlock[] = (page.blocks ?? []).map((b, i) => normalizeBlock(b, i));
+
+    let used = 0;
+    for (const op of ops) {
+      if (!op || typeof op !== 'object') continue;
+      switch (op.op) {
+        case 'append_blocks': {
+          const blocks = toStructural(op.blocks, structural.length);
+          structural.push(...blocks);
+          used++;
+          break;
+        }
+        case 'prepend_blocks': {
+          const blocks = toStructural(op.blocks, structural.length);
+          structural.unshift(...blocks);
+          used++;
+          break;
+        }
+        case 'replace_blocks': {
+          const blocks = toStructural(op.blocks, 0);
+          structural.length = 0;
+          structural.push(...blocks);
+          used++;
+          break;
+        }
+        case 'update_block': {
+          const target = op.id ? structural.find((b) => b.id === op.id) : undefined;
+          if (!target) continue;
+          if (op.props && typeof op.props === 'object') {
+            // Merge: only provided props change; unknown keys of the target are preserved.
+            target.props = { ...target.props, ...(op.props as Record<string, unknown>) };
+          }
+          if (op.style && typeof op.style === 'object') {
+            target.style = { ...target.style, ...(op.style as Record<string, unknown>) };
+          }
+          used++;
+          break;
+        }
+        case 'remove_block': {
+          const pos = structural.findIndex((b) => b.id === op.id);
+          if (pos === -1) continue;
+          structural.splice(pos, 1);
+          used++;
+          break;
+        }
+        case 'reorder_blocks': {
+          if (!Array.isArray(op.ids) || op.ids.length === 0) continue;
+          const map = new Map(structural.map((b) => [b.id, b]));
+          const reordered: StructuralBlock[] = [];
+          for (const id of op.ids) {
+            const b = map.get(String(id));
+            if (b) {
+              reordered.push(b);
+              map.delete(String(id));
+            }
+          }
+          // Blocks not mentioned keep their relative order at the end.
+          reordered.push(...map.values());
+          structural.length = 0;
+          structural.push(...reordered);
+          used++;
+          break;
+        }
+      }
+    }
+
+    if (used > 0) {
+      const next = [...draftPages];
+      next[idx] = { ...page, blocks: structural.map(serializeBlock) as WebPage['blocks'] };
+      setDraftPages(next);
+      setPagesDirty(true);
+    }
+    return used;
   }
 
   async function save() {
