@@ -1,0 +1,5 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { gqlFetchServer } from '@/lib/gql-server';
+import { CustomerAccountShell, CustomerInformation, type AccountCustomer } from '@/components/storefront/CustomerAccountShell';
+export default async function AccountInformationPage({ params }: { params: Promise<{ hash: string }> }) { const { hash } = await params; const token = (await cookies()).get('customer_token')?.value; if (!token) redirect(`/storefront/${hash}/sign-in?next=/storefront/${hash}/account/information`); const d = await gqlFetchServer<{ customerMe: AccountCustomer | null }>({ query: `query { customerMe { id name email phone created_at addresses { id label recipient phone address_line city province postal_code is_default } } }`, token }); if (!d?.customerMe) redirect(`/storefront/${hash}/sign-in?next=/storefront/${hash}/account/information`); return <CustomerAccountShell hash={hash} customer={d.customerMe} active="information" title="Informasi Akun" description="Kelola informasi dasar akun Anda."><CustomerInformation customer={d.customerMe} /></CustomerAccountShell>; }

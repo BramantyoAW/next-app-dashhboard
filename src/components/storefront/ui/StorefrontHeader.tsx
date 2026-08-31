@@ -63,10 +63,10 @@ export function StorefrontHeader({
         <div className="ml-auto flex items-center gap-1 sm:ml-0">
           {(chrome?.header?.show_orders ?? true) && (
             <Link
-              href={`/storefront/${hash}/orders`}
+              href={`/storefront/${hash}/account`}
               className="hidden rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:inline-block"
             >
-              Pesanan
+              Akun
             </Link>
           )}
           <CartBadge hash={hash} />
