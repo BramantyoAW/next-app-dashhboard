@@ -138,12 +138,19 @@ export default function OwnerWebStoreSetupPage() {
         setChrome((prev) => normalizeChrome({ ...prev, ...(change.to as Record<string, unknown>) }));
       } else if ((change.field === 'theme_color' || change.field === 'web_store.theme_color') && typeof change.to === 'string') {
         setThemeColor(change.to);
-      } else if (change.field === 'pages' && Array.isArray(change.to)) {
+      } else if ((change.field === 'pages' || change.field === 'web_store.pages') && Array.isArray(change.to)) {
         setDraftPages(change.to as WebPage[]);
         setPagesDirty(true);
+      } else if ((change.field === 'current_page' || change.field === 'page') && change.to && typeof change.to === 'object') {
+        const value = change.to as { slug?: string; blocks?: WebPage['blocks']; title?: string; is_published?: boolean };
+        if (value.slug) {
+          setDraftPages((prev) => prev.map((p) => p.slug === value.slug ? { ...p, ...value } : p));
+          setPagesDirty(true);
+        }
       } else if (change.field.startsWith('page:') && change.to && typeof change.to === 'object') {
         const value = change.to as { slug?: string; blocks?: WebPage['blocks']; title?: string; is_published?: boolean };
-        setDraftPages((prev) => prev.map((p) => p.slug === change.field.slice(5) ? { ...p, ...value } : p));
+        const slug = change.field.slice(5);
+        setDraftPages((prev) => prev.map((p) => p.slug === slug ? { ...p, ...value, slug: value.slug ?? p.slug } : p));
         setPagesDirty(true);
       }
     }
