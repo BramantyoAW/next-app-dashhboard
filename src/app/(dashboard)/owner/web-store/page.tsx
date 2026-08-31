@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { getWebStoreByOwner } from '@/graphql/query/webstore';
-import { upsertWebStore, uploadWebStoreMedia } from '@/graphql/mutation/webstore';
+import { upsertWebStore, upsertWebPage, uploadWebStoreMedia } from '@/graphql/mutation/webstore';
 import { myStoresService } from '@/graphql/query/myStores';
-import type { WebStore, ShippingMethod } from '@/graphql/query/webstore';
+import type { WebStore, WebPage, ShippingMethod } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
 import { defaultTheme, normalizeTheme, THEME_PRESETS, FONT_OPTIONS, defaultChrome, normalizeChrome, type WebTheme, type WebChrome } from '@/lib/webTheme';
 import {
@@ -60,6 +60,9 @@ export default function OwnerWebStoreSetupPage() {
   const [theme, setTheme] = useState<WebTheme>(defaultTheme());
   // Header & Footer config global.
   const [chrome, setChrome] = useState<WebChrome>(defaultChrome());
+  // Draft halaman untuk usulan AI; baru ditulis ke BE saat Save.
+  const [draftPages, setDraftPages] = useState<WebPage[]>([]);
+  const [pagesDirty, setPagesDirty] = useState(false);
   const [tagline, setTagline] = useState('');
   const [active, setActive] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -109,6 +112,8 @@ export default function OwnerWebStoreSetupPage() {
           setNotifyTelegram(w.notify_telegram ?? '');
           setPaymentMethods(w.payment_methods ?? []);
           setShippingMethods(w.shipping_methods ?? []);
+          setDraftPages(w.pages ?? []);
+          setPagesDirty(false);
           if (w.store?.id && !storesRes.myStores?.some((s: any) => String(s.id) === String(w.store?.id))) {
             setStores((prev) => [...prev, { id: w.store!.id, name: w.store!.name }]);
           }
@@ -127,12 +132,19 @@ export default function OwnerWebStoreSetupPage() {
 
   function applyAiChanges(changes: AiChangeSuggestion[]) {
     for (const change of changes) {
-      if (change.field === 'theme' && change.to && typeof change.to === 'object') {
+      if ((change.field === 'theme' || change.field === 'web_store.theme') && change.to && typeof change.to === 'object') {
         setTheme((prev) => normalizeTheme({ ...prev, ...(change.to as Record<string, unknown>) }));
-      } else if (change.field === 'chrome' && change.to && typeof change.to === 'object') {
+      } else if ((change.field === 'chrome' || change.field === 'web_store.chrome') && change.to && typeof change.to === 'object') {
         setChrome((prev) => normalizeChrome({ ...prev, ...(change.to as Record<string, unknown>) }));
-      } else if (change.field === 'theme_color' && typeof change.to === 'string') {
+      } else if ((change.field === 'theme_color' || change.field === 'web_store.theme_color') && typeof change.to === 'string') {
         setThemeColor(change.to);
+      } else if (change.field === 'pages' && Array.isArray(change.to)) {
+        setDraftPages(change.to as WebPage[]);
+        setPagesDirty(true);
+      } else if (change.field.startsWith('page:') && change.to && typeof change.to === 'object') {
+        const value = change.to as { slug?: string; blocks?: WebPage['blocks']; title?: string; is_published?: boolean };
+        setDraftPages((prev) => prev.map((p) => p.slug === change.field.slice(5) ? { ...p, ...value } : p));
+        setPagesDirty(true);
       }
     }
     setStatus({ kind: 'ok', msg: 'Usulan AI diterapkan ke draft. Klik Simpan Perubahan untuk menyimpan.' });
@@ -167,6 +179,16 @@ export default function OwnerWebStoreSetupPage() {
       });
       setWs(res.upsertWebStore);
       setSubdomainHash(res.upsertWebStore.subdomain_hash ?? '');
+      if (pagesDirty && draftPages.length > 0) {
+        await Promise.all(draftPages.map((p) => upsertWebPage(token, {
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          blocks: p.blocks,
+          is_published: p.is_published,
+        })));
+        setPagesDirty(false);
+      }
       setStatus({ kind: 'ok', msg: 'Konfigurasi Web Store berhasil disimpan!' });
     } catch (e: any) {
       setStatus({ kind: 'err', msg: e?.message ?? 'Gagal menyimpan perubahan' });
