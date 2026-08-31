@@ -1074,6 +1074,8 @@ export default function OwnerWebStoreSetupPage() {
         </div>
 
         <WebStoreAiAssistant
+          webStoreId={ws?.id ?? null}
+          scope="setup"
           context={{
             store: { name: storeName, tagline, themeColor },
             theme,
