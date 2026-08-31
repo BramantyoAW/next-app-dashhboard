@@ -78,7 +78,7 @@ export default async function StorefrontHome({
   if (Array.isArray(blocks) && blocks.length > 0) {
     return (
       <div className="space-y-10">
-        {await StorefrontPageRenderer({ blocks, hash, products })}
+        {await StorefrontPageRenderer({ blocks, hash, products, bannerUrl: banner })}
         {categories.length > 0 && (
           <section>
             <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">

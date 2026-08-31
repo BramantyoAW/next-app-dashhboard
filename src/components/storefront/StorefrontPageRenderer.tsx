@@ -43,10 +43,13 @@ export async function StorefrontPageRenderer({
   blocks,
   hash,
   products,
+  bannerUrl,
 }: {
   blocks: Block[];
   hash: string;
   products: StorefrontProduct[];
+  /** Global banner uploaded in Web Store Setup, used by hero blocks as fallback. */
+  bannerUrl?: string | null;
 }) {
   if (!Array.isArray(blocks) || blocks.length === 0) {
     return (
@@ -61,12 +64,21 @@ export async function StorefrontPageRenderer({
       {blocks.map((block, idx) => {
         const { props: b, style } = resolve(block);
         switch (block.type) {
-          case 'hero':
+          case 'hero': {
+            const heroImage = String(b.image_url ?? '').trim() || bannerUrl || '';
+            const heroStyle = heroImage
+              ? {
+                  ...sectionStyle(style),
+                  backgroundImage: `linear-gradient(rgba(0,0,0,0.48), rgba(0,0,0,0.48)), url(${heroImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }
+              : sectionStyle(style, { background: 'linear-gradient(135deg, var(--brand, #111), #0f172a)' });
             return (
               <section
                 key={idx}
                 className="overflow-hidden rounded-3xl px-6 py-14 text-center text-white sm:py-20"
-                style={sectionStyle(style, { background: 'linear-gradient(135deg, var(--brand, #111), #0f172a)' })}
+                style={heroStyle}
               >
                 <h1 className="mx-auto max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">{b.heading}</h1>
                 {b.subheading && <p className="mx-auto mt-3 max-w-2xl text-sm opacity-90 sm:text-base">{b.subheading}</p>}
@@ -80,6 +92,7 @@ export async function StorefrontPageRenderer({
                 )}
               </section>
             );
+          }
           case 'text':
             return (
               <section
