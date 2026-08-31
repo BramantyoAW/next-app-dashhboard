@@ -14,6 +14,7 @@ export const GET_WEB_ORDERS = gql`
         shipping_cost
         shipping_address
         tracking_number
+        additional_data
         created_at
         items {
           id
@@ -70,6 +71,7 @@ export type WebOrder = {
   shipping_cost: number | null;
   shipping_address: string | null;
   tracking_number: string | null;
+  additional_data?: { unique_amount?: number; base_amount?: number; payment_method?: { name?: string }; [k: string]: unknown } | null;
   created_at: string;
   items: WebOrderItem[];
   customer: WebOrderCustomer | null;

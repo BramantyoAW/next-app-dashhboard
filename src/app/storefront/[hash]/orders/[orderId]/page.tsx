@@ -16,6 +16,9 @@ type Order = {
   shipping_address: string | null;
   tracking_number: string | null;
   additional_data: {
+    unique_amount?: number | null;
+    base_amount?: number | null;
+    fulfillment_type?: string | null;
     payment_method?: {
       name?: string | null;
       bank_name?: string | null;
@@ -140,9 +143,22 @@ export default async function StorefrontOrderDetailPage({
         {o.status === 'pending_payment' && pm && (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
             <div className="font-bold text-amber-800">Instruksi Pembayaran</div>
-            <div className="mt-1.5 font-semibold text-amber-900">
-              Transfer sebesar <b>{formatIDR(o.total_amount)}</b>
-            </div>
+            {o.additional_data?.unique_amount != null ? (
+              <>
+                <div className="mt-1.5 text-amber-900">
+                  Transfer <b>TEPAT</b> sebesar{' '}
+                  <b className="text-base">{formatIDR(Number(o.additional_data.unique_amount))}</b>
+                </div>
+                <div className="mt-0.5 text-xs text-amber-700">
+                  (3 digit terakhir adalah kode unik agar pembayaran terverifikasi otomatis —
+                  jangan dibulatkan)
+                </div>
+              </>
+            ) : (
+              <div className="mt-1.5 font-semibold text-amber-900">
+                Transfer sebesar <b>{formatIDR(o.total_amount)}</b>
+              </div>
+            )}
             {pm.bank_name && <div className="mt-1 text-amber-800">Bank: {pm.bank_name}</div>}
             {pm.account_number && (
               <div className="text-amber-800">
@@ -157,7 +173,9 @@ export default async function StorefrontOrderDetailPage({
 
         {o.shipping_address && (
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Alamat Kirim</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              {o.additional_data?.fulfillment_type === 'pickup' ? 'Ambil di Outlet' : 'Alamat Kirim'}
+            </div>
             <div className="mt-1">{o.shipping_address}</div>
           </div>
         )}

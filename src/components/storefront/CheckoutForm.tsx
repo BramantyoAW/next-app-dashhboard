@@ -14,6 +14,7 @@ import { estimateShipping, type ShippingEstimate } from '@/graphql/query/webstor
 import { CouponInput, type CouponAppliedInfo } from '@/components/storefront/CouponInput';
 import { getCustomerToken } from '@/lib/customer-token';
 import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
+import { AddressAutocomplete } from '@/components/storefront/AddressAutocomplete';
 
 export type PaymentMethod = {
   id: string;
@@ -25,6 +26,14 @@ export type PaymentMethod = {
   instructions?: string | null;
   is_free: boolean;
   enabled: boolean;
+};
+
+export type PickupOutlet = {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  is_open: boolean | null;
 };
 
 export type SavedAddress = {
@@ -47,6 +56,7 @@ export function CheckoutForm({ hash }: { hash: string }) {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [province, setProvince] = useState('');
+  const [district, setDistrict] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddrId, setSelectedAddrId] = useState('');
@@ -59,6 +69,11 @@ export function CheckoutForm({ hash }: { hash: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [placed, setPlaced] = useState<{ orderId: string; instructions: string } | null>(null);
+  // Pickup in store (Opsi A): satu outlet pilihan customer, ongkir Rp 0.
+  const [fulfillmentType, setFulfillmentType] = useState<'delivery' | 'pickup'>('delivery');
+  const [pickupOutlets, setPickupOutlets] = useState<PickupOutlet[]>([]);
+  const [pickupStoreId, setPickupStoreId] = useState('');
+  const [pickupNote, setPickupNote] = useState('');
 
   useEffect(() => {
     if (!getCustomerToken()) {
@@ -81,9 +96,12 @@ export function CheckoutForm({ hash }: { hash: string }) {
         }
       })
       .catch(() => {});
-    gqlFetch<{ webStoreBySlug: { payment_methods: PaymentMethod[] } | null }>(
+    gqlFetch<{ webStoreBySlug: { payment_methods: PaymentMethod[]; pickup_outlets: PickupOutlet[] } | null }>(
       `query($slug: String!) {
-        webStoreBySlug(slug: $slug) { payment_methods { id type name bank_name account_number account_name instructions is_free enabled } }
+        webStoreBySlug(slug: $slug) {
+          payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
+          pickup_outlets { id name address phone is_open }
+        }
       }`,
       { slug: hash },
     )
@@ -91,6 +109,7 @@ export function CheckoutForm({ hash }: { hash: string }) {
         const list = (d?.webStoreBySlug?.payment_methods ?? []).filter((m) => m.enabled);
         setPaymentMethods(list);
         setSelectedPm(list[0]?.id ?? '');
+        setPickupOutlets(d?.webStoreBySlug?.pickup_outlets ?? []);
       })
       .catch(() => {});
   }, [hash, router]);
@@ -197,7 +216,16 @@ export function CheckoutForm({ hash }: { hash: string }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (!recipient || !phone || !address) {
+    if (fulfillmentType === 'pickup') {
+      if (!pickupStoreId) {
+        setErr('Pilih outlet pengambilan');
+        return;
+      }
+      if (!recipient || !phone) {
+        setErr('Nama dan nomor HP wajib diisi');
+        return;
+      }
+    } else if (!recipient || !phone || !address) {
       setErr('Nama, telepon, dan alamat wajib diisi');
       return;
     }
@@ -207,7 +235,7 @@ export function CheckoutForm({ hash }: { hash: string }) {
     }
     setBusy(true);
     try {
-      if (saveAddr) await saveAddressNow();
+      if (fulfillmentType === 'delivery' && saveAddr) await saveAddressNow();
       const data = await gqlFetch<{ placeWebOrder: { order: { id: string }; payment_instructions: string | null } }>(
         `mutation($i: PlaceWebOrderInput!) {
           placeWebOrder(input: $i) { order { id } payment_instructions }
@@ -220,14 +248,26 @@ export function CheckoutForm({ hash }: { hash: string }) {
               qty: i.qty,
               ...(i.variant_key ? { variant_key: i.variant_key } : {}),
             })),
-            shipping_address: {
-              recipient,
-              phone,
-              address_line: address,
-              city: city || null,
-              province: province || null,
-              postal_code: postalCode || null,
-            },
+            fulfillment_type: fulfillmentType,
+            ...(fulfillmentType === 'pickup'
+              ? {
+                  pickup_store_id: pickupStoreId,
+                  pickup_note: pickupNote || null,
+                  // contact person tetap dikirim untuk konfirmasi
+                  shipping_address: { recipient, phone, address_line: null, city: null, province: null, postal_code: null },
+                }
+              : {
+                  shipping_address: {
+                    recipient,
+                    phone,
+                    // Kecamatan dari autocomplete digabung ke baris alamat
+                    // (kolom district belum ada di tabel customer_addresses).
+                    address_line: district ? `${address}, Kec. ${district}` : address,
+                    city: city || null,
+                    province: province || null,
+                    postal_code: postalCode || null,
+                  },
+                }),
             payment_method: selectedPm,
             ...(coupon?.code ? { coupon_code: coupon.code } : {}),
           },
@@ -250,7 +290,71 @@ export function CheckoutForm({ hash }: { hash: string }) {
     <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-base font-extrabold tracking-tight text-slate-900">Alamat Pengiriman</h2>
+          <h2 className="mb-4 text-base font-extrabold tracking-tight text-slate-900">Pengambilan</h2>
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setFulfillmentType('delivery')}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+                fulfillmentType === 'delivery' ? 'border-slate-900 bg-slate-50 text-slate-900' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Dikirim
+            </button>
+            <button
+              type="button"
+              onClick={() => setFulfillmentType('pickup')}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+                fulfillmentType === 'pickup' ? 'border-slate-900 bg-slate-50 text-slate-900' : 'border-slate-200 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              Ambil di Outlet
+            </button>
+          </div>
+
+          {fulfillmentType === 'pickup' ? (
+            <div className="space-y-3">
+              {pickupOutlets.length === 0 ? (
+                <p className="text-sm text-slate-400">Toko belum memiliki outlet untuk pengambilan.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {pickupOutlets.map((o) => (
+                      <label
+                        key={o.id}
+                        className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-sm transition ${
+                          pickupStoreId === o.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="pickup"
+                          value={o.id}
+                          checked={pickupStoreId === o.id}
+                          onChange={() => setPickupStoreId(o.id)}
+                          className="mt-1"
+                        />
+                        <span className="flex-1">
+                          <span className="block font-bold text-slate-800">{o.name}</span>
+                          {o.address && <span className="mt-0.5 block text-xs text-slate-500">{o.address}</span>}
+                          {o.phone && <span className="mt-0.5 block text-xs text-slate-400">{o.phone}</span>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as never]: 'var(--brand)' }}
+                    placeholder="Catatan untuk outlet (opsional) — mis. jam kedatangan"
+                    value={pickupNote}
+                    onChange={(e) => setPickupNote(e.target.value)}
+                  />
+                  <p className="text-xs text-slate-400">Tanpa ongkir — pesanan disiapkan di outlet pilihanmu.</p>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
           {addresses.length > 0 && (
             <select
               className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white outline-none focus:ring-2"
@@ -268,16 +372,22 @@ export function CheckoutForm({ hash }: { hash: string }) {
           )}
           <input className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Nama penerima" value={recipient} onChange={(e) => setRecipient(e.target.value)} required />
           <input className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="No. HP" value={phone} onChange={(e) => setPhone(e.target.value)} required />
-          <textarea className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Alamat lengkap" value={address} onChange={(e) => setAddress(e.target.value)} required />
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <input className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Kota" value={city} onChange={(e) => setCity(e.target.value)} />
-            <input className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Provinsi" value={province} onChange={(e) => setProvince(e.target.value)} />
-          </div>
-          <input className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Kode pos (opsional)" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+          <textarea className="mb-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Alamat lengkap (jalan, nomor, RT/RW)" value={address} onChange={(e) => setAddress(e.target.value)} required />
+          <AddressAutocomplete
+            values={{ province, city, district }}
+            onChange={(next) => {
+              setProvince(next.province);
+              setCity(next.city);
+              setDistrict(next.district);
+            }}
+          />
+          <input className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2" style={{ ['--tw-ring-color' as never]: 'var(--brand)' }} placeholder="Kode pos (opsional)" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
           <label className="mt-3 flex items-center gap-2 text-xs text-slate-500">
             <input type="checkbox" checked={saveAddr} onChange={(e) => setSaveAddr(e.target.checked)} />
             Simpan alamat ini ke buku alamat saya
           </label>
+            </>
+          )}
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -203,6 +203,14 @@ export default function WebOrdersPage() {
                     {STATUS_OPTIONS.find((s) => s.value === o.status)?.label ?? o.status}
                   </span>
                   <span className="text-sm font-bold text-slate-900">{formatIDR(o.total_amount)}</span>
+                  {o.additional_data?.unique_amount != null && Number(o.additional_data.unique_amount) !== Number(o.total_amount) && (
+                    <span
+                      className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-700"
+                      title="Total termasuk kode unik transfer — cocokkan dengan mutasi"
+                    >
+                      Transfer: {formatIDR(Number(o.additional_data.unique_amount))}
+                    </span>
+                  )}
                   {expanded === o.id ? (
                     <ChevronUp size={18} className="text-slate-400" />
                   ) : (
@@ -255,6 +263,12 @@ export default function WebOrdersPage() {
                       <span>Total</span>
                       <span>{formatIDR(o.total_amount)}</span>
                     </div>
+                    {o.additional_data?.unique_amount != null && Number(o.additional_data.unique_amount) !== Number(o.total_amount) && (
+                      <div className="flex justify-between items-center px-3 py-2 text-sm bg-amber-50 rounded-lg">
+                        <span className="font-semibold text-amber-700">Harus ditransfer (kode unik)</span>
+                        <span className="font-extrabold text-amber-800">{formatIDR(Number(o.additional_data.unique_amount))}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
