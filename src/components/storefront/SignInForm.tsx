@@ -1,10 +1,16 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { gqlFetch } from '@/lib/graphqlClient';
 import { setCustomerToken } from '@/lib/customer-token';
 
 type Mode = 'login' | 'register';
+
+/** Only allow internal storefront paths so `next` can never redirect off-site. */
+function safeNextPath(nextPath: string, hash: string): string {
+  if (nextPath.startsWith(`/storefront/${hash}/`)) return nextPath;
+  return `/storefront/${hash}/account`;
+}
 
 export function SignInForm({ hash, nextPath }: { hash: string; nextPath: string }) {
   const [mode, setMode] = useState<Mode>('login');
@@ -44,7 +50,7 @@ export function SignInForm({ hash, nextPath }: { hash: string; nextPath: string 
       const token = data.customerLogin?.token ?? data.customerRegister?.token;
       if (!token) throw new Error('Token kosong dari server');
       setCustomerToken(token);
-      window.location.href = nextPath || `/storefront/${hash}/account`;
+      window.location.href = safeNextPath(nextPath, hash);
     } catch (e: any) {
       setErr(e?.message ?? 'Gagal');
     } finally {

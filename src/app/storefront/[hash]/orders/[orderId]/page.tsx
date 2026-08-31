@@ -14,6 +14,7 @@ type Order = {
   discount: number | null;
   shipping_cost: number | null;
   shipping_address: string | null;
+  tracking_number: string | null;
   additional_data: {
     payment_method?: {
       name?: string | null;
@@ -30,10 +31,24 @@ type Order = {
 const STATUS_LABEL: Record<string, string> = {
   pending_payment: 'Menunggu Pembayaran',
   paid: 'Dibayar',
+  processing: 'Diproses',
   shipped: 'Dikirim',
   completed: 'Selesai',
   cancelled: 'Dibatalkan',
 };
+
+/** Ordered lifecycle shown to the customer; cancelled is terminal & excluded. */
+const TIMELINE: { key: string; label: string; description: string }[] = [
+  { key: 'pending_payment', label: 'Menunggu Pembayaran', description: 'Selesaikan pembayaran agar pesanan diproses' },
+  { key: 'paid', label: 'Pembayaran Diterima', description: 'Pembayaran Anda telah dikonfirmasi' },
+  { key: 'processing', label: 'Sedang Diproses', description: 'Pesanan sedang dikemas di outlet' },
+  { key: 'shipped', label: 'Dalam Pengiriman', description: 'Paket dalam perjalanan ke alamat Anda' },
+  { key: 'completed', label: 'Selesai', description: 'Pesanan telah diterima — terima kasih!' },
+];
+
+function statusIndex(status: string): number {
+  return TIMELINE.findIndex((s) => s.key === status);
+}
 
 const STATUS_STYLE: Record<string, string> = {
   pending_payment: 'bg-amber-100 text-amber-700',
@@ -56,7 +71,7 @@ export default async function StorefrontOrderDetailPage({
     query: `query($id: ID!) {
       getOrderById(id: $id) {
         id order_number status total_amount created_at discount shipping_cost
-        shipping_address
+        shipping_address tracking_number
         additional_data
         items { id store_id name qty price subtotal store { id name } }
       }
@@ -70,6 +85,8 @@ export default async function StorefrontOrderDetailPage({
   const pm = o.additional_data?.payment_method;
   const statusLabel = STATUS_LABEL[o.status] ?? o.status;
   const statusStyle = STATUS_STYLE[o.status] ?? 'bg-neutral-100 text-neutral-600';
+  const cancelled = o.status === 'cancelled';
+  const currentIdx = statusIndex(o.status);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -87,6 +104,38 @@ export default async function StorefrontOrderDetailPage({
           <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusStyle}`}>{statusLabel}</span>
         </div>
         <div className="mt-1 text-xs text-slate-500">{new Date(o.created_at).toLocaleString('id-ID')}</div>
+
+        {/* Status timeline */}
+        {!cancelled ? (
+          <ol className="mt-6 space-y-0">
+            {TIMELINE.map((step, idx) => {
+              const done = idx < currentIdx;
+              const active = idx === currentIdx;
+              const last = idx === TIMELINE.length - 1;
+              return (
+                <li key={step.key} className="relative flex gap-3 pb-5 last:pb-0">
+                  {!last && <span className={`absolute left-[9px] top-5 h-full w-0.5 ${done ? 'bg-emerald-500' : 'bg-slate-200'}`} />}
+                  <span className={`relative z-10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                    done ? 'bg-emerald-500 text-white' : active ? 'bg-slate-900 text-white ring-4 ring-slate-900/10' : 'border-2 border-slate-300 bg-white text-slate-400'
+                  }`}>{done ? '✓' : idx + 1}</span>
+                  <div>
+                    <div className={`text-sm font-bold ${active ? 'text-slate-900' : done ? 'text-slate-700' : 'text-slate-400'}`}>{step.label}</div>
+                    <div className={`text-xs ${active ? 'text-slate-600' : 'text-slate-400'}`}>{step.description}</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">Pesanan ini dibatalkan.</div>
+        )}
+
+        {o.tracking_number && (
+          <div className="mt-5 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 text-sm">
+            <div className="text-xs font-bold uppercase tracking-wide text-indigo-500">Nomor Resi</div>
+            <div className="mt-1 font-mono font-bold text-indigo-900">{o.tracking_number}</div>
+          </div>
+        )}
 
         {o.status === 'pending_payment' && pm && (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
