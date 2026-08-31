@@ -58,7 +58,7 @@ export const WEB_STORE_CATEGORIES = `
   query WebStoreCategories($web_store_id: ID!) {
     webStoreCategories(web_store_id: $web_store_id) {
       id web_store_id name slug sort_order is_active created_at updated_at
-      store_products { id }
+      store_products { id master_product_id is_active }
     }
   }
 `;
@@ -98,6 +98,7 @@ export const MASTER_PRODUCTS = `
     masterProducts(search: $search, min_price: $min_price, max_price: $max_price, store_id: $store_id, page: $page, limit: $limit) {
       data {
         id sku name description price image default_store_id attributes is_active
+        categories { id name }
         store_products { id store_id price_override is_active store { id name } }
       }
       current_page last_page total per_page
@@ -240,6 +241,7 @@ export type MasterProduct = {
   is_active?: boolean;
   default_store_id?: string | null;
   store_products?: Array<{ id: string; store_id: string; price_override?: number | null; is_active: boolean; store?: { id: string; name: string } | null }>;
+  categories?: Array<{ id: string; name: string }> | null;
 };
 
 export type ProductAttribute = {
@@ -269,8 +271,8 @@ export type ProductCategory = {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
-  /** Produk yang ter-assign ke kategori ini (hanya `id` yang diminta). */
-  store_products?: Array<{ id: string }>;
+  /** Produk yang ter-assign ke kategori ini. */
+  store_products?: Array<{ id: string; master_product_id?: string; is_active?: boolean }>;
 };
 
 export type Paginated<T> = {

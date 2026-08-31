@@ -28,7 +28,7 @@ export const DELETE_WEB_PAGE = `
 
 export const UPSERT_MASTER_PRODUCT = `
   mutation UpsertMasterProduct($input: UpsertMasterProductInput!) {
-    upsertMasterProduct(input: $input) { id sku name description price image attributes is_active default_store_id }
+    upsertMasterProduct(input: $input) { id sku name description price image attributes is_active default_store_id store_products { id store_id is_active } }
   }
 `;
 
@@ -80,6 +80,16 @@ export const ASSIGN_PRODUCT_CATEGORIES = `
   mutation AssignProductCategories($store_product_id: ID!, $category_ids: [ID!]!) {
     assignProductCategories(store_product_id: $store_product_id, category_ids: $category_ids) {
       id store_id is_active
+      categories { id name }
+    }
+  }
+`;
+
+export const ASSIGN_CATEGORY_PRODUCTS = `
+  mutation AssignCategoryProducts($category_id: ID!, $store_product_ids: [ID!]!) {
+    assignCategoryProducts(category_id: $category_id, store_product_ids: $store_product_ids) {
+      id name
+      store_products { id }
     }
   }
 `;
@@ -226,6 +236,15 @@ export function assignProductCategories(token: string, storeProductId: string, c
   return gqlFetch<{ assignProductCategories: any }>(
     ASSIGN_PRODUCT_CATEGORIES,
     { store_product_id: storeProductId, category_ids: categoryIds },
+    token
+  );
+}
+
+/** Category-side bulk assignment: set which store products belong to a category. */
+export function assignCategoryProducts(token: string, categoryId: string, storeProductIds: string[]) {
+  return gqlFetch<{ assignCategoryProducts: any }>(
+    ASSIGN_CATEGORY_PRODUCTS,
+    { category_id: categoryId, store_product_ids: storeProductIds },
     token
   );
 }

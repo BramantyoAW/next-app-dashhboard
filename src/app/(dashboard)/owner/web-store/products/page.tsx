@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { listMasterProducts } from '@/graphql/query/webstore';
-import { upsertMasterProduct, deleteMasterProduct, uploadProductImage } from '@/graphql/mutation/webstore';
+import { listMasterProducts, listWebStoreCategories, getWebStoreByOwner } from '@/graphql/query/webstore';
+import { upsertMasterProduct, deleteMasterProduct, uploadProductImage, assignProductCategories } from '@/graphql/mutation/webstore';
 import { myStoresService } from '@/graphql/query/myStores';
 import type { MasterProduct, Paginated, ProductAttribute } from '@/graphql/query/webstore';
 import { Plus, Trash2, Loader2, Search, AlertCircle, X, ImagePlus, RotateCcw, Tag } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/imageUtils';
+import { decodeJwt } from '@/lib/jwt';
 
 type StoreOption = { id: string; name: string };
 
@@ -28,6 +29,8 @@ export default function MasterProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [draftAttrs, setDraftAttrs] = useState<ProductAttribute[]>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([]);
 
   useEffect(() => {
     setToken(localStorage.getItem('token') || '');
@@ -38,6 +41,19 @@ export default function MasterProductsPage() {
     myStoresService(token)
       .then((res) => setStores((res.myStores ?? []).map((s: any) => ({ id: String(s.id), name: s.name }))))
       .catch(() => {});
+    // Load web store categories once for the assignment picker.
+    (async () => {
+      try {
+        const payload = decodeJwt(token);
+        const ownerId = String(payload?.sub ?? payload?.id ?? payload?.user_id ?? '');
+        if (!ownerId) return;
+        const ws = await getWebStoreByOwner(ownerId, token);
+        if (ws.webStoreByOwner?.id) {
+          const res = await listWebStoreCategories(token, String(ws.webStoreByOwner.id));
+          setCategories((res.webStoreCategories ?? []).filter((c: any) => c.is_active !== false).map((c: any) => ({ id: String(c.id), name: c.name })));
+        }
+      } catch { /* picker stays empty; assignment is optional */ }
+    })();
   }, [token]);
 
   useEffect(() => {
@@ -68,7 +84,7 @@ export default function MasterProductsPage() {
     setError(null);
     try {
       const cleanedAttrs = draftAttrs.filter((a) => a.name.trim() && a.value.trim());
-      await upsertMasterProduct(token, {
+      const saved = await upsertMasterProduct(token, {
         id: editing.id ? String(editing.id) : null,
         sku: editing.sku ?? null,
         name: editing.name ?? '',
@@ -79,6 +95,18 @@ export default function MasterProductsPage() {
         is_active: editing.is_active ?? true,
         default_store_id: editing.default_store_id ? String(editing.default_store_id) : null,
       });
+      // Apply category assignment after the product itself is persisted.
+      // upsert returns a MasterProduct; categories hang off its store product
+      // rows (any owner outlet row works — they share the same assignment).
+      const mp = saved?.upsertMasterProduct;
+      const storeProductId = String(
+        mp?.store_products?.find((sp: any) => sp.is_active !== false)?.id
+          ?? mp?.store_products?.[0]?.id
+          ?? ''
+      );
+      if (storeProductId) {
+        await assignProductCategories(token, storeProductId, draftCategoryIds);
+      }
       setEditing(null);
       await reload();
     } catch (e: any) {
@@ -179,7 +207,7 @@ export default function MasterProductsPage() {
           <p className="text-sm text-slate-500 mt-1">Catalog induk lintas store. Assign ke store di halaman Stock.</p>
         </div>
         <button
-          onClick={() => { setEditing({ name: '', sku: '', price: 0, description: '', is_active: true }); setDraftAttrs([{ name: '', value: '' }]); }}
+          onClick={() => { setEditing({ name: '', sku: '', price: 0, description: '', is_active: true }); setDraftAttrs([{ name: '', value: '' }]); setDraftCategoryIds([]); }}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
         >
           <Plus size={16} /> Tambah Produk
@@ -297,7 +325,7 @@ export default function MasterProductsPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1.5 flex-wrap">
                     <button
-                      onClick={() => { setEditing(p); setDraftAttrs(Array.isArray(p.attributes) && p.attributes.length ? p.attributes.map((a) => ({ name: a.name ?? '', value: a.value ?? '' })) : [{ name: '', value: '' }]); }}
+                      onClick={() => { setEditing(p); setDraftAttrs(Array.isArray(p.attributes) && p.attributes.length ? p.attributes.map((a) => ({ name: a.name ?? '', value: a.value ?? '' })) : [{ name: '', value: '' }]); setDraftCategoryIds((p.categories ?? []).map((c: any) => String(c.id))); }}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600"
                     >Edit</button>
                     <button
@@ -444,6 +472,29 @@ export default function MasterProductsPage() {
               >
                 <Plus size={14} /> Tambah baris varian
               </button>
+            </FormField>
+
+            <FormField label="Kategori">
+              {categories.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  Belum ada kategori. <Link href="/owner/web-store/categories" className="font-semibold text-blue-600 hover:underline">Buat kategori →</Link>
+                </p>
+              ) : (
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 p-3 space-y-1.5">
+                  {categories.map((c) => (
+                    <label key={c.id} className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1.5">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-blue-600"
+                        checked={draftCategoryIds.includes(c.id)}
+                        onChange={(e) => setDraftCategoryIds((ids) => e.target.checked ? [...ids, c.id] : ids.filter((x) => x !== c.id))}
+                      />
+                      {c.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-slate-500 mt-1">Kategori menentukan navigasi produk di storefront.</p>
             </FormField>
 
             <FormField label="Status">

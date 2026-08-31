@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Loader2,
@@ -12,16 +12,21 @@ import {
   Trash2,
   X,
   Tag,
+  PackagePlus,
+  Search,
+  Check,
 } from 'lucide-react';
-import { getWebStoreByOwner, listWebStoreCategories, type ProductCategory } from '@/graphql/query/webstore';
+import { getWebStoreByOwner, listWebStoreCategories, listMasterProducts, type ProductCategory } from '@/graphql/query/webstore';
 import {
   createProductCategory,
   updateProductCategory,
   deleteProductCategory,
+  assignCategoryProducts,
   type CreateProductCategoryInput,
   type UpdateProductCategoryInput,
 } from '@/graphql/mutation/webstore';
 import { decodeJwt } from '@/lib/jwt';
+import { resolveImageUrl } from '@/lib/imageUtils';
 
 type FormState = {
   id: string | null;
@@ -29,6 +34,15 @@ type FormState = {
   slug: string;
   sort_order: number;
   is_active: boolean;
+};
+
+type PickerProduct = {
+  key: string;
+  name: string;
+  sku: string | null;
+  image: string | null;
+  storeProductIds: string[];
+  assignedStoreProductIds: string[];
 };
 
 const emptyForm = (): FormState => ({ id: null, name: '', slug: '', sort_order: 0, is_active: true });
@@ -51,6 +65,14 @@ export default function OwnerWebStoreCategoriesPage() {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [form, setForm] = useState<FormState | null>(null);
   const [status, setStatus] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+
+  // ── Assign-products modal state ──
+  const [assignCat, setAssignCat] = useState<ProductCategory | null>(null);
+  const [pickerProducts, setPickerProducts] = useState<PickerProduct[]>([]);
+  const [pickerSelected, setPickerSelected] = useState<Set<string>>(new Set());
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerSaving, setPickerSaving] = useState(false);
 
   const loadCategories = useCallback(async (token: string, wid: string) => {
     const res = await listWebStoreCategories(token, wid);
@@ -159,6 +181,92 @@ export default function OwnerWebStoreCategoriesPage() {
       setDeletingId(null);
     }
   }
+
+  // ── Assign products to a category ──
+  const openAssign = useCallback(async (cat: ProductCategory) => {
+    setStatus(null);
+    const token = typeof window === 'undefined' ? '' : localStorage.getItem('token') || '';
+    if (!token) return setStatus({ kind: 'err', msg: 'Sesi berakhir, silakan login ulang.' });
+    setAssignCat(cat);
+    setPickerSearch('');
+    setPickerProducts([]);
+    setPickerLoading(true);
+    try {
+      // Semua master product milik owner (dedupe per SKU, sesuai model
+      // master product per harga). Row store product dari outlet manapun
+      // dipakai sebagai target assignment.
+      const res = await listMasterProducts(token, { page: 1, limit: 200 });
+      const assignedMpIds = new Set((cat.store_products ?? []).map((sp) => String(sp.master_product_id ?? '')));
+      const rows: PickerProduct[] = (res.masterProducts?.data ?? []).map((mp: any) => {
+        const spIds = (mp.store_products ?? [])
+          .filter((sp: any) => sp.is_active !== false)
+          .map((sp: any) => String(sp.id));
+        return {
+          key: String(mp.id),
+          name: mp.name,
+          sku: mp.sku ?? null,
+          image: mp.image ?? null,
+          storeProductIds: spIds,
+          assignedStoreProductIds: spIds.filter((sid: string) => (cat.store_products ?? []).some((csp) => String(csp.id) === sid)),
+          // helper: apakah master product ini dianggap ter-assign
+          ...(assignedMpIds.has(String(mp.id)) ? {} : {}),
+        } as PickerProduct;
+      });
+      // Preselect: master product yang salah satu store product-nya ada di kategori.
+      const pre = new Set<string>();
+      for (const row of rows) {
+        if (row.assignedStoreProductIds.length > 0) pre.add(row.key);
+      }
+      setPickerProducts(rows);
+      setPickerSelected(pre);
+    } catch (e: any) {
+      setStatus({ kind: 'err', msg: e?.message ?? 'Gagal memuat produk' });
+      setAssignCat(null);
+    } finally {
+      setPickerLoading(false);
+    }
+  }, []);
+
+  function togglePicker(key: string) {
+    setPickerSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  async function saveAssign() {
+    if (!assignCat) return;
+    const token = typeof window === 'undefined' ? '' : localStorage.getItem('token') || '';
+    if (!token) return setStatus({ kind: 'err', msg: 'Sesi berakhir, silakan login ulang.' });
+    setPickerSaving(true);
+    try {
+      // Satu master product → satu row store product perwakilan (outlet pertama
+      // yang aktif) sesuai model katalog dedupe per SKU.
+      const targets: string[] = [];
+      for (const row of pickerProducts) {
+        if (!pickerSelected.has(row.key)) continue;
+        const targetId = row.assignedStoreProductIds[0] ?? row.storeProductIds[0];
+        if (targetId) targets.push(targetId);
+      }
+      await assignCategoryProducts(token, assignCat.id, targets);
+      const cats = await loadCategories(token, webStoreId);
+      setCategories(cats);
+      setAssignCat(null);
+      setStatus({ kind: 'ok', msg: `Produk untuk kategori "${assignCat.name}" tersimpan.` });
+    } catch (e: any) {
+      setStatus({ kind: 'err', msg: e?.message ?? 'Gagal assign produk' });
+    } finally {
+      setPickerSaving(false);
+    }
+  }
+
+  const filteredPicker = useMemo(() => {
+    const q = pickerSearch.trim().toLowerCase();
+    if (!q) return pickerProducts;
+    return pickerProducts.filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? '').toLowerCase().includes(q));
+  }, [pickerProducts, pickerSearch]);
 
   if (loading) {
     return (
@@ -281,6 +389,12 @@ export default function OwnerWebStoreCategoriesPage() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
+                      onClick={() => openAssign(c)}
+                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <PackagePlus size={14} /> Assign Produk
+                    </button>
+                    <button
                       onClick={() => openForm(c)}
                       className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
                     >
@@ -385,6 +499,102 @@ export default function OwnerWebStoreCategoriesPage() {
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                 {form.id ? 'Simpan Perubahan' : 'Buat Kategori'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign products modal */}
+      {assignCat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setAssignCat(null)} />
+          <div className="relative z-10 w-full max-w-3xl rounded-2xl bg-white shadow-2xl max-h-[88vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <PackagePlus size={20} className="text-blue-500" />
+                Assign Produk — {assignCat.name}
+              </h3>
+              <button onClick={() => setAssignCat(null)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" aria-label="Tutup">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="px-6 pt-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <Search size={15} className="text-slate-400 shrink-0" />
+                <input
+                  className="w-full bg-transparent text-sm outline-none"
+                  placeholder="Cari nama atau SKU produk…"
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                />
+                <span className="text-xs font-semibold text-slate-400 shrink-0">{pickerSelected.size} dipilih</span>
+              </div>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+              {pickerLoading ? (
+                <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
+                  <Loader2 size={18} className="animate-spin" /> Memuat produk…
+                </div>
+              ) : filteredPicker.length === 0 ? (
+                <div className="py-12 text-center text-sm text-slate-400">
+                  {pickerProducts.length === 0 ? 'Belum ada master product.' : 'Tidak ada produk yang cocok dengan pencarian.'}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {filteredPicker.map((p) => {
+                    const checked = pickerSelected.has(p.key);
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => togglePicker(p.key)}
+                        className={`relative text-left rounded-xl border-2 p-3 transition-all ${
+                          checked
+                            ? 'border-blue-500 bg-blue-50/70 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {checked && (
+                          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                            <Check size={12} />
+                          </span>
+                        )}
+                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mb-2">
+                          {p.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={resolveImageUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                              <PackagePlus size={22} />
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
+                        <p className="text-[11px] font-mono text-slate-400 truncate">{p.sku ?? '—'}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+              <button
+                onClick={() => setAssignCat(null)}
+                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={saveAssign}
+                disabled={pickerSaving || pickerLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
+              >
+                {pickerSaving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                Simpan Assignment ({pickerSelected.size})
               </button>
             </div>
           </div>
