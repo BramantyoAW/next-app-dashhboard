@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 export function storefrontMetadata(store: {
   store_name: string;
   tagline?: string | null;
+  logo_url?: string | null;
 }): Metadata {
   const title = store.store_name;
   const description =
@@ -12,10 +13,14 @@ export function storefrontMetadata(store: {
   return {
     title,
     description,
+    icons: store.logo_url
+      ? { icon: [{ url: store.logo_url, type: 'image/png' }], shortcut: store.logo_url }
+      : undefined,
     openGraph: {
       title,
       description,
       type: 'website',
+      images: store.logo_url ? [{ url: store.logo_url, alt: store.store_name }] : undefined,
     },
   };
 }
