@@ -44,7 +44,7 @@ export function SignInForm({ hash, nextPath }: { hash: string; nextPath: string 
       const token = data.customerLogin?.token ?? data.customerRegister?.token;
       if (!token) throw new Error('Token kosong dari server');
       setCustomerToken(token);
-      window.location.href = nextPath || `/storefront/${hash}`;
+      window.location.href = nextPath || `/storefront/${hash}/account`;
     } catch (e: any) {
       setErr(e?.message ?? 'Gagal');
     } finally {

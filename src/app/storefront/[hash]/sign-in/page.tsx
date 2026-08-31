@@ -9,5 +9,5 @@ export default async function StorefrontSignInPage({
 }) {
   const { hash } = await params;
   const { next } = await searchParams;
-  return <SignInForm hash={hash} nextPath={next ?? `/storefront/${hash}`} />;
+  return <SignInForm hash={hash} nextPath={next ?? `/storefront/${hash}/account`} />;
 }

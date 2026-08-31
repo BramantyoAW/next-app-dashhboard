@@ -129,6 +129,9 @@ export function CheckoutForm({ hash }: { hash: string }) {
           <Link href={`/storefront/${hash}/orders/${placed.orderId}`} className="rounded-full bg-slate-900 px-5 py-2 font-bold text-white">
             Lihat Pesanan
           </Link>
+          <Link href={`/storefront/${hash}/account`} className="rounded-full border border-slate-300 px-5 py-2 font-semibold text-slate-600 hover:bg-slate-50">
+            Akun Saya
+          </Link>
           <Link href={`/storefront/${hash}`} className="rounded-full border border-slate-300 px-5 py-2 font-semibold text-slate-600 hover:bg-slate-50">
             Kembali Belanja
           </Link>
