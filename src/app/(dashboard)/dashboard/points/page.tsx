@@ -230,7 +230,7 @@ export default function PointsPage() {
       {showTopupModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowTopupModal(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-[32px] shadow-2xl p-10 animate-in fade-in zoom-in duration-300">
+          <div className="relative bg-white w-full max-w-md rounded-[32px] shadow-2xl max-h-[88vh] overflow-y-auto p-6 sm:p-10 animate-in fade-in zoom-in duration-300">
             <div className="text-center space-y-4">
               <div className="mx-auto w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center">
                 <Plus size={40} />

@@ -213,7 +213,7 @@ export default function OwnerWebStoreCouponsPage() {
             href="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={8} />
             Kembali ke Management Merchant
           </Link>
         </div>
@@ -248,11 +248,10 @@ export default function OwnerWebStoreCouponsPage() {
       {/* Status alert */}
       {status && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${
-            status.kind === 'ok'
+          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${status.kind === 'ok'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
+            }`}
         >
           {status.kind === 'ok' ? <CheckCircle2 className="shrink-0 text-emerald-600" size={20} /> : <AlertCircle className="shrink-0 text-rose-600" size={20} />}
           {status.msg}
@@ -278,9 +277,8 @@ export default function OwnerWebStoreCouponsPage() {
             {coupons.map((c) => (
               <div
                 key={c.id}
-                className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-md ${
-                  c.is_active ? 'border-slate-200/80' : 'border-slate-100 opacity-70'
-                }`}
+                className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-md ${c.is_active ? 'border-slate-200/80' : 'border-slate-100 opacity-70'
+                  }`}
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 to-orange-500" />
                 <div className="flex items-start justify-between gap-4 pl-2">

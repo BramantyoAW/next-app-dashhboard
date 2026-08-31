@@ -12,7 +12,7 @@ export default function StorePicker({ stores, onPick, onCancel }:{
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm z-[100] p-4 animate-in">
-      <div className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md border border-border relative overflow-hidden">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl w-full max-w-md max-h-[88vh] flex flex-col border border-border relative overflow-hidden">
         {/* Background Decoration */}
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
         
@@ -37,7 +37,7 @@ export default function StorePicker({ stores, onPick, onCancel }:{
           Please choose which outlet you would like to manage right now.
         </p>
 
-        <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
           {stores.map(s => (
             <button
               key={s.id}
@@ -68,7 +68,7 @@ export default function StorePicker({ stores, onPick, onCancel }:{
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-8">
+        <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-slate-100">
           <button 
             onClick={onCancel} 
             className="px-6 py-3 rounded-2xl bg-secondary text-slate-700 hover:bg-slate-200 transition-all font-bold text-sm active:scale-95"

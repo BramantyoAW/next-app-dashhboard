@@ -326,7 +326,7 @@ export default function InventoryPage() {
       {/* Popup Update Modal */}
       {selectedProduct?.mode === 'update' && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Stock Correction</h2>
@@ -365,7 +365,7 @@ export default function InventoryPage() {
       {/* 📤 Bulk Import Modal */}
       {selectedProduct?.mode === 'import' && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Bulk Quantity Update</h2>
               <button onClick={() => setSelectedProduct(null)} className="text-slate-400 hover:text-rose-500"><X size={24} /></button>

@@ -406,7 +406,7 @@ export default function UserPage() {
       {/* ➕ CREATE Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Create Store Member</h2>
@@ -471,7 +471,7 @@ export default function UserPage() {
       {/* ✏️ EDIT Modal */}
       {showEditModal && editUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
             <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Edit Member Profile</h2>

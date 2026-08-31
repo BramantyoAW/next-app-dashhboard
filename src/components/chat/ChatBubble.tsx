@@ -130,7 +130,7 @@ export default function ChatBubble({
       {/* CHANGED: Modal/Dialog sederhana untuk preview gambar */}
       {isPreviewOpen && type === 'image' && fileUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setIsPreviewOpen(false)}>
-          <button className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/50 rounded-full transition-colors">
+          <button type="button" onClick={(e) => { e.stopPropagation(); setIsPreviewOpen(false); }} aria-label="Tutup" className="absolute top-4 right-4 z-10 p-2.5 text-white/80 hover:text-white bg-black/60 hover:bg-black/80 rounded-full transition-colors">
             <X size={24} />
           </button>
           <img src={fileUrl} alt={fileName || 'Preview'} className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()} />

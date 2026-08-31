@@ -351,7 +351,7 @@ export default function MasterProductsPage() {
 
       {editing && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold">{editing.id ? 'Edit' : 'Tambah'} Master Product</h3>
               <button onClick={() => setEditing(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X size={18} /></button>

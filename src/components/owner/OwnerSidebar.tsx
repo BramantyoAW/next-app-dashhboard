@@ -37,11 +37,10 @@ export function OwnerSidebar({
         key={href}
         href={href}
         onClick={onClose}
-        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-          active
-            ? 'bg-blue-600 text-white shadow-sm'
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-        }`}
+        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${active
+          ? 'bg-blue-600 text-white shadow-sm'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+          }`}
       >
         <Icon size={18} />
         {label}
@@ -58,9 +57,8 @@ export function OwnerSidebar({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 p-5 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-lg lg:shadow-none ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 p-5 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-lg lg:shadow-none ${open ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex items-center justify-between mb-8">
           <Link href="/owner" className="flex items-center gap-3 group">
@@ -80,7 +78,7 @@ export function OwnerSidebar({
           onClick={onClose}
           className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={8} />
           Kembali ke Management Merchant
         </Link>
 

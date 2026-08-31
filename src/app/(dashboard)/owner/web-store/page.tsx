@@ -238,7 +238,7 @@ export default function OwnerWebStoreSetupPage() {
           href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 mb-4"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={8} />
           Kembali ke Management Merchant
         </Link>
         <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -258,7 +258,7 @@ export default function OwnerWebStoreSetupPage() {
             href="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={8} />
             Kembali ke Management Merchant
           </Link>
         </div>
@@ -381,11 +381,10 @@ export default function OwnerWebStoreSetupPage() {
                       key={p.hex}
                       type="button"
                       onClick={() => setThemeColor(p.hex)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
-                        themeColor.toLowerCase() === p.hex.toLowerCase()
-                          ? 'border-slate-900 bg-slate-900 text-white shadow-sm scale-105'
-                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                      }`}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${themeColor.toLowerCase() === p.hex.toLowerCase()
+                        ? 'border-slate-900 bg-slate-900 text-white shadow-sm scale-105'
+                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        }`}
                     >
                       <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: p.hex }} />
                       {p.name}
@@ -467,11 +466,10 @@ export default function OwnerWebStoreSetupPage() {
                           key={p.name}
                           type="button"
                           onClick={() => setTheme({ ...theme, ...p.theme, custom_css: theme.custom_css })}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                            active
-                              ? 'border-slate-900 bg-slate-900 text-white'
-                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
-                          }`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${active
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                            }`}
                         >
                           <span className="inline-block w-2.5 h-2.5 rounded-full mr-1.5 align-middle" style={{ backgroundColor: p.theme.colors.brand }} />
                           {p.name}
@@ -1045,11 +1043,10 @@ export default function OwnerWebStoreSetupPage() {
             {/* Status Alert Notification */}
             {status && (
               <div
-                className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${
-                  status.kind === 'ok'
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}
+                className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${status.kind === 'ok'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-rose-50 text-rose-800 border-rose-200'
+                  }`}
               >
                 {status.kind === 'ok' ? <CheckCircle2 className="shrink-0 text-emerald-600" size={20} /> : <AlertCircle className="shrink-0 text-rose-600" size={20} />}
                 {status.msg}

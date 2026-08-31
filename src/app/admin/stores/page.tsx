@@ -281,8 +281,8 @@ export default function AdminStoresPage() {
 
       {/* Add Store Modal */}
       {showAddStore && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-[88vh] overflow-y-auto space-y-4">
             <h2 className="text-xl font-bold">Add New Store</h2>
 
             <div>
@@ -315,8 +315,8 @@ export default function AdminStoresPage() {
 
       {/* Assign User to Store Modal */}
       {showAssignModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-[88vh] overflow-y-auto space-y-4">
             <h2 className="text-xl font-bold">Assign User to Store</h2>
 
             {/* Select User */}

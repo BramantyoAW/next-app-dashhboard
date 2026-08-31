@@ -178,7 +178,7 @@ export default function MerchantPage() {
         {/* Modal Tambah Outlet */}
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                   <Plus size={18} className="text-indigo-600" /> Tambah Outlet Baru
