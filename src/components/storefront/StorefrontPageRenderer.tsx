@@ -74,6 +74,34 @@ export async function StorefrontPageRenderer({
                   backgroundPosition: 'center',
                 }
               : sectionStyle(style, { background: 'linear-gradient(135deg, var(--brand, #111), #0f172a)' });
+            // full_width: keluar dari wrapper max-w-7xl layout — banner
+            // membentang kiri-kanan penuh; konten tetap di dalam container.
+            const fullWidth = String((style as Record<string, unknown>).full_width ?? 'container') === 'full';
+            if (fullWidth) {
+              const inner = heroStyle as Record<string, unknown>;
+              delete inner.borderRadius;
+              return (
+                <div key={idx} className="relative left-1/2 w-screen -translate-x-1/2" style={{ marginLeft: 'calc(50% - 50vw)' }}>
+                  <section
+                    className="px-6 py-14 text-center text-white sm:py-20"
+                    style={heroStyle}
+                  >
+                    <div className="mx-auto max-w-3xl">
+                      <h1 className="text-3xl font-black tracking-tight sm:text-5xl">{b.heading}</h1>
+                      {b.subheading && <p className="mx-auto mt-3 max-w-2xl text-sm opacity-90 sm:text-base">{b.subheading}</p>}
+                      {b.cta_text && (
+                        <Link
+                          href={b.cta_link || '#products'}
+                          className="mt-6 inline-block rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-900 shadow-lg hover:bg-slate-100"
+                        >
+                          {b.cta_text}
+                        </Link>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              );
+            }
             return (
               <section
                 key={idx}

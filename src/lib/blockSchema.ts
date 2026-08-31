@@ -58,6 +58,7 @@ export type BlockStyle = {
   padding?: string | null;
   radius?: number | null;
   align?: 'left' | 'center' | 'right' | null;
+  full_width?: 'container' | 'full' | null;
   max_width?: string | null;
   aspect?: string | null;
   height?: number | null;
@@ -127,6 +128,15 @@ export const BLOCK_DEFS: BlockDef[] = [
           { value: 'left', label: 'Kiri' },
           { value: 'center', label: 'Tengah' },
           { value: 'right', label: 'Kanan' },
+        ],
+      },
+      {
+        key: 'full_width',
+        label: 'Lebar Banner',
+        kind: 'select',
+        options: [
+          { value: 'container', label: 'Normal (ikuti lebar konten)' },
+          { value: 'full', label: 'Full lebar layar (kiri–kanan)' },
         ],
       },
     ],
