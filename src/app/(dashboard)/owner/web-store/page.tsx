@@ -1076,12 +1076,7 @@ export default function OwnerWebStoreSetupPage() {
         <WebStoreAiAssistant
           webStoreId={ws?.id ?? null}
           scope="setup"
-          context={{
-            store: { name: storeName, tagline, themeColor },
-            theme,
-            chrome,
-            pages: ws?.pages ?? [],
-          }}
+          context={{ store: { name: storeName, tagline, themeColor }, theme, chrome, pages: ws?.pages ?? [] }}
           onApply={applyAiChanges}
         />
 
