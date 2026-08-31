@@ -52,6 +52,8 @@ export default function OwnerWebStoreSetupPage() {
   const [saving, setSaving] = useState(false);
   const [ws, setWs] = useState<WebStore | null>(null);
   const [stores, setStores] = useState<StoreType[]>([]);
+  // Referensi internal untuk create/update; bukan konfigurasi sumber inventory.
+  // Relasi fisik internal untuk pembuatan webstore baru; bukan sumber inventory.
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
   const [storeName, setStoreName] = useState('');
   const [subdomainHash, setSubdomainHash] = useState('');
@@ -161,7 +163,7 @@ export default function OwnerWebStoreSetupPage() {
     setStatus(null);
     const token = typeof window === 'undefined' ? '' : localStorage.getItem('token') || '';
     if (!token) return setStatus({ kind: 'err', msg: 'Sesi berakhir, silakan login ulang.' });
-    if (!selectedStoreId) return setStatus({ kind: 'err', msg: 'Silakan pilih store sumber terlebih dahulu.' });
+    if (!ws && !selectedStoreId) return setStatus({ kind: 'err', msg: 'Pilih outlet awal untuk membuat Web Store.' });
     if (!storeName.trim()) return setStatus({ kind: 'err', msg: 'Nama Web Store wajib diisi.' });
     setSaving(true);
     try {
@@ -286,25 +288,22 @@ export default function OwnerWebStoreSetupPage() {
               <Sliders size={20} className="text-blue-600" /> Konfigurasi Toko Online
             </h2>
 
-            {/* Field 1: Store Sumber */}
-            <Field label="Store Fisik Sumber Inventaris *" icon={<Store size={16} className="text-slate-400" />}>
-              <select
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-                value={selectedStoreId}
-                onChange={(e) => setSelectedStoreId(e.target.value)}
-              >
-                <option value="">— Pilih Toko Fisik —</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-                {ws?.store && !stores.find((s) => String(s.id) === String(ws.store!.id)) && (
-                  <option value={ws.store.id}>{ws.store.name}</option>
-                )}
-              </select>
-              <p className="text-xs text-slate-500 mt-1.5 leading-normal">
-                Toko fisik yang menjadi sumber stok barang & pemrosesan pesanan storefront.
-              </p>
-            </Field>
+            {/* Relasi outlet awal hanya muncul saat membuat webstore baru. Produk dan stok storefront tetap berasal dari seluruh outlet owner. */}
+            {!ws && (
+              <Field label="Outlet Awal Web Store" icon={<Store size={16} className="text-slate-400" />}>
+                <select
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                  value={selectedStoreId}
+                  onChange={(e) => setSelectedStoreId(e.target.value)}
+                >
+                  <option value="">— Pilih outlet awal —</option>
+                  {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+                <p className="text-xs text-slate-500 mt-1.5 leading-normal">
+                  Hanya diperlukan saat membuat Web Store baru. Produk dan stok tetap berasal dari seluruh outlet milik owner.
+                </p>
+              </Field>
+            )}
 
             {/* Field 2: Nama Web Store */}
             <Field label="Nama Web Store" icon={<Globe size={16} className="text-slate-400" />}>
