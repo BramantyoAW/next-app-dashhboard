@@ -41,7 +41,7 @@ export default async function StorefrontLayout({
   return (
     <div
       style={{ ['--brand' as never]: brand } as React.CSSProperties}
-      className="storefront-root flex min-h-screen flex-col bg-slate-50 text-slate-900"
+      className="storefront-root flex min-h-screen flex-col overflow-x-clip bg-slate-50 text-slate-900"
     >
       {/* Tema global store: CSS vars + custom CSS owner */}
       <style dangerouslySetInnerHTML={{ __html: themeCss }} />

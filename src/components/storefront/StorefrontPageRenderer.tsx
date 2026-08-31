@@ -76,15 +76,27 @@ export async function StorefrontPageRenderer({
               : sectionStyle(style, { background: 'linear-gradient(135deg, var(--brand, #111), #0f172a)' });
             // full_width: keluar dari wrapper max-w-7xl layout — banner
             // membentang kiri-kanan penuh; konten tetap di dalam container.
+            // Teknik breakout standar: margin negatif 50vw + width 100vw
+            // relatif terhadap parent (layout root sudah overflow-x: clip
+            // sehingga tidak memunculkan scrollbar horizontal).
             const fullWidth = String((style as Record<string, unknown>).full_width ?? 'container') === 'full';
             if (fullWidth) {
-              const inner = heroStyle as Record<string, unknown>;
+              const inner = { ...heroStyle } as Record<string, unknown>;
               delete inner.borderRadius;
               return (
-                <div key={idx} className="relative left-1/2 w-screen -translate-x-1/2" style={{ marginLeft: 'calc(50% - 50vw)' }}>
+                <div
+                  key={idx}
+                  className="hero-full-bleed"
+                  style={{
+                    width: '100vw',
+                    position: 'relative',
+                    left: '50%',
+                    marginLeft: '-50vw',
+                  }}
+                >
                   <section
                     className="px-6 py-14 text-center text-white sm:py-20"
-                    style={heroStyle}
+                    style={inner}
                   >
                     <div className="mx-auto max-w-3xl">
                       <h1 className="text-3xl font-black tracking-tight sm:text-5xl">{b.heading}</h1>
