@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import { WebStoreStatusBadge } from '@/components/web-store/WebStoreStatusBadge';
 import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPreviewButton';
+import { WebStoreAiAssistant } from '@/components/web-store/WebStoreAiAssistant';
+import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 
 type StoreType = { id: string | number; name: string };
 
@@ -122,6 +124,19 @@ export default function OwnerWebStoreSetupPage() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  function applyAiChanges(changes: AiChangeSuggestion[]) {
+    for (const change of changes) {
+      if (change.field === 'theme' && change.to && typeof change.to === 'object') {
+        setTheme((prev) => normalizeTheme({ ...prev, ...(change.to as Record<string, unknown>) }));
+      } else if (change.field === 'chrome' && change.to && typeof change.to === 'object') {
+        setChrome((prev) => normalizeChrome({ ...prev, ...(change.to as Record<string, unknown>) }));
+      } else if (change.field === 'theme_color' && typeof change.to === 'string') {
+        setThemeColor(change.to);
+      }
+    }
+    setStatus({ kind: 'ok', msg: 'Usulan AI diterapkan ke draft. Klik Simpan Perubahan untuk menyimpan.' });
+  }
 
   async function save() {
     setStatus(null);
@@ -1028,6 +1043,16 @@ export default function OwnerWebStoreSetupPage() {
             </div>
           </div>
         </div>
+
+        <WebStoreAiAssistant
+          context={{
+            store: { name: storeName, tagline, themeColor },
+            theme,
+            chrome,
+            pages: ws?.pages ?? [],
+          }}
+          onApply={applyAiChanges}
+        />
 
         {/* Right Panel: Interactive Real-Time Storefront Mockup */}
         <div className="lg:col-span-5 space-y-4 sticky top-6">
