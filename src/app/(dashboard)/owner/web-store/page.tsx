@@ -30,7 +30,10 @@ import {
   Upload,
   Trash2,
   ArrowLeft,
-  LayoutGrid
+  LayoutGrid,
+  Settings,
+  FileCode,
+  CreditCard
 } from 'lucide-react';
 import { WebStoreStatusBadge } from '@/components/web-store/WebStoreStatusBadge';
 import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPreviewButton';
@@ -109,6 +112,7 @@ export default function OwnerWebStoreSetupPage() {
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [activeTab, setActiveTab] = useState<'toko' | 'tema' | 'pembayaran' | 'pengiriman' | 'lanjutan'>('toko');
 
   const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'om-bot.com';
   const subdomain = useMemo(() => subdomainHash || generateHash(storeName), [subdomainHash, storeName]);
@@ -428,11 +432,38 @@ export default function OwnerWebStoreSetupPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form Settings */}
         <div className="lg:col-span-7 space-y-6">
+          {/* Tab Navigation */}
+          <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-sm">
+            {([
+              { key: 'toko' as const, label: 'Toko', icon: Store },
+              { key: 'tema' as const, label: 'Tema', icon: Palette },
+              { key: 'pembayaran' as const, label: 'Pembayaran', icon: ShieldCheck },
+              { key: 'pengiriman' as const, label: 'Pengiriman', icon: Truck },
+              { key: 'lanjutan' as const, label: 'Lanjutan', icon: Settings },
+            ]).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
+                  activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <tab.icon size={14} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           <div className="bg-white border border-slate-200/80 rounded-2xl p-7 shadow-sm space-y-6">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-              <Sliders size={20} className="text-blue-600" /> Konfigurasi Toko Online
+              {activeTab === 'toko' && <><Store size={20} className="text-blue-600" /> Informasi Toko</>}
+              {activeTab === 'tema' && <><Palette size={20} className="text-blue-600" /> Tampilan & Tema</>}
+              {activeTab === 'pembayaran' && <><ShieldCheck size={20} className="text-blue-600" /> Metode Pembayaran</>}
+              {activeTab === 'pengiriman' && <><Truck size={20} className="text-blue-600" /> Metode Pengiriman</>}
+              {activeTab === 'lanjutan' && <><Settings size={20} className="text-blue-600" /> Pengaturan Lanjutan</>}
             </h2>
 
+            {activeTab === 'toko' && (<>
             {/* Relasi outlet awal hanya muncul saat membuat webstore baru. Produk dan stok storefront tetap berasal dari seluruh outlet owner. */}
             {!ws && (
               <Field label="Outlet Awal Web Store" icon={<Store size={16} className="text-slate-400" />}>
@@ -450,7 +481,6 @@ export default function OwnerWebStoreSetupPage() {
               </Field>
             )}
 
-            {/* Field 2: Nama Web Store */}
             <Field label="Nama Web Store" icon={<Globe size={16} className="text-slate-400" />}>
               <input
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
@@ -460,7 +490,6 @@ export default function OwnerWebStoreSetupPage() {
               />
             </Field>
 
-            {/* Field 3: Subdomain URL */}
             <Field label="Subdomain URL Public" icon={<Sparkles size={16} className="text-slate-400" />}>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -490,7 +519,6 @@ export default function OwnerWebStoreSetupPage() {
               </div>
             </Field>
 
-            {/* Field 4: Tagline */}
             <Field label="Tagline / Slogan Toko" icon={<Sparkles size={16} className="text-slate-400" />}>
               <input
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
@@ -499,8 +527,9 @@ export default function OwnerWebStoreSetupPage() {
                 placeholder="Produk Berkualitas dengan Pelayanan Tercepat"
               />
             </Field>
+            </>)}
 
-            {/* Field 5: Theme Color & Presets */}
+            {activeTab === 'tema' && (<>
             <Field label="Warna Aksensuasi Tema Storefront" icon={<Palette size={16} className="text-slate-400" />}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -692,25 +721,6 @@ export default function OwnerWebStoreSetupPage() {
                     </select>
                   </div>
                 </div>
-
-                {/* Custom CSS */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">CSS Kustom (lanjutan)</span>
-                    <span className="text-[10px] text-slate-400">Opsional — untuk power user</span>
-                  </div>
-                  <textarea
-                    value={theme.custom_css}
-                    onChange={(e) => setTheme({ ...theme, custom_css: e.target.value })}
-                    rows={6}
-                    spellCheck={false}
-                    placeholder={'.hero-title { font-size: 48px; }'}
-                    className="mt-1.5 w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    CSS ini berlaku di seluruh halaman storefront. Pakai variabel seperti <code className="text-slate-500">var(--brand)</code> bila perlu.
-                  </p>
-                </div>
               </div>
             </Field>
 
@@ -844,7 +854,9 @@ export default function OwnerWebStoreSetupPage() {
                 </div>
               </div>
             </Field>
+            </>)}
 
+            {activeTab === 'pembayaran' && (<>
             <Field label="Metode Pembayaran & Notifikasi" icon={<ShieldCheck size={16} className="text-slate-400" />}>
               <div className="space-y-4">
                 {/* Payment methods list */}
@@ -1007,23 +1019,11 @@ export default function OwnerWebStoreSetupPage() {
                   </div>
                 </div>
 
-                {/* Custom domain */}
-                <div className="border-t border-slate-100 pt-3">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Domain Kustom (opsional)</label>
-                  <input
-                    className="w-full rounded-lg border px-2.5 py-1.5 text-sm"
-                    placeholder="tokoanda.com"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                  />
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    Kosongkan untuk memakai subdomain otomatis ({mainDomain}). Arahkan DNS A ke server Anda bila memakai domain kustom.
-                  </p>
-                </div>
               </div>
             </Field>
+            </>)}
 
-            {/* Field 8: Metode Ongkir */}
+            {activeTab === 'pengiriman' && (<>
             <Field label="Metode Ongkir" icon={<Truck size={16} className="text-slate-400" />}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -1166,8 +1166,63 @@ export default function OwnerWebStoreSetupPage() {
                 ))}
               </div>
             </Field>
+            </>)}
 
-            {/* Field 9: Status Activation */}
+            {activeTab === 'lanjutan' && (<>
+            <Field label="CSS & JavaScript Kustom" icon={<FileCode size={16} className="text-slate-400" />}>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                  <span className="font-bold">⚠️ Hanya untuk power user.</span> CSS dan JS ini berlaku di seluruh halaman storefront.
+                  Jangan tempel kode dari sumber yang tidak dipercaya.
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">CSS Kustom</label>
+                  <textarea
+                    value={theme.custom_css}
+                    onChange={(e) => setTheme({ ...theme, custom_css: e.target.value })}
+                    rows={8}
+                    spellCheck={false}
+                    placeholder={'.hero-title { font-size: 48px; }'}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Gunakan variabel seperti <code className="text-slate-500">var(--brand)</code> bila perlu.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">JavaScript Kustom</label>
+                  <textarea
+                    value={theme.custom_js}
+                    onChange={(e) => setTheme({ ...theme, custom_js: e.target.value })}
+                    rows={8}
+                    spellCheck={false}
+                    placeholder={'// contoh: tandai storefront sudah dimuat\ndocument.body.dataset.ombotLoaded = "1";'}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-xs font-mono leading-relaxed focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Dieksekusi setelah DOM siap di semua halaman storefront.
+                  </p>
+                </div>
+              </div>
+            </Field>
+
+            <Field label="Domain Kustom" icon={<Globe size={16} className="text-slate-400" />}>
+              <input
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                placeholder="toko-anda.com (opsional)"
+              />
+              <p className="text-xs text-slate-500 mt-1.5">
+                Hubungkan domain sendiri. Arahkan CNAME ke <code className="text-slate-500">cname.om-bot.com</code>.
+              </p>
+            </Field>
+            </>)}
+
+            {/* Status Activation — always visible, belongs to toko tab */}
+            {activeTab === 'toko' && (
             <div className="pt-2 border-t border-slate-100">
               <label className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition-colors">
                 <div>
@@ -1184,8 +1239,9 @@ export default function OwnerWebStoreSetupPage() {
                 />
               </label>
             </div>
+            )}
 
-            {/* Status Alert Notification */}
+            {/* Status Alert Notification — always visible */}
             {status && (
               <div
                 className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${status.kind === 'ok'
