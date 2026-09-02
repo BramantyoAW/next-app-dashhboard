@@ -17,11 +17,21 @@ export type WebTheme = {
   radius: number;
   buttonStyle: 'rounded' | 'square' | 'pill';
   custom_css: string;
+  custom_js: string;
 };
 
-export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css'> }[] = [
+export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css' | 'custom_js'> }[] = [
   {
-    name: 'Modern (default)',
+    name: 'Editorial',
+    theme: {
+      font: 'serif',
+      colors: { brand: '#8a6f4d', bg: '#f4f1ea', text: '#17150f', muted: '#7a7568' },
+      radius: 4,
+      buttonStyle: 'rounded',
+    },
+  },
+  {
+    name: 'Modern',
     theme: {
       font: 'system',
       colors: { brand: '#0ea5e9', bg: '#ffffff', text: '#0f172a', muted: '#64748b' },
@@ -30,20 +40,11 @@ export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css'> 
     },
   },
   {
-    name: 'Elegan',
-    theme: {
-      font: 'serif',
-      colors: { brand: '#b45309', bg: '#faf9f7', text: '#292524', muted: '#78716c' },
-      radius: 4,
-      buttonStyle: 'square',
-    },
-  },
-  {
-    name: 'Bold',
+    name: 'Hype',
     theme: {
       font: 'system',
-      colors: { brand: '#dc2626', bg: '#ffffff', text: '#111827', muted: '#6b7280' },
-      radius: 0,
+      colors: { brand: '#d6ff3f', bg: '#0b0b0c', text: '#f5f5f3', muted: '#8b8b90' },
+      radius: 14,
       buttonStyle: 'pill',
     },
   },
@@ -69,11 +70,12 @@ export const FONT_OPTIONS: { value: string; label: string; css: string }[] = [
 
 export function defaultTheme(): WebTheme {
   return {
-    font: 'system',
-    colors: { brand: '#0ea5e9', bg: '#ffffff', text: '#0f172a', muted: '#64748b' },
-    radius: 12,
+    font: 'serif',
+    colors: { brand: '#8a6f4d', bg: '#f4f1ea', text: '#17150f', muted: '#7a7568' },
+    radius: 4,
     buttonStyle: 'rounded',
     custom_css: '',
+    custom_js: '',
   };
 }
 
@@ -152,6 +154,7 @@ export function normalizeTheme(raw: unknown): WebTheme {
     radius: typeof t.radius === 'number' ? t.radius : d.radius,
     buttonStyle: t.buttonStyle ?? d.buttonStyle,
     custom_css: t.custom_css ?? '',
+    custom_js: t.custom_js ?? '',
   };
 }
 
@@ -186,5 +189,28 @@ export function themeToCss(theme: WebTheme): string {
   --btn-radius: ${radius};
 }
 body, .storefront-root { font-family: var(--font); background: var(--bg); color: var(--text); }
-${theme.custom_css || ''}`;
+${sanitizeCustomCss(theme.custom_css) || ''}`;
+}
+
+/** Batas panjang kode kustom owner (selaras dengan backend: 50000 char). */
+export const MAX_CUSTOM_CSS_LENGTH = 50000;
+export const MAX_CUSTOM_JS_LENGTH = 50000;
+
+/**
+ * Sanitasi custom CSS owner sebelum di-inject ke <style>.
+ * Mencegah broken-attribute injection dengan membuang tag penutup style.
+ */
+export function sanitizeCustomCss(css: string): string {
+  if (!css) return '';
+  return css.slice(0, MAX_CUSTOM_CSS_LENGTH).replace(/<\/(style|script)/gi, '');
+}
+
+/**
+ * Sanitasi custom JS owner sebelum di-inject ke <script>.
+ * JS dijalankan apa adanya (privileged owner code) — hanya dibersihkan dari
+ * tag penutup script agar tidak memutus atribut injeksi, dan dibatasi panjangnya.
+ */
+export function sanitizeCustomJs(js: string): string {
+  if (!js) return '';
+  return js.slice(0, MAX_CUSTOM_JS_LENGTH).replace(/<\/script/gi, '<\\/script');
 }

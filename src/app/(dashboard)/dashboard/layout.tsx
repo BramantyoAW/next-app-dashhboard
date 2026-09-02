@@ -21,7 +21,8 @@ import {
   Store,
   Zap,
   Globe,
-  CreditCard
+  CreditCard,
+  MapPin
 } from 'lucide-react'
 
 const ProfileContext = createContext<any>(null)
@@ -173,6 +174,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     if (path.startsWith('/dashboard/order')) return 'Orders'
     if (path.startsWith('/dashboard/user/message')) return 'User Messages'
     if (path.startsWith('/dashboard/user')) return 'Users'
+    if (path.startsWith('/owner/stores')) return 'Outlet Saya'
     if (path.startsWith('/dashboard/settings/gateway')) return 'Gateway'
     if (path.startsWith('/dashboard/settings/payment')) return 'Payment Settings'
     if (path.startsWith('/dashboard/settings/store')) return 'Store Profile'
@@ -262,6 +264,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </div>
           <SidebarLink href="/dashboard/merchant" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Merchant
+          </SidebarLink>
+          <SidebarLink href="/owner/stores" icon={<MapPin size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Outlet Saya
           </SidebarLink>
           <SidebarLink href="/dashboard/user" icon={<Users size={18} />} exact onClick={() => setIsSidebarOpen(false)}>
             Users
