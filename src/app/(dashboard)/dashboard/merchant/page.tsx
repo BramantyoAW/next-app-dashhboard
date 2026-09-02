@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { myStoresService, MyStore } from "@/graphql/query/myStores"
 import { merchantCreateStoreService } from "@/graphql/mutation/merchantCreateStore"
 import { resolveImageUrl } from "@/lib/imageUtils"
+import { gqlFetch } from "@/lib/graphqlClient"
 import {
   Store,
   Package,
@@ -26,9 +27,19 @@ export default function MerchantPage() {
   // Modal create
   const [showModal, setShowModal] = useState(false)
   const [newName, setNewName] = useState("")
+  const [newAddress, setNewAddress] = useState("")
+  const [newPhone, setNewPhone] = useState("")
   const [duplicateFrom, setDuplicateFrom] = useState<string>("")
   const [saving, setSaving] = useState(false)
   const [modalMsg, setModalMsg] = useState<{ kind: "ok" | "err"; msg: string } | null>(null)
+
+  // Modal edit
+  const [editStore, setEditStore] = useState<MyStore | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editAddress, setEditAddress] = useState("")
+  const [editPhone, setEditPhone] = useState("")
+  const [editSaving, setEditSaving] = useState(false)
+  const [editMsg, setEditMsg] = useState<{ kind: "ok" | "err"; msg: string } | null>(null)
 
   async function fetchStores() {
     try {
@@ -52,6 +63,8 @@ export default function MerchantPage() {
   function openModal() {
     setModalMsg(null)
     setNewName("")
+    setNewAddress("")
+    setNewPhone("")
     // 1 store → otomatis duplicate dari store itu; ≥2 → user pilih (default store pertama).
     if (stores.length === 1) {
       setDuplicateFrom(String(stores[0].id))
@@ -63,9 +76,46 @@ export default function MerchantPage() {
     setShowModal(true)
   }
 
+  function openEditModal(store: MyStore) {
+    setEditMsg(null)
+    setEditStore(store)
+    setEditName(store.name)
+    setEditAddress(store.address ?? "")
+    setEditPhone(store.phone ?? "")
+    setEditSaving(false)
+  }
+
+  async function updateStore() {
+    if (!editStore) return
+    setEditSaving(true)
+    setEditMsg(null)
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Token not found")
+      await gqlFetch(
+        `mutation UpdateStore($id: ID!, $name: String, $address: String, $phone: String) {
+          updateStore(id: $id, name: $name, address: $address, phone: $phone) { id }
+        }`,
+        { id: editStore.id, name: editName, address: editAddress, phone: editPhone },
+        token
+      )
+      setEditMsg({ kind: "ok", msg: "Outlet berhasil diperbarui!" })
+      await fetchStores()
+      setTimeout(() => setEditStore(null), 1000)
+    } catch (e: any) {
+      setEditMsg({ kind: "err", msg: e?.message ?? "Gagal menyimpan" })
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
   async function createStore() {
     if (!newName.trim()) {
       setModalMsg({ kind: "err", msg: "Nama outlet wajib diisi." })
+      return
+    }
+    if (!newAddress.trim()) {
+      setModalMsg({ kind: "err", msg: "Alamat outlet wajib diisi." })
       return
     }
     const token = localStorage.getItem("token")
@@ -75,6 +125,8 @@ export default function MerchantPage() {
     try {
       await merchantCreateStoreService(token, {
         name: newName.trim(),
+        address: newAddress.trim(),
+        phone: newPhone.trim() || undefined,
         duplicate_products: !!duplicateFrom,
         duplicate_from_store_id: duplicateFrom || null,
       })
@@ -151,6 +203,12 @@ export default function MerchantPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-slate-900 truncate">{store.name}</h3>
+                      <button
+                        onClick={() => openEditModal(store)}
+                        className="ml-auto px-2 py-1 rounded-lg text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                      >
+                        Edit
+                      </button>
                       {store.role && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wide">
                           <BadgeCheck size={10} /> {store.role}
@@ -200,6 +258,29 @@ export default function MerchantPage() {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Alamat Outlet *</label>
+                  <textarea
+                    rows={3}
+                    value={newAddress}
+                    onChange={(e) => setNewAddress(e.target.value)}
+                    placeholder="Jl. Malioboro No. 1, Yogyakarta 55213"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Telepon (opsional)</label>
+                  <input
+                    type="text"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    placeholder="08123456789"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
                 {stores.length > 0 && (
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
@@ -241,6 +322,79 @@ export default function MerchantPage() {
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                     Buat Outlet
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Edit Outlet */}
+        {editStore && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Store size={18} className="text-indigo-600" /> Edit Outlet
+                </h2>
+                <button onClick={() => setEditStore(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Tutup">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nama Outlet *</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Alamat Outlet *</label>
+                  <textarea
+                    rows={3}
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    placeholder="Jl. Malioboro No. 1, Yogyakarta 55213"
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Telepon</label>
+                  <input
+                    type="text"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                {editMsg && (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${editMsg.kind === "ok" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                    {editMsg.kind === "ok" ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />} {editMsg.msg}
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setEditStore(null)}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={updateStore}
+                    disabled={editSaving}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-bold shadow-md disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                  >
+                    {editSaving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
+                    Simpan
                   </button>
                 </div>
               </div>
