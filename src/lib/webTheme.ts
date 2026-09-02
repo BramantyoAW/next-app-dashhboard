@@ -17,9 +17,10 @@ export type WebTheme = {
   radius: number;
   buttonStyle: 'rounded' | 'square' | 'pill';
   custom_css: string;
+  custom_js: string;
 };
 
-export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css'> }[] = [
+export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css' | 'custom_js'> }[] = [
   {
     name: 'Modern (default)',
     theme: {
@@ -74,6 +75,7 @@ export function defaultTheme(): WebTheme {
     radius: 12,
     buttonStyle: 'rounded',
     custom_css: '',
+    custom_js: '',
   };
 }
 
@@ -152,6 +154,7 @@ export function normalizeTheme(raw: unknown): WebTheme {
     radius: typeof t.radius === 'number' ? t.radius : d.radius,
     buttonStyle: t.buttonStyle ?? d.buttonStyle,
     custom_css: t.custom_css ?? '',
+    custom_js: (t as Record<string, unknown>).custom_js as string ?? '',
   };
 }
 
@@ -187,4 +190,17 @@ export function themeToCss(theme: WebTheme): string {
 }
 body, .storefront-root { font-family: var(--font); background: var(--bg); color: var(--text); }
 ${theme.custom_css || ''}`;
+}
+
+/** Sanitize custom JS for inline injection — strip dangerous patterns. */
+export function sanitizeCustomJs(js: string): string {
+  if (!js) return '';
+  return js
+    .replace(/<\/script/gi, '<\\/script')   // break out of script tag
+    .replace(/document\.cookie/gi, '')       // no cookie access
+    .replace(/localStorage/gi, '')           // no localStorage
+    .replace(/sessionStorage/gi, '')         // no sessionStorage
+    .replace(/fetch\(/gi, 'void(')           // no fetch
+    .replace(/XMLHttpRequest/gi, 'void')     // no XHR
+    .trim();
 }
