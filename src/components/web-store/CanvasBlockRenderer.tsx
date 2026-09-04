@@ -31,6 +31,47 @@ export function CanvasBlockRenderer({ block }: { block: StructuralBlock }) {
   const ss = sectionStyle(style);
 
   switch (block.type) {
+    /* ── HEADER (editable, bukan chrome global) ── */
+    case 'header': {
+      const sticky = String(b.sticky ?? 'yes') !== 'no';
+      const logoUrl = String(b.logo_url ?? '').trim();
+      const logoText = String(b.logo_text ?? '').trim() || 'TOKO SAYA';
+      const nav: { label?: string; href?: string }[] = Array.isArray(b.nav) ? b.nav : [];
+      return (
+        <header
+          className={sticky ? 'sticky top-0 z-30' : ''}
+          style={{
+            ...ss,
+            background: style.bg_color ? String(style.bg_color) : 'var(--bg, #f4f1ea)',
+            color: style.text_color ? String(style.text_color) : 'var(--text, #17150f)',
+            borderBottom: '1px solid rgba(0,0,0,0.08)',
+          }}
+        >
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <span className="flex min-w-0 items-center gap-2.5">
+              {logoUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={logoUrl} alt={logoText} className="h-8 w-8 shrink-0 rounded object-cover" />
+              ) : null}
+              <span
+                className="truncate text-base font-bold uppercase tracking-[0.14em]"
+                style={{ fontFamily: 'var(--font)', color: style.text_color ? String(style.text_color) : 'var(--text, #17150f)' }}
+              >
+                {logoText}
+              </span>
+            </span>
+            <nav className="ml-auto hidden items-center gap-5 text-[11px] font-semibold uppercase tracking-[0.18em] md:flex">
+              {nav.map((n, i) => (
+                <span key={i} className="cursor-pointer transition-colors hover:opacity-70">
+                  {n.label}
+                </span>
+              ))}
+            </nav>
+          </div>
+        </header>
+      );
+    }
+
     /* ── HERO ── */
     case 'hero': {
       const heroImage = String(b.image_url ?? '').trim();
@@ -215,6 +256,50 @@ export function CanvasBlockRenderer({ block }: { block: StructuralBlock }) {
     /* ── DIVIDER ── */
     case 'divider':
       return <hr style={{ borderTop: `${style.height ?? 1}px solid ${style.color ?? 'var(--text, #17150f)'}`, margin: style.margin ?? '24px 0', opacity: 0.1 }} />;
+
+    /* ── FOOTER (editable, bukan chrome global) ── */
+    case 'footer': {
+      const about = String(b.about_text ?? '');
+      const copyright = String(b.copyright ?? '').trim();
+      const nav: { label?: string; href?: string }[] = Array.isArray(b.nav) ? b.nav : [];
+      const socials: { label?: string; url?: string }[] = Array.isArray(b.socials) ? b.socials : [];
+      return (
+        <footer
+          style={{
+            ...ss,
+            background: style.bg_color ? String(style.bg_color) : 'var(--text, #17150f)',
+            color: style.text_color ? String(style.text_color) : 'var(--bg, #f4f1ea)',
+          }}
+        >
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 md:grid-cols-3 lg:px-8">
+            <div className="md:col-span-1">
+              <p className="max-w-xs text-sm leading-relaxed opacity-70">{about}</p>
+            </div>
+            {nav.length > 0 && (
+              <div className="flex flex-col gap-2 text-sm">
+                {nav.map((n, i) => (
+                  <span key={i} className="cursor-pointer opacity-80 transition-opacity hover:opacity-100">
+                    {n.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            {socials.length > 0 && (
+              <div className="flex flex-col gap-2 text-sm">
+                {socials.map((s, i) => (
+                  <span key={i} className="cursor-pointer opacity-80 transition-opacity hover:opacity-100">
+                    {s.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="mx-auto mt-8 max-w-7xl border-t border-white/15 px-4 pt-4 text-xs opacity-60 sm:px-6 lg:px-8">
+            {copyright || '© ' + new Date().getFullYear() + ' — Hak cipta dilindungi'}
+          </div>
+        </footer>
+      );
+    }
 
     default:
       return null;

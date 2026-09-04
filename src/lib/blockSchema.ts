@@ -7,6 +7,8 @@ import {
   Code2,
   PlayCircle,
   Minus,
+  PanelTop,
+  PanelBottom,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -79,7 +81,18 @@ export type BlockDef = {
 };
 
 /** Tipe blok yang didukung renderer. */
-export type BlockType = 'hero' | 'text' | 'products' | 'cta' | 'faq' | 'custom' | 'image' | 'video' | 'divider';
+export type BlockType =
+  | 'header'
+  | 'hero'
+  | 'text'
+  | 'products'
+  | 'cta'
+  | 'faq'
+  | 'custom'
+  | 'image'
+  | 'video'
+  | 'divider'
+  | 'footer';
 
 /** Blok struktural (props + style). */
 export type StructuralBlock = {
@@ -91,6 +104,44 @@ export type StructuralBlock = {
 };
 
 export const BLOCK_DEFS: BlockDef[] = [
+  {
+    type: 'header',
+    label: 'Header Toko',
+    description: 'Bilah atas toko: logo, nama, menu navigasi',
+    icon: PanelTop,
+    defaults: {
+      logo_text: 'TOKO SAYA',
+      logo_url: '',
+      nav: [
+        { label: 'Beranda', href: '/' },
+        { label: 'Produk', href: '/#produk' },
+      ],
+      sticky: true,
+    },
+    props: [
+      { key: 'logo_text', label: 'Nama / Logo Teks', kind: 'text', placeholder: 'TOKO SAYA' },
+      { key: 'logo_url', label: 'URL Logo (gambar)', kind: 'image', placeholder: 'https://...' },
+      {
+        key: 'nav',
+        label: 'Menu Navigasi',
+        kind: 'repeater',
+        itemLabel: 'Menu',
+        item: [
+          { key: 'label', label: 'Teks', kind: 'text' },
+          { key: 'href', label: 'Link', kind: 'text' },
+        ],
+      },
+      { key: 'sticky', label: 'Sticky (menempel saat scroll)', kind: 'select', options: [
+        { value: 'yes', label: 'Ya' },
+        { value: 'no', label: 'Tidak' },
+      ] },
+    ],
+    style: [
+      { key: 'bg_color', label: 'Warna Latar Header', kind: 'color' },
+      { key: 'text_color', label: 'Warna Teks', kind: 'color' },
+      { key: 'padding', label: 'Padding', kind: 'text', placeholder: '0 24px' },
+    ],
+  },
   {
     type: 'hero',
     label: 'Hero / Banner Utama',
@@ -305,6 +356,50 @@ export const BLOCK_DEFS: BlockDef[] = [
       { key: 'margin', label: 'Margin (atas/bawah)', kind: 'text', placeholder: '24px 0' },
     ],
   },
+  {
+    type: 'footer',
+    label: 'Footer Toko',
+    description: 'Kaki halaman: tentang, menu, kontak, sosial',
+    icon: PanelBottom,
+    defaults: {
+      about_text: 'Belanja mudah, antar cepat, pembayaran fleksibel. Pesan langsung dari toko online kami.',
+      copyright: '',
+      nav: [
+        { label: 'Beranda', href: '/' },
+        { label: 'Produk', href: '/#produk' },
+      ],
+      socials: [],
+    },
+    props: [
+      { key: 'about_text', label: 'Teks Tentang', kind: 'textarea', placeholder: 'Deskripsi singkat toko' },
+      { key: 'copyright', label: 'Teks Hak Cipta (kosong = otomatis)', kind: 'text', placeholder: '© 2025 Toko Anda' },
+      {
+        key: 'nav',
+        label: 'Menu Footer',
+        kind: 'repeater',
+        itemLabel: 'Menu',
+        item: [
+          { key: 'label', label: 'Teks', kind: 'text' },
+          { key: 'href', label: 'Link', kind: 'text' },
+        ],
+      },
+      {
+        key: 'socials',
+        label: 'Sosial Media',
+        kind: 'repeater',
+        itemLabel: 'Sosial',
+        item: [
+          { key: 'label', label: 'Nama', kind: 'text' },
+          { key: 'url', label: 'URL', kind: 'text' },
+        ],
+      },
+    ],
+    style: [
+      { key: 'bg_color', label: 'Warna Latar Footer', kind: 'color' },
+      { key: 'text_color', label: 'Warna Teks', kind: 'color' },
+      { key: 'padding', label: 'Padding', kind: 'text', placeholder: '48px 24px 24px' },
+    ],
+  },
 ];
 
 export const DEF_MAP: Record<string, BlockDef> = Object.fromEntries(
@@ -315,6 +410,7 @@ export const DEF_BY_TYPE = DEF_MAP;
 
 /** Default style per tipe blok. */
 const DEFAULT_STYLE: Record<string, BlockStyle> = {
+  header: { bg_color: '', text_color: '', padding: '0 24px' },
   hero: { bg_color: '#1e293b', text_color: '#ffffff', padding: '64px 24px', radius: 16, align: 'center' },
   text: { align: 'left' },
   products: {},
@@ -324,6 +420,7 @@ const DEFAULT_STYLE: Record<string, BlockStyle> = {
   image: { align: 'center' },
   video: {},
   divider: { color: '#e2e8f0', margin: '24px 0' },
+  footer: { bg_color: '', text_color: '', padding: '48px 24px 24px' },
 };
 
 function deepClone<T>(v: T): T {
@@ -406,4 +503,63 @@ export function serializeBlock(block: StructuralBlock): Record<string, unknown> 
 /** Serialisasi array blok → siap simpan ke DB. */
 export function serializeBlocks(blocks: StructuralBlock[]): Record<string, unknown>[] {
   return blocks.map(serializeBlock);
+}
+
+/** Buat blok default (dipakai untuk mengisi halaman baru / kerangka). */
+export function makeDefaultBlock(type: BlockType, index = 0): StructuralBlock {
+  const def = DEF_MAP[type];
+  const props: Record<string, unknown> = {};
+  for (const f of def.props) props[f.key] = deepClone(f.default ?? def.defaults[f.key]);
+  const style: BlockStyle = { ...(DEFAULT_STYLE[type] ?? {}) };
+  return { id: `blk_${Date.now()}_${index}`, type, props, style, layout: {} };
+}
+
+/**
+ * Kerangka default satu halaman (konsep Shopify: lahir sudah lengkap).
+ * Header + Footer ikut di daftar blok sehingga bisa diedit/dipindah/hapus.
+ */
+export function defaultPageBlocks(): StructuralBlock[] {
+  const make = (type: BlockType, seed: number) => {
+    const def = DEF_MAP[type];
+    const props: Record<string, unknown> = {};
+    for (const f of def.props) props[f.key] = deepClone(f.default ?? def.defaults[f.key]);
+    return { id: `${type}_${seed}`, type, props, style: { ...(DEFAULT_STYLE[type] ?? {}) }, layout: {} };
+  };
+  const t = Date.now();
+  return [
+    make('header', t),
+    make('hero', t + 1),
+    make('text', t + 2),
+    make('products', t + 3),
+    make('cta', t + 4),
+    make('footer', t + 5),
+  ];
+}
+
+/**
+ * Pastikan halaman punya "cangkang" (header & footer) sebagai blok.
+ * Kalau halaman lama belum punya, editor tetap menampilkan header/footer
+ * default di atas/bawah daftar — disimpan saat owner klik Simpan.
+ */
+export function ensurePageShell(blocks: StructuralBlock[]): StructuralBlock[] {
+  // Halaman benar-benar kosong → isi kerangka default lengkap (Shopify-like).
+  if (blocks.length === 0) return defaultPageBlocks();
+  const hasHeader = blocks.some((b) => b.type === 'header');
+  const hasFooter = blocks.some((b) => b.type === 'footer');
+  if (hasHeader && hasFooter) return blocks;
+  const shell: StructuralBlock[] = [];
+  if (!hasHeader) {
+    const def = DEF_MAP.header;
+    const props: Record<string, unknown> = {};
+    for (const f of def.props) props[f.key] = deepClone(f.default ?? def.defaults[f.key]);
+    shell.push({ id: 'header_default', type: 'header', props, style: { ...DEFAULT_STYLE.header }, layout: {} });
+  }
+  const out = [...shell, ...blocks];
+  if (!hasFooter) {
+    const def = DEF_MAP.footer;
+    const props: Record<string, unknown> = {};
+    for (const f of def.props) props[f.key] = deepClone(f.default ?? def.defaults[f.key]);
+    out.push({ id: 'footer_default', type: 'footer', props, style: { ...DEFAULT_STYLE.footer }, layout: {} });
+  }
+  return out;
 }

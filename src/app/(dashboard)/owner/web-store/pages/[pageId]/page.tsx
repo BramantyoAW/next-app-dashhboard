@@ -37,7 +37,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, serializeBlocks, type StructuralBlock } from '@/lib/blockSchema';
+import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, serializeBlocks, ensurePageShell, type StructuralBlock } from '@/lib/blockSchema';
 import { BlockFieldInput, BlockRemoveButton } from '@/components/owner/BlockFieldInput';
 import { CanvasBlockRenderer } from '@/components/web-store/CanvasBlockRenderer';
 import { normalizeTheme, themeToCss, type WebTheme } from '@/lib/webTheme';
@@ -144,7 +144,7 @@ export default function PageEditorPage() {
         if (!pg) throw new Error('Halaman tidak ditemukan');
         setPage(pg);
         setTheme(normalizeTheme((ws.settings as any)?.theme ?? null));
-        const normalized = normalizeBlocks(pg.blocks);
+        const normalized = ensurePageShell(normalizeBlocks(pg.blocks));
         setBlocks(normalized);
         setSelectedId(normalized[0]?.id ?? null);
       } catch (e: any) {
