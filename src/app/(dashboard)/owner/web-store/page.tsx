@@ -427,7 +427,7 @@ export default function OwnerWebStoreSetupPage() {
             {ws && <WebStoreStatusBadge active={ws.is_active} />}
             <StorefrontPreviewButton hash={subdomain} isActive={active} />
             <Link
-              href="/owner/web-store/builder"
+              href="/owner/web-store/pages"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-bold hover:bg-white/20 transition-colors"
             >
               <LayoutTemplate size={15} /> Page Builder
