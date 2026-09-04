@@ -264,49 +264,53 @@ export default function PageEditorPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-16">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <Link href="/owner/web-store/pages" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
-            <ArrowLeft size={16} /> Kembali ke Pages
-          </Link>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-1 flex items-center gap-2">
-            {page?.title ?? 'Halaman'}
-            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">{page?.slug}</span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setPreview((p) => !p)}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-              preview ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Eye size={16} /> {preview ? 'Edit' : 'Preview'}
-          </button>
-          <button
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
-          >
-            {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-            Simpan
-          </button>
+    <div className="pb-16">
+      {/* Toolbar atas (full-bleed, tipis) */}
+      <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-6 py-2.5">
+          <div className="flex items-center gap-3">
+            <Link href="/owner/web-store/pages" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
+              <ArrowLeft size={16} /> Halaman
+            </Link>
+            <span className="hidden sm:inline h-4 w-px bg-slate-200" />
+            <h1 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              {page?.title ?? 'Halaman'}
+              <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">{page?.slug}</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPreview((p) => !p)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                preview ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Eye size={16} /> {preview ? 'Edit' : 'Preview'}
+            </button>
+            <button
+              onClick={save}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
+            >
+              {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+              Simpan
+            </button>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+        <div className="mx-4 md:mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
           <AlertCircle size={16} /> {error}
         </div>
       )}
       {ok && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+        <div className="mx-4 md:mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
           <CheckCircle2 size={16} /> {ok}
         </div>
       )}
 
+      <div className="px-4 md:px-6 pt-4">
       {preview ? (
         /* ---------- Preview mode ---------- */
         <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -390,6 +394,7 @@ export default function PageEditorPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

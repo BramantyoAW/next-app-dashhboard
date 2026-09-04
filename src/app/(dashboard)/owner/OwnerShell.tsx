@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { clearAuthToken } from '@/lib/auth';
@@ -10,11 +10,23 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Builder & page editor = full-bleed: tanpa sidebar, header, navbar.
+  const isBuilder = pathname.startsWith('/owner/web-store/pages');
 
   const handleLogout = () => {
     clearAuthToken();
     router.push('/login');
   };
+
+  if (isBuilder) {
+    return (
+      <main style={{ minHeight: '100vh', background: '#f8fafc' }}>
+        {children}
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-slate-50">
