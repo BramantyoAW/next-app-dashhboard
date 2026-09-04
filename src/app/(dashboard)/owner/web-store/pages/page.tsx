@@ -8,6 +8,7 @@ import { deleteWebPage, upsertWebPage } from '@/graphql/mutation/webstore';
 import type { WebPage } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
 import { Plus, Trash2, Loader2, FileText, ArrowLeft, ExternalLink, AlertCircle, LayoutTemplate } from 'lucide-react';
+import WebThemePanel from '@/components/web-store/WebThemePanel';
 
 const SLUG_LABEL: Record<string, string> = {
   home: 'Beranda',
@@ -21,6 +22,9 @@ export default function WebPagesPage() {
   const [token, setToken] = useState('');
   const [pages, setPages] = useState<WebPage[]>([]);
   const [webStoreId, setWebStoreId] = useState('');
+  const [storeId, setStoreId] = useState('');
+  const [storeTheme, setStoreTheme] = useState<Record<string, any> | null>(null);
+  const [storeName, setStoreName] = useState('');
   const [slug, setSlug] = useState('home');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,9 @@ export default function WebPagesPage() {
         return;
       }
       setWebStoreId(ws.id);
+      setStoreId(ws.store_id);
+      setStoreName(ws.store_name);
+      setStoreTheme(((ws.settings as any)?.theme ?? null) as Record<string, any> | null);
       setPages(ws.pages ?? []);
     } catch (e: any) {
       setError(e?.message ?? 'Gagal memuat halaman');
@@ -120,6 +127,11 @@ export default function WebPagesPage() {
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
           ✓ {ok}
         </div>
+      )}
+
+      {/* Tema global toko — sinkron dgn page builder & storefront */}
+      {token && webStoreId && storeId && (
+        <WebThemePanel token={token} webStoreId={webStoreId} storeId={storeId} storeName={storeName} initialTheme={storeTheme} />
       )}
 
       {/* Create new */}

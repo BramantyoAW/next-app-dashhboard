@@ -106,7 +106,7 @@ export type UpsertWebStoreInput = {
   store_id: string;
   slug?: string | null;
   subdomain_hash?: string | null;
-  store_name: string;
+  store_name?: string | null;
   theme_color?: string | null;
   tagline?: string | null;
   is_active?: boolean | null;
@@ -144,7 +144,7 @@ export function deleteMasterProduct(token: string, id: string) {
 
 export function upsertWebPage(
   token: string,
-  input: { id?: string | null; slug?: string; title?: string; blocks?: unknown[] | null; is_published?: boolean; full_page?: boolean }
+  input: { id?: string | null; slug?: string; title?: string; blocks?: unknown; is_published?: boolean; full_page?: boolean }
 ) {
   return gqlFetch<{ upsertWebPage: any }>(UPSERT_WEB_PAGE, { input }, token);
 }
@@ -324,4 +324,15 @@ export function upsertCoupon(token: string, web_store_id: string, coupon: Coupon
 
 export function deleteCoupon(token: string, web_store_id: string, coupon_id: string) {
   return gqlFetch<{ deleteCoupon: Coupon[] }>(DELETE_COUPON, { web_store_id, coupon_id }, token);
+}
+
+const UPLOAD_PAGE_IMAGE = `
+  mutation UploadPageImage($file: Upload!) {
+    uploadPageImage(file: $file)
+  }
+`;
+
+/** Upload gambar utk blok halaman (page builder). Return URL publik. */
+export function uploadPageImage(token: string, file: File) {
+  return gqlFetch<{ uploadPageImage: string }>(UPLOAD_PAGE_IMAGE, { file }, token);
 }

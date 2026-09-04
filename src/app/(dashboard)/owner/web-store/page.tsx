@@ -19,13 +19,9 @@ import {
   Store,
   Sparkles,
   Palette,
-  ShoppingBag,
-  Search,
-  Sliders,
   Check,
   ShieldCheck,
   Truck,
-  MessageSquare,
   ImagePlus,
   Upload,
   Trash2,
@@ -438,12 +434,11 @@ export default function OwnerWebStoreSetupPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Form Settings */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-12 space-y-6">
           {/* Tab Navigation */}
           <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-sm">
             {([
               { key: 'toko' as const, label: 'Toko', icon: Store },
-              { key: 'tema' as const, label: 'Tema', icon: Palette },
               { key: 'pembayaran' as const, label: 'Pembayaran', icon: ShieldCheck },
               { key: 'pengiriman' as const, label: 'Pengiriman', icon: Truck },
               { key: 'lanjutan' as const, label: 'Lanjutan', icon: Settings },
@@ -464,7 +459,6 @@ export default function OwnerWebStoreSetupPage() {
           <div className="bg-white border border-slate-200/80 rounded-2xl p-7 shadow-sm space-y-6">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
               {activeTab === 'toko' && <><Store size={20} className="text-blue-600" /> Informasi Toko</>}
-              {activeTab === 'tema' && <><Palette size={20} className="text-blue-600" /> Tampilan & Tema</>}
               {activeTab === 'pembayaran' && <><ShieldCheck size={20} className="text-blue-600" /> Metode Pembayaran</>}
               {activeTab === 'pengiriman' && <><Truck size={20} className="text-blue-600" /> Metode Pengiriman</>}
               {activeTab === 'lanjutan' && <><Settings size={20} className="text-blue-600" /> Pengaturan Lanjutan</>}
@@ -536,7 +530,8 @@ export default function OwnerWebStoreSetupPage() {
             </Field>
             </>)}
 
-            {activeTab === 'tema' && (<>
+            {activeTab === 'toko' && (<>
+            {/* Tampilan & identitas toko (sebelumnya tab Tema) */}
             <Field label="Warna Aksensuasi Tema Storefront" icon={<Palette size={16} className="text-slate-400" />}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
@@ -1272,7 +1267,6 @@ export default function OwnerWebStoreSetupPage() {
                 {ws ? 'Simpan Perubahan' : 'Buat Web Store Baru'}
               </button>
 
-              <StorefrontPreviewButton hash={subdomain} isActive={active} />
             </div>
           </div>
         </div>
@@ -1284,142 +1278,6 @@ export default function OwnerWebStoreSetupPage() {
           onApply={applyAiChanges}
         />
 
-        {/* Right Panel: Interactive Real-Time Storefront Mockup */}
-        <div className="lg:col-span-5 space-y-4 sticky top-6">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Globe size={14} className="text-blue-600" /> Live Storefront Preview
-            </span>
-            <span className="text-[11px] font-medium text-slate-400">Tampilan Ponsel & Desktop</span>
-          </div>
-
-          {/* Browser Window Mockup */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl transition-all">
-            {/* Browser Top Bar */}
-            <div className="bg-slate-800/80 px-4 py-3 flex items-center gap-3 border-b border-slate-700/50">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-              </div>
-              <div className="flex-1 bg-slate-950/80 px-3 py-1 rounded-lg text-[11px] font-mono text-slate-400 flex items-center justify-between border border-slate-800 truncate">
-                <span className="truncate">https://{subdomain}.{mainDomain}</span>
-                <ShieldCheck size={12} className="text-emerald-400 shrink-0 ml-1" />
-              </div>
-            </div>
-
-            {/* Storefront Page Content Mockup */}
-            <div className="bg-slate-50 text-slate-900 min-h-[460px] flex flex-col font-sans">
-              {/* Navbar Mockup */}
-              <div className="px-4 py-3 text-white flex items-center justify-between shadow-md" style={{ backgroundColor: themeColor }}>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-sm">
-                    {storeName ? storeName.charAt(0).toUpperCase() : 'S'}
-                  </div>
-                  <span className="font-bold text-sm tracking-tight truncate max-w-[140px]">
-                    {storeName || 'Nama Web Store'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-white/90">
-                  <Search size={16} />
-                  <div className="relative">
-                    <ShoppingBag size={16} />
-                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-400 text-slate-900 text-[9px] font-bold flex items-center justify-center">
-                      2
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Hero Banner Mockup */}
-              <div className="p-5 text-white relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${themeColor}, #0f172a)` }}>
-                <div className="relative z-10 space-y-2">
-                  <span className="inline-block px-2 py-0.5 rounded bg-white/20 text-[10px] font-semibold tracking-wider uppercase">
-                    Selamat Datang
-                  </span>
-                  <h3 className="text-base font-extrabold leading-tight">
-                    {storeName || 'Toko Online Resmi'}
-                  </h3>
-                  <p className="text-xs text-white/80 line-clamp-2">
-                    {tagline || 'Pesan produk favorit Anda dengan mudah dan cepat.'}
-                  </p>
-                  <button
-                    type="button"
-                    className="mt-2 px-3 py-1.5 rounded-lg bg-white text-slate-900 font-bold text-xs shadow-sm hover:bg-slate-100"
-                  >
-                    Lihat Katalog Produk
-                  </button>
-                </div>
-              </div>
-
-              {/* Product Cards Grid Mockup */}
-              <div className="p-4 space-y-3 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800">Produk Unggulan</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Lihat Semua</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Sample Card 1 */}
-                  <div className="bg-white rounded-xl p-2.5 border border-slate-200/80 shadow-sm space-y-2">
-                    <div className="h-24 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 font-medium text-xs">
-                      Gambar Produk
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 truncate">Es Teh Jumbo</div>
-                      <div className="text-[11px] font-extrabold mt-0.5" style={{ color: themeColor }}>
-                        Rp 15.000
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full py-1 rounded-lg text-white font-semibold text-[10px] shadow-sm"
-                      style={{ backgroundColor: themeColor }}
-                    >
-                      + Tambah Cart
-                    </button>
-                  </div>
-
-                  {/* Sample Card 2 */}
-                  <div className="bg-white rounded-xl p-2.5 border border-slate-200/80 shadow-sm space-y-2">
-                    <div className="h-24 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300 font-medium text-xs">
-                      Gambar Produk
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 truncate">Pisang Goreng Crispy</div>
-                      <div className="text-[11px] font-extrabold mt-0.5" style={{ color: themeColor }}>
-                        Rp 10.000
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="w-full py-1 rounded-lg text-white font-semibold text-[10px] shadow-sm"
-                      style={{ backgroundColor: themeColor }}
-                    >
-                      + Tambah Cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Storefront Footer Features Mockup */}
-              <div className="bg-white border-t border-slate-200 p-3 grid grid-cols-3 gap-2 text-center text-[10px] text-slate-600">
-                <div className="flex flex-col items-center gap-1">
-                  <Truck size={14} className="text-slate-400" />
-                  <span>Pengiriman Cepat</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <ShieldCheck size={14} className="text-slate-400" />
-                  <span>Terpercaya</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <MessageSquare size={14} className="text-slate-400" />
-                  <span>Order via WA</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
