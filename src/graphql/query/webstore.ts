@@ -9,7 +9,7 @@ export const WEBSTORE_BY_HASH = `
       shipping_methods { id name cost per_km min_cost min_order enabled }
       notify_whatsapp notify_telegram
       store { id name }
-      pages { id slug title blocks is_published }
+      pages { id slug title blocks is_published full_page }
     }
   }
 `;
@@ -23,7 +23,7 @@ export const WEBSTORE_BY_SLUG = `
       shipping_methods { id name cost per_km min_cost min_order enabled }
       notify_whatsapp notify_telegram
       store { id name }
-      pages { id slug title blocks is_published }
+      pages { id slug title blocks is_published full_page }
     }
   }
 `;
@@ -38,7 +38,7 @@ export const WEBSTORE_BY_OWNER = `
       notify_whatsapp notify_telegram
       settings
       store { id name }
-      pages { id slug title blocks is_published }
+      pages { id slug title blocks is_published full_page }
     }
   }
 `;
@@ -176,6 +176,7 @@ export type WebPage = {
   title: string;
   blocks: PageBlock[] | null;
   is_published: boolean;
+  full_page: boolean;
 };
 
 export type PaymentMethodConfig = {

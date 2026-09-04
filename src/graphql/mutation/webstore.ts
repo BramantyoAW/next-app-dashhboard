@@ -15,7 +15,7 @@ export const UPSERT_WEB_STORE = `
 export const UPSERT_WEB_PAGE = `
   mutation UpsertWebPage($input: UpsertWebPageInput!) {
     upsertWebPage(input: $input) {
-      id web_store_id slug title blocks is_published
+      id web_store_id slug title blocks is_published full_page
     }
   }
 `;
@@ -144,7 +144,7 @@ export function deleteMasterProduct(token: string, id: string) {
 
 export function upsertWebPage(
   token: string,
-  input: { id?: string | null; slug?: string; title?: string; blocks?: unknown[] | null; is_published?: boolean }
+  input: { id?: string | null; slug?: string; title?: string; blocks?: unknown[] | null; is_published?: boolean; full_page?: boolean }
 ) {
   return gqlFetch<{ upsertWebPage: any }>(UPSERT_WEB_PAGE, { input }, token);
 }

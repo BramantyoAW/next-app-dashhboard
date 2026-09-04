@@ -1,10 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { StorefrontHeader, StorefrontMobileSearch, StorefrontFeatureStrip } from '@/components/storefront/ui/StorefrontHeader';
-import { StorefrontFooter } from '@/components/storefront/ui/StorefrontFooter';
 import { getWebStoreByHashServer } from '@/lib/storefront-server';
 import { storefrontMetadata } from '@/lib/storefront-metadata';
-import { normalizeTheme, themeToCss, sanitizeCustomJs, normalizeChrome } from '@/lib/webTheme';
+import { normalizeTheme, themeToCss, sanitizeCustomJs } from '@/lib/webTheme';
 
 export async function generateMetadata({
   params,
@@ -17,6 +15,13 @@ export async function generateMetadata({
   return storefrontMetadata(ws);
 }
 
+/**
+ * Layout dasar storefront — hanya menyuntikkan tema (CSS vars, custom CSS/JS)
+ * dan wrapper root. Chrome (header/footer penuh ATAU floating mini-bar)
+ * dirender oleh layout route group anak:
+ *   - (shop)     → halaman toko: header/footer penuh
+ *   - (fullpage) → halaman page-builder: tanpa navbar (mode Stitch)
+ */
 export default async function StorefrontLayout({
   children,
   params,
@@ -29,14 +34,9 @@ export default async function StorefrontLayout({
   if (!webStore || !webStore.is_active) notFound();
 
   const brand = webStore.theme_color || '#111111';
-  // Tema global (font, warna, radius, custom CSS) dari settings.theme.
   const settings = (webStore.settings ?? {}) as any;
   const theme = normalizeTheme(settings.theme ?? null);
-  const chrome = normalizeChrome(settings.chrome ?? null);
   const themeCss = themeToCss(theme);
-  const navPages = (webStore.pages ?? [])
-    .filter((p) => p.is_published !== false && p.slug !== 'home')
-    .slice(0, 5);
 
   return (
     <div
@@ -49,24 +49,7 @@ export default async function StorefrontLayout({
       {theme.custom_js && (
         <script dangerouslySetInnerHTML={{ __html: sanitizeCustomJs(theme.custom_js) }} />
       )}
-      <StorefrontHeader
-        hash={hash}
-        storeName={webStore.store_name}
-        logoUrl={webStore.logo_url}
-        brand={brand}
-        navPages={navPages.map((p) => ({ slug: p.slug, title: p.title }))}
-        chrome={chrome as any}
-      />
-      {chrome.header.show_search && <StorefrontMobileSearch hash={hash} brand={brand} />}
-      {chrome.header.show_feature_strip && <StorefrontFeatureStrip waPhone={webStore.notify_whatsapp} />}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>
-      <StorefrontFooter
-        hash={hash}
-        storeName={webStore.store_name}
-        brand={brand}
-        navPages={navPages.map((p) => ({ slug: p.slug, title: p.title }))}
-        chrome={chrome as any}
-      />
+      {children}
     </div>
   );
 }
