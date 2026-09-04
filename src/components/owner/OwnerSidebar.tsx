@@ -22,11 +22,14 @@ export function OwnerSidebar({
   onClose,
   displayName,
   onLogout,
+  desktopCollapsed = false,
 }: {
   open: boolean;
   onClose: () => void;
   displayName?: string;
   onLogout: () => void;
+  /** Desktop: sembunyikan sidebar (full-bleed editing). */
+  desktopCollapsed?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -57,8 +60,9 @@ export function OwnerSidebar({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 p-5 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-lg lg:shadow-none ${open ? 'translate-x-0' : '-translate-x-full'
-          }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 p-5 flex flex-col transition-all duration-300 lg:static lg:z-auto shadow-lg lg:shadow-none ${
+          desktopCollapsed ? '-translate-x-full lg:hidden' : open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
       >
         <div className="flex items-center justify-between mb-8">
           <Link href="/owner" className="flex items-center gap-3 group">

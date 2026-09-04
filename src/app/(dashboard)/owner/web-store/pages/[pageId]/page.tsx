@@ -32,13 +32,11 @@ import {
   Save,
   Eye,
   GripVertical,
-  Settings2,
-  Palette,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
 import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, serializeBlocks, ensurePageShell, type StructuralBlock } from '@/lib/blockSchema';
-import { BlockFieldInput, BlockRemoveButton } from '@/components/owner/BlockFieldInput';
+import { BlockRemoveButton } from '@/components/owner/BlockFieldInput';
 import { CanvasBlockRenderer } from '@/components/web-store/CanvasBlockRenderer';
 import { normalizeTheme, themeToCss, type WebTheme } from '@/lib/webTheme';
 
@@ -60,6 +58,7 @@ function SortableBlock({
   onSelect,
   onRemove,
   onMove,
+  onField,
 }: {
   block: StructuralBlock;
   index: number;
@@ -68,6 +67,7 @@ function SortableBlock({
   onSelect: () => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
+  onField?: (blockId: string, key: string, value: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   return (
@@ -99,9 +99,15 @@ function SortableBlock({
           <BlockRemoveButton onClick={onRemove} />
         </div>
       )}
-      {/* Render blok utuh seperti storefront asli */}
-      <div className="relative cursor-pointer" onClick={() => onSelect()} onMouseDown={(e) => e.stopPropagation()}>
-        <CanvasBlockRenderer block={block} />
+      {/* Render blok utuh seperti storefront asli — teks langsung bisa diedit saat aktif */}
+      <div
+        className="relative cursor-pointer"
+        onClick={() => {
+          if (!selected) onSelect();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <CanvasBlockRenderer block={block} activeBlockId={selected ? block.id : null} onField={onField} />
       </div>
     </div>
   );
@@ -117,7 +123,6 @@ export default function PageEditorPage() {
   const [theme, setTheme] = useState<WebTheme | null>(null);
   const [blocks, setBlocks] = useState<StructuralBlock[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,7 +160,6 @@ export default function PageEditorPage() {
     })();
   }, [pageId]);
 
-  const defFor = (b: StructuralBlock) => DEF_MAP[b.type] ?? DEF_MAP.text;
   const selected = blocks.find((b) => b.id === selectedId) ?? null;
 
   function addBlock(type: string) {
@@ -169,7 +173,6 @@ export default function PageEditorPage() {
     const nb: StructuralBlock = { id, type: type as any, props, style, layout: {} };
     setBlocks((prev) => [...prev, nb]);
     setSelectedId(id);
-    setActiveTab('content');
     setPreview(false);
   }
 
@@ -201,11 +204,27 @@ export default function PageEditorPage() {
   }
 
   function updateProp(id: string, key: string, value: unknown) {
-    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, props: { ...b.props, [key]: value } } : b)));
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== id) return b;
+        // Dukung path bertitik: "nav.0.label", "items.2.q" (repeater inline edit)
+        const keys = key.split('.');
+        if (keys.length === 1) return { ...b, props: { ...b.props, [key]: value } };
+        const props = structuredClone(b.props ?? {});
+        let cur: any = props;
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!cur[keys[i]]) cur[keys[i]] = {};
+          cur = cur[keys[i]];
+        }
+        cur[keys[keys.length - 1]] = value;
+        return { ...b, props };
+      })
+    );
   }
 
-  function updateStyle(id: string, key: string, value: unknown) {
-    setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, style: { ...b.style, [key]: value } } : b)));
+  /** Inline edit dari canvas: field teks langsung diketik → commit ke state. */
+  function handleField(blockId: string, key: string, value: string) {
+    updateProp(blockId, key, value);
   }
 
   async function save() {
@@ -311,42 +330,39 @@ export default function PageEditorPage() {
       ) : (
         /* ---------- Edit mode ---------- */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Block palette */}
-          <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-              <Plus size={16} className="text-blue-600" /> Tambah Blok
-            </h3>
-            <div className="space-y-2">
-              {BLOCK_DEFS.map((def) => (
-                <button
-                  key={def.type}
-                  onClick={() => addBlock(def.type)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-colors text-left"
-                >
-                  <span className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
-                    <def.icon size={18} />
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-slate-800 truncate">{def.label}</div>
-                    <div className="text-[11px] text-slate-400 truncate">{def.description}</div>
-                  </div>
-                  <Plus size={16} className="text-slate-300 shrink-0" />
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-[11px] text-blue-700 leading-relaxed">
-              💡 Seret blok untuk mengubah urutan, atau klik blok untuk mengedit konten & desainnya.
+          {/* Layout edit: palet kiri tipis + kanvas penuh (tanpa form kanan) */}
+          <div className="lg:col-span-3 xl:col-span-2">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm lg:sticky lg:top-4">
+              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <Plus size={16} className="text-blue-600" /> Blok
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {BLOCK_DEFS.map((def) => (
+                  <button
+                    key={def.type}
+                    onClick={() => addBlock(def.type)}
+                    title={def.description}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-colors"
+                  >
+                    <def.icon size={18} className="text-slate-600" />
+                    <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">{def.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">
+                💡 Klik teks di halaman untuk mengedit langsung. Seret handle ⠿ (hover) untuk pindah blok.
+              </p>
             </div>
           </div>
 
-          {/* Canvas */}
-          <div className="lg:col-span-6">
+          {/* Canvas lebar (full editing, tanpa form kanan) */}
+          <div className="lg:col-span-9 xl:col-span-10">
             {blocks.length === 0 ? (
               <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400 text-sm">
                 Halaman masih kosong. Pilih blok di kiri untuk mulai membangun.
               </div>
             ) : (
-              <div className="bg-slate-100 rounded-2xl p-4 sm:p-8 border border-slate-200/60">
+              <div className="bg-slate-100 rounded-2xl p-3 sm:p-6 border border-slate-200/60">
                 {theme && <style dangerouslySetInnerHTML={{ __html: themeToCss(theme) }} />}
                 <div className="mx-auto bg-white shadow-sm rounded-lg overflow-hidden min-h-[400px]">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -362,78 +378,14 @@ export default function PageEditorPage() {
                             onSelect={() => setSelectedId(block.id)}
                             onRemove={() => removeBlock(block.id)}
                             onMove={(dir) => moveBlock(block.id, dir)}
+                            onField={handleField}
                           />
                         ))}
                       </div>
                     </SortableContext>
                   </DndContext>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2 text-center">
-                  💡 Klik blok untuk pilih → ubah di panel kanan. Seret handle ⠿ (hover kiri) untuk urutan.
-                </p>
               </div>
-            )}
-          </div>
-
-          {/* Property panel */}
-          <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm lg:sticky lg:top-4">
-            {!selected ? (
-              <div className="text-sm text-slate-400 text-center py-8">
-                Pilih blok untuk mengedit propertinya.
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    {(() => { const Icon = defFor(selected).icon; return <Icon size={16} className="text-blue-600" />; })()}
-                    {defFor(selected).label}
-                  </h3>
-                  <div className="flex rounded-xl border border-slate-200 p-0.5">
-                    <button
-                      onClick={() => setActiveTab('content')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${
-                        activeTab === 'content' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'
-                      }`}
-                    >
-                      <Settings2 size={12} /> Konten
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('design')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${
-                        activeTab === 'design' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'
-                      }`}
-                    >
-                      <Palette size={12} /> Desain
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {activeTab === 'content'
-                    ? defFor(selected).props.map((f) => (
-                        <BlockFieldInput
-                          key={f.key}
-                          field={f}
-                          value={selected.props[f.key]}
-                          onChange={(v) => updateProp(selected.id, f.key, v)}
-                        />
-                      ))
-                    : (defFor(selected).style ?? []).length > 0
-                      ? defFor(selected).style!.map((f) => (
-                          <BlockFieldInput
-                            key={f.key}
-                            field={f}
-                            value={(selected.style as Record<string, unknown>)[f.key]}
-                            onChange={(v) => updateStyle(selected.id, f.key, v)}
-                          />
-                        ))
-                      : (
-                        <div className="text-xs text-slate-400 py-4 text-center">
-                          Blok ini belum punya pengaturan desain.
-                        </div>
-                      )}
-                </div>
-              </>
             )}
           </div>
         </div>
