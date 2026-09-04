@@ -336,7 +336,7 @@ export default function PageEditorPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Layout edit: palet kiri tipis + kanvas penuh (tanpa form kanan) */}
           <div className="lg:col-span-3 xl:col-span-2">
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm lg:sticky lg:top-4">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                 <Plus size={16} className="text-blue-600" /> Blok
               </h3>
