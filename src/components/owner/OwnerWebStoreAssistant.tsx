@@ -31,7 +31,8 @@ export function OwnerWebStoreAssistant() {
   }, []);
 
   const scope = useMemo(() => getScope(pathname), [pathname]);
-  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || !webStoreId) return null;
+  // Builder page mounts its own WebStoreAiAssistant wired to live drafts.
+  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || pathname.includes('/builder') || !webStoreId) return null;
 
   return (
     <WebStoreAiAssistant

@@ -38,9 +38,11 @@ import {
   Blocks,
   Globe,
 } from 'lucide-react';
-import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, serializeBlocks, type StructuralBlock } from '@/lib/blockSchema';
+import { BLOCK_DEFS, DEF_MAP, normalizeBlocks, normalizeBlock, serializeBlocks, type StructuralBlock } from '@/lib/blockSchema';
 import { BlockFieldInput, BlockRemoveButton } from '@/components/owner/BlockFieldInput';
 import { CanvasBlockRenderer } from '@/components/web-store/CanvasBlockRenderer';
+import { WebStoreAiAssistant } from '@/components/web-store/WebStoreAiAssistant';
+import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 import {
   defaultTheme,
   normalizeTheme,
@@ -113,6 +115,36 @@ function SortableBlock({
       </div>
     </div>
   );
+}
+
+/** Incremental block operations proposed by the AI assistant (#7). */
+type BlockOp =
+  | { op: 'append_blocks' | 'prepend_blocks' | 'replace_blocks'; blocks: unknown[] }
+  | { op: 'update_block'; id: string; props?: Record<string, unknown>; style?: Record<string, unknown> }
+  | { op: 'remove_block'; id: string }
+  | { op: 'reorder_blocks'; ids: string[] };
+
+/** Convert raw AI blocks into normalized structural blocks with fresh ids. */
+function toStructural(raw: unknown[] | undefined, startIndex: number): StructuralBlock[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((b, i) => {
+    const obj = (b && typeof b === 'object' ? b : {}) as Record<string, unknown>;
+    if (Array.isArray(obj.props)) {
+      const arr = obj.props as unknown[];
+      const props: Record<string, unknown> = {};
+      if (arr.length > 0 && arr.every((it) => it && typeof it === 'object' && !Array.isArray(it))) {
+        const keys = ['items', 'faqs', 'slides', 'images', 'links', 'variants'];
+        const list = arr;
+        for (const k of keys) props[k] = list;
+      } else {
+        for (const it of arr) {
+          if (it && typeof it === 'object' && !Array.isArray(it)) Object.assign(props, it);
+        }
+      }
+      obj.props = props;
+    }
+    return normalizeBlock(obj, startIndex + i);
+  });
 }
 
 export default function WebStoreBuilderPage() {
@@ -226,6 +258,109 @@ export default function WebStoreBuilderPage() {
   }
   function updateStyle(id: string, key: string, value: unknown) {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, style: { ...b.style, [key]: value } } : b)));
+  }
+
+  /** Apply AI changes: theme / chrome / theme_color / page blocks / block ops. */
+  function applyAiChanges(changes: AiChangeSuggestion[]) {
+    let applied = 0;
+    let skipped = 0;
+    for (const change of changes) {
+      if ((change.field === 'theme' || change.field === 'web_store.theme') && change.to && typeof change.to === 'object') {
+        setTheme((prev) => normalizeTheme({ ...prev, ...(change.to as Record<string, unknown>) }));
+        applied++;
+      } else if ((change.field === 'theme_color' || change.field === 'web_store.theme_color') && typeof change.to === 'string') {
+        setThemeColor(change.to);
+        applied++;
+      } else if ((change.field === 'current_page' || change.field === 'page') && change.to && typeof change.to === 'object') {
+        const value = change.to as { slug?: string; title?: string; blocks?: unknown[] };
+        // Terapkan ke halaman aktif (slug boleh mengarah halaman lain → pindah).
+        const targetSlug = value.slug && pages.some((p) => p.slug === value.slug) ? value.slug : activeSlug;
+        const t = targetSlug;
+        if (value.title) setPageTitle(String(value.title));
+        if (Array.isArray(value.blocks)) {
+          const structural = toStructural(value.blocks, 0);
+          if (t === activeSlug) {
+            setBlocks(structural);
+            setSelectedId(structural[0]?.id ?? null);
+          } else {
+            setPages((prev) => prev.map((p) => (p.slug === t ? { ...p, blocks: structural.map((s) => JSON.parse(JSON.stringify(s))) as WebPage['blocks'] } : p)));
+          }
+          applied++;
+        }
+      } else if (change.field.startsWith('page:') && change.to && typeof change.to === 'object') {
+        const slug = change.field.slice('page:'.length);
+        const value = change.to as { slug?: string; blocks?: unknown[]; title?: string };
+        const targetSlug = value.slug && pages.some((p) => p.slug === value.slug) ? value.slug : slug;
+        const structural = Array.isArray(value.blocks) ? toStructural(value.blocks, 0) : null;
+        setPages((prev) => prev.map((p) => {
+          if (p.slug !== targetSlug) return p;
+          const next = { ...p };
+          if (value.title) next.title = String(value.title);
+          if (structural) next.blocks = structural.map((s) => JSON.parse(JSON.stringify(s))) as WebPage['blocks'];
+          return next;
+        }));
+        if (structural && targetSlug === activeSlug) {
+          setBlocks(structural);
+          setSelectedId(structural[0]?.id ?? null);
+        }
+        applied++;
+      } else if (change.field.includes('block') && change.to && typeof change.to === 'object') {
+        const payload = change.to as { slug?: string; ops?: BlockOp[] };
+        const slug = payload.slug && pages.some((p) => p.slug === payload.slug) ? payload.slug : activeSlug;
+        const ops = Array.isArray(payload.ops) ? payload.ops : [];
+        let used = 0;
+        const structural = [...blocks];
+        for (const op of ops) {
+          switch (op.op) {
+            case 'append_blocks': { structural.push(...toStructural(op.blocks, structural.length)); used++; break; }
+            case 'prepend_blocks': { structural.unshift(...toStructural(op.blocks, 0)); used++; break; }
+            case 'replace_blocks': { const nb = toStructural(op.blocks, 0); structural.length = 0; structural.push(...nb); used++; break; }
+            case 'update_block': {
+              const target = structural.find((b) => b.id === op.id);
+              if (!target) continue;
+              if (op.props && typeof op.props === 'object') target.props = { ...target.props, ...op.props };
+              if (op.style && typeof op.style === 'object') target.style = { ...target.style, ...op.style };
+              used++;
+              break;
+            }
+            case 'remove_block': {
+              const pos = structural.findIndex((b) => b.id === op.id);
+              if (pos === -1) continue;
+              structural.splice(pos, 1);
+              used++;
+              break;
+            }
+            case 'reorder_blocks': {
+              if (!Array.isArray(op.ids) || op.ids.length === 0) continue;
+              const map = new Map(structural.map((b) => [b.id, b]));
+              const reordered: StructuralBlock[] = [];
+              for (const id of op.ids) {
+                const b = map.get(String(id));
+                if (b) { reordered.push(b); map.delete(String(id)); }
+              }
+              reordered.push(...map.values());
+              structural.length = 0;
+              structural.push(...reordered);
+              used++;
+              break;
+            }
+          }
+        }
+        if (used > 0) {
+          if (slug === activeSlug) {
+            setBlocks(structural);
+          } else {
+            setPages((prev) => prev.map((p) => (p.slug === slug ? { ...p, blocks: structural.map((s) => JSON.parse(JSON.stringify(s))) as WebPage['blocks'] } : p)));
+          }
+          applied++;
+        }
+      } else {
+        skipped++;
+      }
+    }
+    setStatus(applied > 0
+      ? { kind: 'ok', msg: `Usulan AI diterapkan (${applied} perubahan${skipped > 0 ? `, ${skipped} dilewati` : ''}). Klik Simpan untuk publish.` }
+      : { kind: 'err', msg: 'Tidak ada usulan yang bisa diterapkan ke builder ini.' });
   }
 
   const save = useCallback(async () => {
@@ -616,6 +751,23 @@ export default function WebStoreBuilderPage() {
           </div>
         </div>
       )}
+
+      {/* AI Assistant — generate/edit halaman via chat */}
+      <WebStoreAiAssistant
+        webStoreId={webStore?.id ?? null}
+        scope="homepage"
+        context={{
+          scope: 'homepage',
+          route: '/owner/web-store/builder',
+          store: { name: webStore?.store_name ?? '', subdomain: webStore?.subdomain_hash ?? '' },
+          theme,
+          current_page: activePage
+            ? { slug: activePage.slug, title: pageTitle, blocks: serializeBlocks(blocks) }
+            : null,
+          pages: pages.map((p) => ({ slug: p.slug, title: p.title, block_count: (p.blocks ?? []).length })),
+        }}
+        onApply={applyAiChanges}
+      />
     </div>
   );
 }
