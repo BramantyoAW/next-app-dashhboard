@@ -4,7 +4,7 @@ import { StorefrontHeader, StorefrontMobileSearch, StorefrontFeatureStrip } from
 import { StorefrontFooter } from '@/components/storefront/ui/StorefrontFooter';
 import { getWebStoreByHashServer } from '@/lib/storefront-server';
 import { storefrontMetadata } from '@/lib/storefront-metadata';
-import { normalizeTheme, themeToCss, normalizeChrome } from '@/lib/webTheme';
+import { normalizeTheme, themeToCss, sanitizeCustomJs, normalizeChrome } from '@/lib/webTheme';
 
 export async function generateMetadata({
   params,
@@ -45,6 +45,10 @@ export default async function StorefrontLayout({
     >
       {/* Tema global store: CSS vars + custom CSS owner */}
       <style dangerouslySetInnerHTML={{ __html: themeCss }} />
+      {/* Custom JS owner — berlaku di seluruh halaman storefront (dieksekusi setelah DOM siap). */}
+      {theme.custom_js && (
+        <script dangerouslySetInnerHTML={{ __html: sanitizeCustomJs(theme.custom_js) }} />
+      )}
       <StorefrontHeader
         hash={hash}
         storeName={webStore.store_name}

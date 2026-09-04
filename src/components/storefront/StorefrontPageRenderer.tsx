@@ -36,8 +36,10 @@ function sectionStyle(style: Record<string, any>, extra?: Record<string, string>
 }
 
 /**
- * Renders a dynamic page's block array (Shopify-style) into storefront HTML.
- * Blocks: hero, text, products, cta, faq — membaca props + style struktural.
+ * Renders a dynamic page's block array into storefront HTML.
+ * Blocks: hero, text, products, cta, faq — reads structured props + style.
+ *
+ * Hero block supports `layout` prop: 'centered' (default) or 'split' (editorial 2-col).
  */
 export async function StorefrontPageRenderer({
   blocks,
@@ -48,146 +50,268 @@ export async function StorefrontPageRenderer({
   blocks: Block[];
   hash: string;
   products: StorefrontProduct[];
-  /** Global banner uploaded in Web Store Setup, used by hero blocks as fallback. */
   bannerUrl?: string | null;
 }) {
   if (!Array.isArray(blocks) || blocks.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-12 text-center text-sm text-slate-500">
+      <div className="py-16 text-center text-sm" style={{ color: 'var(--muted, #7a7568)' }}>
         Halaman ini belum memiliki blok.
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {blocks.map((block, idx) => {
         const { props: b, style } = resolve(block);
         switch (block.type) {
+          /* ───────────────────────────── HERO ───────────────────────────── */
           case 'hero': {
             const heroImage = String(b.image_url ?? '').trim() || bannerUrl || '';
+            const layout = String(b.layout ?? 'centered');
+            const eyebrow = String(b.eyebrow ?? '').trim();
+            const heading = b.heading ?? '';
+            const subheading = b.subheading ?? '';
+            const ctaText = b.cta_text ?? '';
+            const ctaLink = b.cta_link || '#products';
+
+            /* ── Split layout (editorial 2-column) ── */
+            if (layout === 'split' && heroImage) {
+              return (
+                <section
+                  key={idx}
+                  className="grid items-center gap-8 py-4 lg:grid-cols-2 lg:gap-14"
+                  style={sectionStyle(style)}
+                >
+                  {/* Text side */}
+                  <div className="flex flex-col gap-4">
+                    {eyebrow && (
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-[0.24em]"
+                        style={{ color: 'var(--muted, #7a7568)' }}
+                      >
+                        {eyebrow}
+                      </span>
+                    )}
+                    {heading && (
+                      <h1
+                        className="text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl"
+                        style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                      >
+                        {heading}
+                      </h1>
+                    )}
+                    {subheading && (
+                      <p className="max-w-md text-sm leading-relaxed sm:text-base" style={{ color: 'var(--muted, #7a7568)' }}>
+                        {subheading}
+                      </p>
+                    )}
+                    {ctaText && (
+                      <div className="pt-2">
+                        <Link
+                          href={ctaLink}
+                          className="inline-block border-b-2 pb-0.5 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+                          style={{ color: 'var(--brand, #8a6f4d)', borderColor: 'var(--brand, #8a6f4d)' }}
+                        >
+                          {ctaText}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                  {/* Image side */}
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--text,#17150f)]/5 lg:aspect-auto lg:h-[520px]">
+                    <StorefrontImage
+                      src={heroImage}
+                      alt={String(heading)}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </section>
+              );
+            }
+
+            /* ── Centered layout (default) ── */
             const heroStyle = heroImage
               ? {
                   ...sectionStyle(style),
-                  backgroundImage: `linear-gradient(rgba(0,0,0,0.48), rgba(0,0,0,0.48)), url(${heroImage})`,
+                  backgroundImage: `linear-gradient(rgba(0,0,0,0.42), rgba(0,0,0,0.42)), url(${heroImage})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }
-              : sectionStyle(style, { background: 'linear-gradient(135deg, var(--brand, #111), #0f172a)' });
-            // full_width: keluar dari wrapper max-w-7xl layout — banner
-            // membentang kiri-kanan penuh; konten tetap di dalam container.
-            // Teknik breakout standar: margin negatif 50vw + width 100vw
-            // relatif terhadap parent (layout root sudah overflow-x: clip
-            // sehingga tidak memunculkan scrollbar horizontal).
+              : sectionStyle(style, {
+                  background: `linear-gradient(135deg, var(--text, #17150f), #2a2420)`,
+                });
+
             const fullWidth = String((style as Record<string, unknown>).full_width ?? 'container') === 'full';
+            const innerContent = (
+              <div className="mx-auto max-w-3xl">
+                {eyebrow && (
+                  <span className="mb-3 block text-[10px] font-bold uppercase tracking-[0.28em] text-white/60">
+                    {eyebrow}
+                  </span>
+                )}
+                {heading && (
+                  <h1
+                    className="text-3xl font-medium tracking-tight sm:text-5xl"
+                    style={{ color: 'white' }}
+                  >
+                    {heading}
+                  </h1>
+                )}
+                {subheading && (
+                  <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
+                    {subheading}
+                  </p>
+                )}
+                {ctaText && (
+                  <div className="pt-5">
+                    <Link
+                      href={ctaLink}
+                      className="inline-block border-b-2 border-white/60 pb-0.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-opacity hover:border-white hover:opacity-80"
+                    >
+                      {ctaText}
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+
             if (fullWidth) {
-              const inner = { ...heroStyle } as Record<string, unknown>;
-              delete inner.borderRadius;
               return (
                 <div
                   key={idx}
                   className="hero-full-bleed"
-                  style={{
-                    width: '100vw',
-                    position: 'relative',
-                    left: '50%',
-                    marginLeft: '-50vw',
-                  }}
+                  style={{ width: '100vw', position: 'relative', left: '50%', marginLeft: '-50vw' }}
                 >
-                  <section
-                    className="px-6 py-14 text-center text-white sm:py-20"
-                    style={inner}
-                  >
-                    <div className="mx-auto max-w-3xl">
-                      <h1 className="text-3xl font-black tracking-tight sm:text-5xl">{b.heading}</h1>
-                      {b.subheading && <p className="mx-auto mt-3 max-w-2xl text-sm opacity-90 sm:text-base">{b.subheading}</p>}
-                      {b.cta_text && (
-                        <Link
-                          href={b.cta_link || '#products'}
-                          className="mt-6 inline-block rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-900 shadow-lg hover:bg-slate-100"
-                        >
-                          {b.cta_text}
-                        </Link>
-                      )}
-                    </div>
+                  <section className="px-6 py-16 text-center sm:py-24" style={heroStyle}>
+                    {innerContent}
                   </section>
                 </div>
               );
             }
+
             return (
               <section
                 key={idx}
-                className="overflow-hidden rounded-3xl px-6 py-14 text-center text-white sm:py-20"
+                className="overflow-hidden px-6 py-16 text-center sm:py-24"
                 style={heroStyle}
               >
-                <h1 className="mx-auto max-w-3xl text-3xl font-black tracking-tight sm:text-5xl">{b.heading}</h1>
-                {b.subheading && <p className="mx-auto mt-3 max-w-2xl text-sm opacity-90 sm:text-base">{b.subheading}</p>}
-                {b.cta_text && (
-                  <Link
-                    href={b.cta_link || '#products'}
-                    className="mt-6 inline-block rounded-full bg-white px-7 py-3 text-sm font-bold text-slate-900 shadow-lg hover:bg-slate-100"
-                  >
-                    {b.cta_text}
-                  </Link>
-                )}
+                {innerContent}
               </section>
             );
           }
+
+          /* ───────────────────────────── TEXT ───────────────────────────── */
           case 'text':
             return (
-              <section
-                key={idx}
-                className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
-                style={sectionStyle(style)}
-              >
-                {b.heading && <h2 className="text-xl font-extrabold tracking-tight text-slate-900">{b.heading}</h2>}
+              <section key={idx} className="py-2" style={sectionStyle(style)}>
+                {b.heading && (
+                  <h2
+                    className="text-xl font-medium tracking-tight sm:text-2xl"
+                    style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                  >
+                    {b.heading}
+                  </h2>
+                )}
                 {b.body && (
-                  <div className="mt-2 max-w-prose whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{b.body}</div>
+                  <div
+                    className="mt-3 max-w-prose whitespace-pre-wrap text-sm leading-relaxed sm:text-base"
+                    style={{ color: 'var(--muted, #7a7568)' }}
+                  >
+                    {b.body}
+                  </div>
                 )}
               </section>
             );
+
+          /* ───────────────────────────── PRODUCTS ───────────────────────────── */
           case 'products':
             return (
               <section key={idx} id="products" className="scroll-mt-24">
-                {b.heading && <h2 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">{b.heading}</h2>}
-                <ProductGrid hash={hash} products={products.slice(0, Number(b.limit) || products.length)} />
+                <ProductGrid
+                  hash={hash}
+                  products={products.slice(0, Number(b.limit) || products.length)}
+                  heading={b.heading ? String(b.heading) : undefined}
+                  count
+                />
               </section>
             );
+
+          /* ───────────────────────────── CTA ───────────────────────────── */
           case 'cta':
             return (
               <section
                 key={idx}
-                className="rounded-3xl px-6 py-12 text-center text-white"
-                style={sectionStyle(style, { background: 'linear-gradient(to right, #4f46e5, #2563eb)' })}
+                className="px-6 py-14 text-center sm:py-20"
+                style={sectionStyle(style, {
+                  background: 'var(--text, #17150f)',
+                  color: 'var(--bg, #f4f1ea)',
+                })}
               >
-                <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{b.heading}</h2>
-                {b.body && <p className="mx-auto mt-2 max-w-xl text-sm opacity-90">{b.body}</p>}
-                {b.button_text && (
-                  <Link
-                    href={b.button_link || '#products'}
-                    className="mt-6 inline-block rounded-full bg-white px-7 py-3 text-sm font-bold text-indigo-700 shadow-lg hover:opacity-90"
+                {b.heading && (
+                  <h2
+                    className="text-2xl font-medium tracking-tight sm:text-3xl"
+                    style={{ fontFamily: 'var(--font)' }}
                   >
-                    {b.button_text}
-                  </Link>
+                    {b.heading}
+                  </h2>
+                )}
+                {b.body && (
+                  <p className="mx-auto mt-3 max-w-xl text-sm opacity-70 sm:text-base">{b.body}</p>
+                )}
+                {b.button_text && (
+                  <div className="pt-5">
+                    <Link
+                      href={b.button_link || '#products'}
+                      className="inline-block border-b-2 border-current/40 pb-0.5 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+                      style={{ color: 'var(--brand, #d6ff3f)' }}
+                    >
+                      {b.button_text}
+                    </Link>
+                  </div>
                 )}
               </section>
             );
+
+          /* ───────────────────────────── FAQ ───────────────────────────── */
           case 'faq':
             return (
-              <section key={idx} className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-                {b.heading && <h2 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">{b.heading}</h2>}
-                <div className="space-y-3">
+              <section key={idx} className="py-2" style={sectionStyle(style)}>
+                {b.heading && (
+                  <h2
+                    className="mb-5 text-xl font-medium tracking-tight sm:text-2xl"
+                    style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                  >
+                    {b.heading}
+                  </h2>
+                )}
+                <div className="divide-y" style={{ borderColor: 'var(--text, #17150f)', opacity: 0.1 }}>
                   {(b.items ?? []).map((it: any, i: number) => (
-                    <details key={i} className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                      <summary className="cursor-pointer text-sm font-bold text-slate-800">{it.q}</summary>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{it.a}</p>
+                    <details key={i} className="group py-4">
+                      <summary
+                        className="cursor-pointer text-sm font-medium list-none flex items-center justify-between"
+                        style={{ color: 'var(--text, #17150f)' }}
+                      >
+                        <span>{it.q}</span>
+                        <span className="ml-4 text-lg transition-transform group-open:rotate-45">+</span>
+                      </summary>
+                      <p
+                        className="mt-2 text-sm leading-relaxed"
+                        style={{ color: 'var(--muted, #7a7568)' }}
+                      >
+                        {it.a}
+                      </p>
                     </details>
                   ))}
                 </div>
               </section>
             );
+
+          /* ───────────────────────────── CUSTOM ───────────────────────────── */
           case 'custom':
             return <CustomBlockRenderer key={idx} html={String(b.html ?? '')} css={String(b.css ?? '')} js={String(b.js ?? '')} />;
+
+          /* ───────────────────────────── IMAGE ───────────────────────────── */
           case 'image':
             return (
               <section
@@ -198,7 +322,7 @@ export async function StorefrontPageRenderer({
                 <img
                   src={String(b.image_url ?? '')}
                   alt={String(b.alt ?? '')}
-                  className="rounded-2xl object-cover shadow-sm"
+                  className="object-cover"
                   style={{
                     maxWidth: style.max_width ?? '100%',
                     width: '100%',
@@ -207,23 +331,36 @@ export async function StorefrontPageRenderer({
                 />
               </section>
             );
+
+          /* ───────────────────────────── VIDEO ───────────────────────────── */
           case 'video':
             return (
-              <section key={idx} className="overflow-hidden rounded-2xl shadow-sm" style={{ aspectRatio: style.aspect ?? '16 / 9', borderRadius: style.radius != null ? `${style.radius}px` : undefined }}>
+              <section
+                key={idx}
+                className="overflow-hidden"
+                style={{
+                  aspectRatio: style.aspect ?? '16 / 9',
+                  borderRadius: style.radius != null ? `${style.radius}px` : undefined,
+                }}
+              >
                 <VideoEmbed url={String(b.video_url ?? '')} />
               </section>
             );
+
+          /* ───────────────────────────── DIVIDER ───────────────────────────── */
           case 'divider':
             return (
               <hr
                 key={idx}
                 className="w-full border-0"
                 style={{
-                  borderTop: `${style.height ?? 1}px solid ${style.color ?? '#e2e8f0'}`,
-                  margin: style.margin ?? '24px 0',
+                  borderTop: `${style.height ?? 1}px solid ${style.color ?? 'var(--text, #17150f)'}`,
+                  opacity: 0.1,
+                  margin: style.margin ?? '32px 0',
                 }}
               />
             );
+
           default:
             return null;
         }

@@ -8,12 +8,10 @@ function SocialIcon({ platform }: { platform: string }) {
   if (p.includes('facebook')) return <Facebook className="h-4 w-4" />;
   if (p.includes('twitter') || p.includes('x')) return <Twitter className="h-4 w-4" />;
   if (p.includes('whatsapp') || p.includes('wa')) return <MessageCircle className="h-4 w-4" />;
-  return <span className="h-4 w-4 rounded-full bg-slate-200" />;
+  return <span className="h-4 w-4 rounded-full bg-current/20" />;
 }
 
-/** Storefront footer (generic). Brand column + quick links + payments + credits.
- *  Config dari `chrome.footer` (Setup): about text, payment badges, socials,
- *  powered-by & copyright bisa diubah owner. */
+/** Storefront footer — editorial design. Dark bg, clean 3-column layout. */
 export function StorefrontFooter({
   hash,
   storeName,
@@ -35,22 +33,38 @@ export function StorefrontFooter({
   const copyright = footer.copyright_text || `${new Date().getFullYear()} ${storeName}`;
 
   return (
-    <footer className="mt-16 border-t border-slate-200 bg-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
+    <footer
+      className="mt-20 border-t"
+      style={{
+        background: 'var(--text, #17150f)',
+        borderColor: 'rgba(255,255,255,0.1)',
+      }}
+    >
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:px-8 py-14 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Brand column */}
         <div>
-          <div className="text-base font-extrabold tracking-tight" style={{ color: brand }}>
+          <div
+            className="text-sm font-bold uppercase tracking-[0.16em]"
+            style={{ color: 'var(--bg, #f4f1ea)' }}
+          >
             {storeName}
           </div>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-slate-500">{aboutText}</p>
+          <p
+            className="mt-3 max-w-xs text-sm leading-relaxed"
+            style={{ color: 'rgba(245,245,243,0.5)' }}
+          >
+            {aboutText}
+          </p>
           {socials.length > 0 && (
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-4 flex items-center gap-2">
               {socials.map((s, i) => (
                 <a
                   key={i}
                   href={s.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-800 transition-colors"
+                  className="flex h-8 w-8 items-center justify-center border transition-colors hover:border-white/30"
+                  style={{ color: 'rgba(245,245,243,0.5)', borderColor: 'rgba(255,255,255,0.1)' }}
                   title={s.platform}
                 >
                   <SocialIcon platform={s.platform} />
@@ -59,56 +73,90 @@ export function StorefrontFooter({
             </div>
           )}
         </div>
+
+        {/* Navigation */}
         <div>
-          <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Menu</div>
-          <ul className="space-y-2 text-sm">
+          <div
+            className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'rgba(245,245,243,0.35)' }}
+          >
+            Navigasi
+          </div>
+          <ul className="space-y-2.5">
             <li>
-              <Link href={`/storefront/${hash}`} className="text-slate-600 hover:text-slate-900">
+              <Link
+                href={`/storefront/${hash}`}
+                className="text-sm transition-colors hover:text-white"
+                style={{ color: 'rgba(245,245,243,0.6)' }}
+              >
                 Beranda
               </Link>
             </li>
             {navPages.map((p) => (
               <li key={p.slug}>
-                <Link href={`/storefront/${hash}/${p.slug}`} className="text-slate-600 hover:text-slate-900">
+                <Link
+                  href={`/storefront/${hash}/${p.slug}`}
+                  className="text-sm transition-colors hover:text-white"
+                  style={{ color: 'rgba(245,245,243,0.6)' }}
+                >
                   {p.title}
                 </Link>
               </li>
             ))}
-          </ul>
-        </div>
-        <div>
-          <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Belanja</div>
-          <ul className="space-y-2 text-sm">
             <li>
-              <Link href={`/storefront/${hash}/cart`} className="text-slate-600 hover:text-slate-900">
+              <Link
+                href={`/storefront/${hash}/cart`}
+                className="text-sm transition-colors hover:text-white"
+                style={{ color: 'rgba(245,245,243,0.6)' }}
+              >
                 Keranjang
               </Link>
             </li>
             <li>
-              <Link href={`/storefront/${hash}/orders`} className="text-slate-600 hover:text-slate-900">
+              <Link
+                href={`/storefront/${hash}/orders`}
+                className="text-sm transition-colors hover:text-white"
+                style={{ color: 'rgba(245,245,243,0.6)' }}
+              >
                 Pesanan Saya
               </Link>
             </li>
           </ul>
         </div>
+
+        {/* Payments + info */}
         <div>
-          <div className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-400">Pembayaran</div>
-          <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-500">
+          <div
+            className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'rgba(245,245,243,0.35)' }}
+          >
+            Pembayaran
+          </div>
+          <div className="flex flex-wrap gap-2">
             {payments.map((p) => (
-              <span key={p} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
+              <span
+                key={p}
+                className="border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: 'rgba(245,245,243,0.6)', borderColor: 'rgba(255,255,255,0.1)' }}
+              >
                 {p}
               </span>
             ))}
           </div>
         </div>
       </div>
-      <div className="border-t border-slate-100 py-4">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 text-xs text-slate-400">
-          <span>© {copyright}</span>
+
+      {/* Bottom bar */}
+      <div className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 py-5 text-[11px]">
+          <span style={{ color: 'rgba(245,245,243,0.3)' }}>© {copyright}</span>
           {showPoweredBy && (
-            <span>
+            <span style={{ color: 'rgba(245,245,243,0.3)' }}>
               Powered by{' '}
-              <a href="https://om-bot.com" className="underline hover:text-slate-600">
+              <a
+                href="https://om-bot.com"
+                className="underline transition-colors hover:text-white/60"
+              >
                 om-bot.com
               </a>
             </span>
