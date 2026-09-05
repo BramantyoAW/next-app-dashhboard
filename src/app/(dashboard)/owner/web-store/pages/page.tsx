@@ -67,9 +67,14 @@ export default function WebPagesPage() {
     setError(null);
     setOk(null);
     try {
-      const exists = pages.some((p) => p.slug === slug);
+      const existing = pages.find((p) => p.slug === slug);
+      if (existing) {
+        // Halaman sudah ada → jangan timpa blok, langsung buka editor.
+        setOk('Halaman sudah ada. Membuka editor...');
+        router.push(`/owner/web-store/pages/${existing.id}`);
+        return;
+      }
       const res = await upsertWebPage(token, {
-        id: exists ? pages.find((p) => p.slug === slug)!.id : undefined,
         slug,
         title: SLUG_LABEL[slug] ?? slug,
         blocks: [],

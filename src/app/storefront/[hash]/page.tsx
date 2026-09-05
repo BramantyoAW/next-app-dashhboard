@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { ProductGrid } from '@/components/storefront/ui/ProductCard';
 import { StorefrontPageRenderer } from '@/components/storefront/StorefrontPageRenderer';
+import StorefrontPuckRenderer from '@/components/storefront/StorefrontPuckRenderer';
+import StorefrontShopShell from '@/components/storefront/StorefrontShopShell';
+import { isPuckStored, puckDataOf } from '@/lib/puckAdapter';
 
 type SP = {
   id: string;
@@ -13,6 +16,16 @@ type SP = {
 
 type Category = { id: string; name: string; slug: string | null };
 
+/**
+ * Halaman DEPAN (home) storefront — route root /storefront/<hash>, di bawah
+ * layout [hash]/layout.tsx yang hanya menyuntik tema (tanpa chrome toko).
+ *
+ * Dua mode:
+ *  1. Home dibuat dengan page builder (data Puck di web_pages.blocks):
+ *     dirender full-canvas — chrome (header/footer/feature) juga dikelola
+ *     owner via blok di kanvas → tidak dibungkus shell (Shopify-like).
+ *  2. Home belum di-builder: dibungkus chrome toko (StorefrontShopShell).
+ */
 export default async function StorefrontHome({
   params,
   searchParams,
@@ -28,7 +41,7 @@ export default async function StorefrontHome({
       store_name: string;
       tagline: string | null;
       banner_url: string | null;
-      pages: { slug: string; blocks: unknown[] | null }[] | null;
+      pages: { slug: string; blocks: unknown }[] | null;
     } | null;
   }>({
     query: `query($hash: String!) {
@@ -40,13 +53,49 @@ export default async function StorefrontHome({
     variables: { hash },
   });
   const ws = wsData?.webStoreByHash;
-  const banner = ws?.banner_url ?? null;
-  const tagline = ws?.tagline ?? null;
-  const storeName = ws?.store_name ?? 'Toko';
-  const homePage = ws?.pages?.find((p) => p.slug === 'home');
-  const blocks = (homePage?.blocks ?? null) as { type: string; [key: string]: unknown }[] | null;
+  if (!ws) return null;
+  const banner = ws.banner_url ?? null;
+  const tagline = ws.tagline ?? null;
+  const storeName = ws.store_name || 'Toko';
+  const homePage = ws.pages?.find((p) => p.slug === 'home');
+  const homeBlocks = homePage?.blocks ?? null;
 
-  // Kategori storefront (anon) untuk chip/filter navigasi.
+  // Mode 1: home full-canvas dari page builder (data Puck).
+  if (homeBlocks && isPuckStored(homeBlocks)) {
+    const puck = puckDataOf(homeBlocks);
+    if (puck) {
+      return <StorefrontPuckRenderer data={puck} storeName={storeName} />;
+    }
+  }
+  const blocks = (Array.isArray(homeBlocks) ? homeBlocks : null) as { type: string; [key: string]: unknown }[] | null;
+
+  return (
+    <StorefrontShopShell hash={hash}>
+      <HomeContent hash={hash} blocks={blocks} banner={banner} tagline={tagline} storeName={storeName} q={q} min={min} max={max} page={page} />
+    </StorefrontShopShell>
+  );
+}
+
+async function HomeContent({
+  hash,
+  blocks,
+  banner,
+  tagline,
+  storeName,
+  q,
+  min,
+  max,
+}: {
+  hash: string;
+  blocks: { type: string; [key: string]: unknown }[] | null;
+  banner: string | null;
+  tagline: string | null;
+  storeName: string;
+  q: string;
+  min: string;
+  max: string;
+  page: string;
+}) {
   const catData = await gqlFetchServer<{ storefrontCategories: Category[] | null }>({
     query: `query($web_store_slug: String!) {
       storefrontCategories(web_store_slug: $web_store_slug) { id name slug }
@@ -67,40 +116,18 @@ export default async function StorefrontHome({
       search: q || null,
       min_price: min ? Number(min) : null,
       max_price: max ? Number(max) : null,
-      page: Number(page),
+      page: 1,
       limit: 24,
     },
   });
   const products = (data?.storefrontProducts ?? []).filter((p) => p.is_active);
 
-  // Jika owner mengkonfigurasi blok halaman (page builder), render itu;
-  // sebaliknya fallback ke template default (hero + katalog).
-  if (Array.isArray(blocks) && blocks.length > 0) {
+  // Blok ombot lama → render + kategori/produk di bawahnya.
+  if (blocks && blocks.length > 0) {
     return (
       <div className="space-y-10">
         {await StorefrontPageRenderer({ blocks, hash, products, bannerUrl: banner })}
-        {categories.length > 0 && (
-          <section>
-            <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
-              <Link
-                href={`/storefront/${hash}${q ? `?q=${encodeURIComponent(q)}` : ''}`}
-                className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold text-white"
-                style={{ background: 'var(--brand, #111)' }}
-              >
-                Semua
-              </Link>
-              {categories.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/storefront/${hash}/categories/${c.slug}`}
-                  className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-                >
-                  {c.name}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        <CategoryChips hash={hash} categories={categories} q={q} active={true} />
         {products.length > 0 && (
           <section>
             <ProductGrid hash={hash} products={products} />
@@ -110,9 +137,9 @@ export default async function StorefrontHome({
     );
   }
 
+  // Fallback template default (hero + katalog).
   return (
     <div className="space-y-8">
-      {/* Hero */}
       <section
         className="relative overflow-hidden rounded-3xl px-6 py-14 text-white sm:px-10 sm:py-20"
         style={
@@ -148,31 +175,8 @@ export default async function StorefrontHome({
         </div>
       </section>
 
-      {/* Kategori */}
-      {categories.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
-            <Link
-              href={`/storefront/${hash}${q ? `?q=${encodeURIComponent(q)}` : ''}`}
-              className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold text-white"
-              style={{ background: 'var(--brand, #111)' }}
-            >
-              Semua
-            </Link>
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/storefront/${hash}/categories/${c.slug}`}
-                className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <CategoryChips hash={hash} categories={categories} q={q} active={false} />
 
-      {/* Filter harga */}
       <form
         action={`/storefront/${hash}`}
         method="get"
@@ -225,10 +229,46 @@ export default async function StorefrontHome({
         )}
       </form>
 
-      {/* Produk */}
       <section id="products" className="scroll-mt-24">
         <ProductGrid hash={hash} products={products} />
       </section>
     </div>
+  );
+}
+
+function CategoryChips({
+  hash,
+  categories,
+  q,
+  active,
+}: {
+  hash: string;
+  categories: Category[];
+  q: string;
+  active: boolean;
+}) {
+  if (categories.length === 0) return null;
+  void active;
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
+        <Link
+          href={`/storefront/${hash}${q ? `?q=${encodeURIComponent(q)}` : ''}`}
+          className="shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold text-white"
+          style={{ background: 'var(--brand, #111)' }}
+        >
+          Semua
+        </Link>
+        {categories.map((c) => (
+          <Link
+            key={c.id}
+            href={`/storefront/${hash}/categories/${c.slug}`}
+            className="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+          >
+            {c.name}
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -18,6 +18,35 @@ export type WebStoreResolved = {
 };
 
 /**
+ * Ambil blok home (slug 'home') utk deteksi format: legacy array vs puck JSON.
+ * Query kecil terpisah supaya layout lain tak memuat semua blok tiap halaman.
+ */
+export async function getHomeBlocksByHash(hash: string): Promise<unknown | null> {
+  if (!hash) return null;
+  const apiUrl = process.env.GRAPHQL_URL || 'http://127.0.0.1:8000/graphql';
+  const query = `query($hash: String!) {
+    webStoreByHash(hash: $hash) {
+      pages { slug blocks }
+    }
+  }`;
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { hash } }),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const home = json?.data?.webStoreByHash?.pages?.find((p: { slug: string }) => p.slug === 'home');
+    return home?.blocks ?? null;
+  } catch {
+    return null;
+  }
+}
+
+
+/**
  * Resolve a WebStore by subdomain hash via the GraphQL gateway.
  * Uses the real `webStoreByHash` field from the commerce schema.
  */
