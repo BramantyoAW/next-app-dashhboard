@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
 import { imageUploadField } from './puckImageField';
+import { ProductCard, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
+import { usePuckDynamic } from '@/lib/puckDynamic';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -49,6 +51,10 @@ type ProductsProps = {
   mode: 'grid' | 'slider';
   limit: number;
   autoplay: 'yes' | 'no';
+};
+type ProductSlotProps = {
+  /** Teks CTA yang dirender di bawah detail produk (opsional). */
+  cta_text: string;
 };
 type CtaProps = { heading: string; body: string; button_text: string; link: string };
 type FaqItem = { q: string; a: string };
@@ -103,6 +109,7 @@ type ComponentProps = {
   Hero: HeroProps;
   Text: TextProps;
   Products: ProductsProps;
+  ProductSlot: ProductSlotProps;
   Cta: CtaProps;
   Faq: FaqProps;
   StoreFooter: StoreFooterProps;
@@ -212,33 +219,94 @@ function ColumnsView({ layout, gap, left, right }: ColumnsProps) {
   );
 }
 
-/** Produk unggulan — grid (default) atau slider bila jumlah melebihi kapasitas. */
-function ProductsView({ heading, mode, limit, autoplay }: ProductsProps) {
+/** Produk unggulan — menampilkan produk ASLI dari katalog store.
+ * Saat dirender di storefront, fetch produk via `storefrontProducts` dan
+ * render kartu asli (link PDP benar + Add to Cart). Di editor (preview)
+ * tidak ada konteks storefront → tampilkan placeholder.
+ */
+function ProductsView({ heading, mode, limit }: ProductsProps) {
   const total = Math.min(limit || 4, 8);
-  const [idx, setIdx] = useState(0);
   const perView = 4;
+  const [idx, setIdx] = useState(0);
+  const [hash, setHash] = useState('');
+  const [items, setItems] = useState<StorefrontProduct[]>([]);
+  const [state, setState] = useState<'loading' | 'done'>('loading');
+
   useEffect(() => {
-    if (mode !== 'slider' || autoplay !== 'yes' || total <= perView) return;
-    const id = setInterval(() => setIdx((i) => (i + perView >= total ? 0 : i + 1)), 3500);
-    return () => clearInterval(id);
-  }, [mode, autoplay, total]);
-  const card = (i: number, hidden = false) => (
-    <div key={i} className={`overflow-hidden rounded-xl border border-black/10 ${hidden ? 'hidden' : ''}`}>
+    // Hash storefront: dari path /storefront/<hash> ATAU subdomain host
+    // (dev *.lvh.me, prod *.<domain>).
+    const fromPath = window.location.pathname.match(/\/storefront\/([^/]+)/)?.[1];
+    const host = window.location.hostname;
+    const fromHost = host.includes('.') && !/^localhost$|^\d/.test(host)
+      ? host.split('.')[0]
+      : '';
+    const h = fromPath || fromHost || '';
+    setHash(h);
+    if (!h) {
+      // Editor / preview — tidak ada katalog storefront, diam.
+      setState('done');
+      return;
+    }
+    let on = true;
+    (async () => {
+      try {
+        const { gqlFetch } = await import('@/lib/graphqlClient');
+        const res = await gqlFetch<{ storefrontProducts: StorefrontProduct[] | null }>(
+          `query($slug: String!, $limit: Int) {
+            storefrontProducts(web_store_slug: $slug, limit: $limit) {
+              id price_override image is_active
+              master_product { id sku name price image }
+            }
+          }`,
+          { slug: h, limit: total }
+        );
+        if (on) {
+          setItems((res?.storefrontProducts ?? []).filter((p) => p.is_active !== false));
+          setState('done');
+        }
+      } catch {
+        if (on) setState('done');
+      }
+    })();
+    return () => {
+      on = false;
+    };
+  }, [total]);
+
+  const card = (i: number) => (
+    <div key={i} className="overflow-hidden rounded-xl border border-black/10">
       <div className="aspect-square bg-black/5" />
       <div className="p-2 text-xs font-semibold" style={{ color: 'var(--text, #17150f)' }}>Produk {i + 1}</div>
       <div className="px-2 pb-2 text-xs font-bold" style={{ color: 'var(--brand, #8a6f4d)' }}>Rp 25.000</div>
     </div>
   );
-  if (mode === 'slider') {
-    const maxIdx = Math.max(total - perView, 0);
+
+  const body = (shown: number) =>
+    Array.from({ length: shown }).map((_, i) => (hash && items[i] ? (
+      <ProductCard key={items[i].id} hash={hash} p={items[i]} />
+    ) : (
+      card(i)
+    )));
+
+  const show = items.length > 0 ? Math.min(items.length, total) : (state === 'loading' && hash ? 0 : total);
+  const auto = mode === 'slider' && items.length > perView;
+
+  if (mode === 'slider' && show > perView) {
+    const maxIdx = Math.max(show - perView, 0);
+    const i0 = Math.min(idx, maxIdx);
     return (
       <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
         {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
         <div className="relative">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" style={{ transform: `translateX(-${idx * (100 / perView)}%)` }}>
-            {Array.from({ length: total }).map((_, i) => card(i))}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: Math.min(perView, show) }).map((_, j) => {
+              const k = items.length > 0 ? i0 + j : j;
+              return (items.length > 0 && items[k] && hash) ? (
+                <ProductCard key={items[k].id} hash={hash} p={items[k]} />
+              ) : card(k);
+            })}
           </div>
-          {total > perView && (
+          {maxIdx > 0 && (
             <>
               <button type="button" onClick={() => setIdx((i) => Math.max(i - 1, 0))} aria-label="Mundur" className="absolute -left-1 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white hover:bg-black/50">‹</button>
               <button type="button" onClick={() => setIdx((i) => Math.min(i + 1, maxIdx))} aria-label="Maju" className="absolute -right-1 top-1/2 -translate-y-1/2 rounded-full bg-black/30 p-1.5 text-white hover:bg-black/50">›</button>
@@ -251,7 +319,75 @@ function ProductsView({ heading, mode, limit, autoplay }: ProductsProps) {
   return (
     <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
       {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: total }).map((_, i) => card(i))}</div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {body(show > 0 ? show : total)}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * SLOT PRODUK DINAMIS — inti "kanvas + data aktif" utk PDP (dan bisa dipakai
+ * di halaman lain). Dirender di dalam kanvas Puck TAPI menampilkan produk
+ * AKTIF yang dibuka (dari konteks dinamis), bukan data statis blok.
+ */
+function ProductSlotView({ cta_text }: ProductSlotProps) {
+  const { hash, product, storeName } = usePuckDynamic();
+  const btn = cta_text || 'Beli Sekarang';
+
+  if (!product) {
+    return (
+      <div className="px-6 py-16 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>
+        {product === undefined ? 'Memuat produk...' : 'Produk tidak ditemukan.'}
+      </div>
+    );
+  }
+  const mp = product.master_product ?? product;
+  const name = mp?.name ?? (product as any).name ?? 'Produk';
+  const price = Number(product.price ?? mp?.price ?? 0);
+  const url = mp?.image || product?.image || '';
+  const wa = `https://wa.me/?text=${encodeURIComponent(`Halo ${storeName ? 'kak ' + storeName : ''}, saya mau pesan: ${name} (${hash ? '' : ''})`)}`;
+
+  return (
+    <div className="px-6 py-6" style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}>
+      <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2">
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-black/5">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt={name} className="h-full w-full object-cover" />
+          ) : null}
+        </div>
+        <div className="flex flex-col justify-center">
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--brand, #8a6f4d)' }}>
+            {product.sku || mp?.sku || 'PRODUK'}
+          </span>
+          <h1 className="mt-2 text-3xl font-black leading-tight tracking-tight">{name}</h1>
+          <p className="mt-2 text-lg font-bold" style={{ color: 'var(--brand, #8a6f4d)' }}>
+            {Number.isFinite(price) && price > 0 ? `Rp ${price.toLocaleString('id-ID')}` : 'Hubungi kami'}
+          </p>
+          <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted, #7a7568)' }}>
+            {product.description || mp?.description || ''}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="rounded-full px-6 py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
+              style={{ background: 'var(--brand, #8a6f4d)', color: '#fff' }}
+            >
+              {btn}
+            </button>
+            <a
+              href={wa}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border px-6 py-2.5 text-sm font-bold"
+              style={{ borderColor: 'var(--brand, #8a6f4d)', color: 'var(--brand, #8a6f4d)' }}
+            >
+              Order via WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -439,6 +575,15 @@ export const puckLabConfig: Config<ComponentProps> = {
       },
       defaultProps: { heading: 'Menu Favorit', mode: 'grid', limit: 4, autoplay: 'yes' },
       render: ProductsView,
+    },
+
+    ProductSlot: {
+      label: 'Slot Produk (PDP)',
+      fields: {
+        cta_text: { type: 'text', label: 'Teks Tombol Beli' },
+      },
+      defaultProps: { cta_text: 'Beli Sekarang' },
+      render: ProductSlotView,
     },
 
     Cta: {

@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2 } from
 import { Puck, Render, resolveAllData, type Data } from '@puckeditor/core';
 import '@puckeditor/core/dist/index.css';
 import { puckLabConfig } from '@/lib/puckLabConfig';
-import { isPuckStored, defaultPuckData, legacyToPuckData, puckDataOf, legacyOf } from '@/lib/puckAdapter';
+import { isPuckStored, defaultPuckDataFor, legacyToPuckData, puckDataOf, legacyOf } from '@/lib/puckAdapter';
 import { setUploadToken } from '@/lib/puckImageField';
 
 /** Bentuk halaman yang diterima editor (hasil query web store). */
@@ -43,8 +43,9 @@ export default function PuckPageEditor({
     if (stored) return stored;
     const legacy = legacyOf(initial.blocks);
     if (legacy.length > 0) return legacyToPuckData(legacy);
-    // Halaman baru / kosong → lahir lengkap dengan default (Shopify-like).
-    return defaultPuckData();
+    // Halaman baru / kosong → lahir lengkap dengan default per tipe halaman
+    // (home → hero+katalog, product → slot produk dinamis, dst).
+    return defaultPuckDataFor(initial.slug);
   });
   const [preview, setPreview] = useState(false);
   const [resolved, setResolved] = useState<Data | null>(null);

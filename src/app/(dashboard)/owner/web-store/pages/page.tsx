@@ -15,7 +15,28 @@ const SLUG_LABEL: Record<string, string> = {
   about: 'Tentang',
   contact: 'Kontak',
   faq: 'FAQ',
+  product: 'Halaman Produk (PDP)',
+  cart: 'Keranjang',
+  checkout: 'Checkout',
+  category: 'Kategori Produk',
 };
+
+const SLUG_HINT: Record<string, string> = {
+  home: 'Landing utama — sudah aktif.',
+  about: 'Halaman statis profil toko.',
+  contact: 'Halaman statis kontak.',
+  faq: 'Halaman statis pertanyaan umum.',
+  product: 'Template detail produk. Bagian produk (gambar, harga, beli) otomatis dari katalog; taruh blok “Slot Produk (PDP)” di posisi produk.',
+  cart: 'Halaman keranjang.',
+  checkout: 'Halaman checkout & ringkasan pesanan.',
+  category: 'Template halaman daftar produk per kategori.',
+};
+
+const SLUG_OPTIONS: { value: string; label: string; hint: string }[] = Object.keys(SLUG_LABEL).map((k) => ({
+  value: k,
+  label: SLUG_LABEL[k],
+  hint: SLUG_HINT[k] ?? '',
+}));
 
 export default function WebPagesPage() {
   const router = useRouter();
@@ -145,16 +166,22 @@ export default function WebPagesPage() {
           <Plus size={18} className="text-blue-600" /> Buat Halaman Baru
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <select
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="home">Beranda (home)</option>
-            <option value="about">Tentang (about)</option>
-            <option value="contact">Kontak (contact)</option>
-            <option value="faq">FAQ (faq)</option>
-          </select>
+          <div className="w-full sm:w-auto">
+            <select
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {SLUG_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label} ({o.value})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-slate-400 max-w-md">
+              {SLUG_HINT[slug]}
+            </p>
+          </div>
           <button
             onClick={createPage}
             disabled={saving || !token}

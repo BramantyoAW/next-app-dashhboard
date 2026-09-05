@@ -8,6 +8,10 @@ import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { ProductActions } from '@/components/storefront/ProductActions';
 import { ProductGrid } from '@/components/storefront/ui/ProductCard';
 import type { ProductAttribute } from '@/graphql/query/webstore';
+import StorefrontPuckRenderer from '@/components/storefront/StorefrontPuckRenderer';
+import StorefrontShopShell from '@/components/storefront/StorefrontShopShell';
+import { isPuckStored, puckDataOf } from '@/lib/puckAdapter';
+import { getPageByHashAndSlug } from '@/lib/storefront-server';
 
 type SP = {
   id: string;
@@ -53,6 +57,22 @@ export default async function StorefrontProductPage({
   const waPhone = store?.webStoreByHash?.notify_whatsapp ?? null;
   const storeName = store?.webStoreByHash?.store_name ?? 'Toko';
 
+  // Template PDP dari page builder (slug 'product') — jika ada & berisi kanvas,
+  // render halaman itu + suntik produk aktif lewat slot dinamis ProductSlot.
+  const tpl = await getPageByHashAndSlug(hash, 'product');
+  if (tpl && isPuckStored(tpl.blocks)) {
+    const puck = puckDataOf(tpl.blocks);
+    if (puck && (puck.content ?? []).length > 0) {
+      return (
+        <StorefrontPuckRenderer
+          data={puck}
+          storeName={storeName}
+          dynamic={{ hash, storeName, product: sp as unknown as Record<string, any> }}
+        />
+      );
+    }
+  }
+
   const variantImages = (sp.variants ?? [])
     .filter((r) => r.variant_key && r.image)
     .reduce<Record<string, string>>((acc, r) => {
@@ -96,6 +116,7 @@ export default async function StorefrontProductPage({
     .slice(0, 5);
 
   return (
+    <StorefrontShopShell hash={hash}>
     <div className="space-y-10">
       <article className="grid gap-8 md:grid-cols-2 lg:gap-12">
         {/* Gallery */}
@@ -204,5 +225,6 @@ export default async function StorefrontProductPage({
         </section>
       )}
     </div>
+    </StorefrontShopShell>
   );
 }

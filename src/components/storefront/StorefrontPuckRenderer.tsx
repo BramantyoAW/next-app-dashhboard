@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Render, resolveAllData, type Data } from '@puckeditor/core';
 import { puckLabConfig } from '@/lib/puckLabConfig';
+import { PuckDynamicContext, type PuckDynamic } from '@/lib/puckDynamic';
 
 /**
  * Renderer storefront untuk data Puck (dari page builder).
@@ -12,18 +13,19 @@ import { puckLabConfig } from '@/lib/puckLabConfig';
  * dengan config komponen yang sama seperti editor — sehingga apa yang owner
  * rancang di editor tampil persis di toko publik.
  *
- * Dipakai oleh:
- *  - (shop)/page.tsx  (home)
- *  - (fullpage)/[slug]/page.tsx (halaman about/faq/kontak dsb.)
+ * `dynamic` berisi data aktif (produk yang dibuka, keranjang, dst) yang
+ * disuntikkan lewat context utk blok dinamis (ProductSlot dll).
  */
 export default function StorefrontPuckRenderer({
   data,
   products = [],
   storeName = '',
+  dynamic = {},
 }: {
   data: Data;
   products?: { id: string; name: string; price: string; image?: string | null }[];
   storeName?: string;
+  dynamic?: PuckDynamic;
 }) {
   const [resolved, setResolved] = useState<Data | null>(null);
   const [err, setErr] = useState('');
@@ -58,7 +60,9 @@ export default function StorefrontPuckRenderer({
   }
   return (
     <div className="storefront-puck-root" style={{ minHeight: '100vh' }}>
-      <Render config={puckLabConfig} data={resolved} />
+      <PuckDynamicContext.Provider value={{ hash: dynamic.hash ?? '', storeName, product: dynamic.product ?? null, products: dynamic.products ?? [], cart: dynamic.cart ?? [] }}>
+        <Render config={puckLabConfig} data={resolved} />
+      </PuckDynamicContext.Provider>
     </div>
   );
 }

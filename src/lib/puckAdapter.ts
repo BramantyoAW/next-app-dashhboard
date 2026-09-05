@@ -104,40 +104,74 @@ export function legacyToPuckData(blocks: LegacyBlock[]): Data {
  * dan bisa diedit drag&drop.
  */
 export function defaultPuckData(): Data {
+  return defaultPuckDataFor('home');
+}
+
+/** Header toko standar (dipakai semua template halaman). */
+function tplHeader(item: (t: string, p: Record<string, unknown>, n: number) => { type: never; props: Record<string, unknown> }, t: number) {
+  return item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', menu_3: '', menu_4: '', cta_text: 'Pesan', sticky: 'yes' }, t);
+}
+
+/** Footer toko standar (dipakai semua template halaman). */
+function tplFooter(item: (t: string, p: Record<string, unknown>, n: number) => { type: never; props: Record<string, unknown> }, t: number) {
+  return item('StoreFooter', {
+    logo_mode: 'text',
+    logo_image: '',
+    about_text: 'Toko online terpercaya untuk kebutuhan harian Anda.',
+    show_about: 'yes',
+    show_links: 'yes',
+    links_title: 'Menu',
+    links: [
+      { label: 'Tentang', href: '/about' },
+      { label: 'Cara Order', href: '/cara-order' },
+    ],
+    show_social: 'yes',
+    socials_title: 'Ikuti Kami',
+    socials: [
+      { label: 'Instagram', href: '#' },
+      { label: 'WhatsApp', href: '#' },
+    ],
+    show_payments: 'yes',
+    copyright_text: '© ' + new Date().getFullYear() + ' Hak cipta dilindungi.',
+  }, t);
+}
+
+/**
+ * Data awal (default) halaman kanvas per tipe (slug). Halaman dinamis seperti
+ * PDP mendapat template dgn SLOT dinamis (ProductSlot) — area produk diisi
+ * otomatis dari data aktif saat halaman dibuka di storefront.
+ */
+export function defaultPuckDataFor(slug: string): Data {
   const t = Date.now();
   const item = (type: string, props: Record<string, unknown>, n: number) => ({
     type: type as never,
     props: { id: `puck-def-${t}-${n}`, ...props },
   });
+  const hdr = tplHeader(item, 0);
+  const ftr = tplFooter(item, 999);
+
+  if (slug === 'product') {
+    return {
+      root: { props: { title: 'Produk' } },
+      zones: {},
+      content: [
+        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
+        item('ProductSlot', { cta_text: 'Beli Sekarang' }, 1),
+        ftr,
+      ],
+    };
+  }
+
   return {
     root: { props: { title: 'Home' } },
     zones: {},
     content: [
-      item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', menu_3: '', menu_4: '', cta_text: 'Pesan', sticky: 'yes' }, 0),
+      hdr,
       item('Hero', { eyebrow: 'SELAMAT DATANG', heading: 'Produk Segar & Berkualitas', subheading: 'Temukan pilihan terbaik toko kami — antar cepat, bayar mudah.', cta_text: 'Belanja Sekarang', image_url: '', align: 'left', dark: 'yes' }, 1),
       item('Text', { heading: 'Tentang Kami', body: 'Ceritakan tentang toko Anda di sini. Ubah teks langsung di kanvas.' }, 2),
       item('Products', { heading: 'Menu Favorit', mode: 'grid', limit: 4, autoplay: 'yes' }, 3),
       item('Cta', { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' }, 4),
-      item('StoreFooter', {
-        logo_mode: 'text',
-        logo_image: '',
-        about_text: 'Toko online terpercaya untuk kebutuhan harian Anda.',
-        show_about: 'yes',
-        show_links: 'yes',
-        links_title: 'Menu',
-        links: [
-          { label: 'Tentang', href: '/about' },
-          { label: 'Cara Order', href: '/cara-order' },
-        ],
-        show_social: 'yes',
-        socials_title: 'Ikuti Kami',
-        socials: [
-          { label: 'Instagram', href: '#' },
-          { label: 'WhatsApp', href: '#' },
-        ],
-        show_payments: 'yes',
-        copyright_text: '© ' + new Date().getFullYear() + ' Hak cipta dilindungi.',
-      }, 5),
+      ftr,
     ],
   };
 }

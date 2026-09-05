@@ -93,3 +93,26 @@ export async function getWebStoreByHashServer(hash: string): Promise<WebStoreRes
     return null;
   }
 }
+
+/** Ambil satu halaman web store (slug tertentu) — utk template dinamis (product, cart, dsb). */
+export async function getPageByHashAndSlug(hash: string, slug: string): Promise<{ title: string; blocks: unknown } | null> {
+  if (!hash || !slug) return null;
+  const apiUrl = process.env.GRAPHQL_URL || 'http://127.0.0.1:8000/graphql';
+  const query = `query($hash: String!) {
+    webStoreByHash(hash: $hash) { pages { slug title blocks } }
+  }`;
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: { hash } }),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const page = json?.data?.webStoreByHash?.pages?.find((p: { slug: string }) => p.slug === slug);
+    return page ? { title: page.title ?? '', blocks: page.blocks ?? null } : null;
+  } catch {
+    return null;
+  }
+}
