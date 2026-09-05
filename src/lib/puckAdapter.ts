@@ -184,6 +184,18 @@ export function defaultPuckDataFor(slug: string): Data {
       ],
     };
   }
+  if (slug === 'category') {
+    return {
+      root: { props: { title: 'Kategori' } },
+      zones: {},
+      content: [
+        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
+        item('Hero', { eyebrow: 'KATEGORI', heading: 'Jelajahi Koleksi Kami', subheading: 'Pilih kategori favorit Anda.', cta_text: '', image_url: '', align: 'center', dark: 'yes' }, 1),
+        item('CategorySlot', { heading: 'Produk', limit: 50 }, 2),
+        ftr,
+      ],
+    };
+  }
 
   return {
     root: { props: { title: 'Home' } },

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
 import { imageUploadField } from './puckImageField';
-import { ProductCard, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
+import { ProductCard, ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 import { usePuckDynamic } from '@/lib/puckDynamic';
 import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
@@ -64,6 +64,10 @@ type CartSlotProps = {
 type CheckoutSlotProps = {
   heading: string;
 };
+type CategorySlotProps = {
+  heading: string;
+  limit: number;
+};
 type CtaProps = { heading: string; body: string; button_text: string; link: string };
 type FaqItem = { q: string; a: string };
 type FaqProps = { heading: string; items: FaqItem[] };
@@ -120,6 +124,7 @@ type ComponentProps = {
   ProductSlot: ProductSlotProps;
   CartSlot: CartSlotProps;
   CheckoutSlot: CheckoutSlotProps;
+  CategorySlot: CategorySlotProps;
   Cta: CtaProps;
   Faq: FaqProps;
   StoreFooter: StoreFooterProps;
@@ -430,6 +435,59 @@ function CheckoutSlotView({ heading }: CheckoutSlotProps) {
   );
 }
 
+/** Slot produk kategori dinamis — fetch produk kategori aktif & render grid. */
+function CategorySlotView({ heading, limit }: CategorySlotProps) {
+  const { hash, categorySlug } = usePuckDynamic();
+  const [items, setItems] = useState<StorefrontProduct[]>([]);
+  const [state, setState] = useState<'loading' | 'done'>('loading');
+  const n = Math.min(limit || 50, 50);
+
+  useEffect(() => {
+    if (!hash || !categorySlug) {
+      setState('done');
+      return;
+    }
+    let on = true;
+    (async () => {
+      try {
+        const { gqlFetch } = await import('@/lib/graphqlClient');
+        const res = await gqlFetch<{ storefrontProductsByCategory: StorefrontProduct[] | null }>(
+          `query($web_store_slug: String!, $category_slug: String!, $limit: Int) {
+            storefrontProductsByCategory(web_store_slug: $web_store_slug, category_slug: $category_slug, limit: $limit) {
+              id price_override image is_active
+              master_product { id sku name price image }
+            }
+          }`,
+          { web_store_slug: hash, category_slug: categorySlug, limit: n }
+        );
+        if (on) {
+          setItems((res?.storefrontProductsByCategory ?? []).filter((p) => p.is_active !== false));
+          setState('done');
+        }
+      } catch {
+        if (on) setState('done');
+      }
+    })();
+    return () => {
+      on = false;
+    };
+  }, [hash, categorySlug, n]);
+
+  if (!hash) {
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Produk Kategori (slot dinamis)</div>;
+  }
+  return (
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+      {items.length === 0 && state === 'loading' ? (
+        <div className="py-8 text-center text-sm" style={{ color: 'var(--muted, #7a7568)' }}>Memuat produk...</div>
+      ) : (
+        <ProductGrid hash={hash} products={items} />
+      )}
+    </div>
+  );
+}
+
 export const puckLabConfig: Config<ComponentProps> = {
   root: Root,
   components: {
@@ -640,6 +698,16 @@ export const puckLabConfig: Config<ComponentProps> = {
       },
       defaultProps: { heading: '' },
       render: CheckoutSlotView,
+    },
+
+    CategorySlot: {
+      label: 'Slot Produk Kategori',
+      fields: {
+        heading: { type: 'text', label: 'Judul Section' },
+        limit: { type: 'number', label: 'Jumlah Produk', min: 1, max: 50 },
+      },
+      defaultProps: { heading: 'Produk', limit: 50 },
+      render: CategorySlotView,
     },
 
     Cta: {

@@ -17,6 +17,8 @@ export type PuckDynamic = {
   product?: Record<string, any> | null;
   products?: Record<string, any>[] | null;
   cart?: Record<string, any>[] | null;
+  categorySlug?: string;
+  categoryName?: string;
 };
 
 export const PuckDynamicContext = createContext<PuckDynamic>({});

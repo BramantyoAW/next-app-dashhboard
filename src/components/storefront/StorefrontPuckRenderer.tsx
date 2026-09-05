@@ -60,7 +60,17 @@ export default function StorefrontPuckRenderer({
   }
   return (
     <div className="storefront-puck-root" style={{ minHeight: '100vh' }}>
-      <PuckDynamicContext.Provider value={{ hash: dynamic.hash ?? '', storeName, product: dynamic.product ?? null, products: dynamic.products ?? [], cart: dynamic.cart ?? [] }}>
+      <PuckDynamicContext.Provider
+        value={{
+          hash: dynamic.hash ?? '',
+          storeName,
+          product: dynamic.product ?? null,
+          products: dynamic.products ?? [],
+          cart: dynamic.cart ?? [],
+          categorySlug: dynamic.categorySlug,
+          categoryName: dynamic.categoryName,
+        }}
+      >
         <Render config={puckLabConfig} data={resolved} />
       </PuckDynamicContext.Provider>
     </div>

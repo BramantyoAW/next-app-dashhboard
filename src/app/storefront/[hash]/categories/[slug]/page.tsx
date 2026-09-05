@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
+import StorefrontPuckRenderer from '@/components/storefront/StorefrontPuckRenderer';
+import StorefrontShopShell from '@/components/storefront/StorefrontShopShell';
+import { isPuckStored, puckDataOf } from '@/lib/puckAdapter';
+import { getPageByHashAndSlug } from '@/lib/storefront-server';
 
 type Category = { id: string; name: string; slug: string | null };
 
@@ -20,6 +24,22 @@ export default async function StorefrontCategoryPage({
   });
   const categories = catData?.storefrontCategories ?? [];
   const activeCat = categories.find((c) => c.slug === slug);
+  if (!activeCat) notFound();
+
+  // Template kategori dari page builder (slug 'category') — kanvas penuh dgn
+  // slot produk kategori dinamis.
+  const tpl = await getPageByHashAndSlug(hash, 'category');
+  if (tpl && isPuckStored(tpl.blocks)) {
+    const puck = puckDataOf(tpl.blocks);
+    if (puck && (puck.content ?? []).length > 0) {
+      return (
+        <StorefrontPuckRenderer
+          data={puck}
+          dynamic={{ hash, categorySlug: slug, categoryName: activeCat.name ?? slug }}
+        />
+      );
+    }
+  }
 
   const data = await gqlFetchServer<{ storefrontProductsByCategory: StorefrontProduct[] }>({
     query: `query($web_store_slug: String!, $category_slug: String!, $page: Int, $limit: Int) {
@@ -32,10 +52,9 @@ export default async function StorefrontCategoryPage({
   });
   const products = (data?.storefrontProductsByCategory ?? []).filter((p) => p.is_active);
 
-  if (!activeCat) notFound();
-
   return (
-    <div className="space-y-6">
+    <StorefrontShopShell hash={hash}>
+      <div className="space-y-6">
       <nav className="flex items-center gap-1 text-xs text-slate-400">
         <Link href={`/storefront/${hash}`} className="hover:underline">
           Beranda
@@ -67,6 +86,7 @@ export default async function StorefrontCategoryPage({
       </div>
 
       <ProductGrid hash={hash} products={products} />
-    </div>
+      </div>
+    </StorefrontShopShell>
   );
 }
