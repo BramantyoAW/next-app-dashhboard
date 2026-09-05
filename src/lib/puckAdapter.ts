@@ -161,6 +161,29 @@ export function defaultPuckDataFor(slug: string): Data {
       ],
     };
   }
+  if (slug === 'cart') {
+    return {
+      root: { props: { title: 'Keranjang' } },
+      zones: {},
+      content: [
+        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
+        item('CartSlot', { heading: 'Keranjang Belanja' }, 1),
+        item('Cta', { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' }, 2),
+        ftr,
+      ],
+    };
+  }
+  if (slug === 'checkout') {
+    return {
+      root: { props: { title: 'Checkout' } },
+      zones: {},
+      content: [
+        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
+        item('CheckoutSlot', { heading: '' }, 1),
+        ftr,
+      ],
+    };
+  }
 
   return {
     root: { props: { title: 'Home' } },

@@ -5,6 +5,8 @@ import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
 import { imageUploadField } from './puckImageField';
 import { ProductCard, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 import { usePuckDynamic } from '@/lib/puckDynamic';
+import { CartView } from '@/components/storefront/CartView';
+import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -55,6 +57,12 @@ type ProductsProps = {
 type ProductSlotProps = {
   /** Teks CTA yang dirender di bawah detail produk (opsional). */
   cta_text: string;
+};
+type CartSlotProps = {
+  heading: string;
+};
+type CheckoutSlotProps = {
+  heading: string;
 };
 type CtaProps = { heading: string; body: string; button_text: string; link: string };
 type FaqItem = { q: string; a: string };
@@ -110,6 +118,8 @@ type ComponentProps = {
   Text: TextProps;
   Products: ProductsProps;
   ProductSlot: ProductSlotProps;
+  CartSlot: CartSlotProps;
+  CheckoutSlot: CheckoutSlotProps;
   Cta: CtaProps;
   Faq: FaqProps;
   StoreFooter: StoreFooterProps;
@@ -392,6 +402,34 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
   );
 }
 
+/** Slot keranjang dinamis — merender CartView asli di dalam kanvas. */
+function CartSlotView({ heading }: CartSlotProps) {
+  const { hash } = usePuckDynamic();
+  if (!hash) {
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Keranjang (slot dinamis)</div>;
+  }
+  return (
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+      <CartView hash={hash} jumpToCheckout={false} />
+    </div>
+  );
+}
+
+/** Slot checkout dinamis — merender CheckoutForm asli di dalam kanvas. */
+function CheckoutSlotView({ heading }: CheckoutSlotProps) {
+  const { hash } = usePuckDynamic();
+  if (!hash) {
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Checkout (slot dinamis)</div>;
+  }
+  return (
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+      <CheckoutForm hash={hash} />
+    </div>
+  );
+}
+
 export const puckLabConfig: Config<ComponentProps> = {
   root: Root,
   components: {
@@ -584,6 +622,24 @@ export const puckLabConfig: Config<ComponentProps> = {
       },
       defaultProps: { cta_text: 'Beli Sekarang' },
       render: ProductSlotView,
+    },
+
+    CartSlot: {
+      label: 'Slot Keranjang',
+      fields: {
+        heading: { type: 'text', label: 'Judul Section' },
+      },
+      defaultProps: { heading: '' },
+      render: CartSlotView,
+    },
+
+    CheckoutSlot: {
+      label: 'Slot Checkout',
+      fields: {
+        heading: { type: 'text', label: 'Judul Section' },
+      },
+      defaultProps: { heading: '' },
+      render: CheckoutSlotView,
     },
 
     Cta: {
