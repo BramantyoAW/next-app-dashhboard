@@ -71,7 +71,18 @@ export async function gqlFetch<T>(
 
   const json = JSON.parse(raw);
   if (json.errors?.length) {
-    throw new Error(json.errors.map((e: any) => e.message).join(', '));
+    const messages = json.errors.map((e: any) => e.message);
+    const isAuth = messages.some((m: string) => /unauthenticated|not authenticated|token.*expired|login.*required/i.test(m));
+    if (isAuth && typeof window !== 'undefined') {
+      // Sesi habis / token invalid → bersihkan kredensial lalu lempar ke halaman login.
+      localStorage.removeItem('token');
+      document.cookie = 'ombot_token=; Path=/; Max-Age=0; SameSite=Lax';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login');
+      }
+      throw new Error('Unauthenticated. Sesi berakhir, silakan masuk kembali.');
+    }
+    throw new Error(messages.join(', '));
   }
 
   return json.data as T;
