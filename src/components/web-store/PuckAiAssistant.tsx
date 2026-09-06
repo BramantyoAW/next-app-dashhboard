@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Check, ImagePlus, Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
@@ -128,6 +128,7 @@ export function PuckAiAssistant({
   onClose?: () => void;
 }) {
   const [open, setOpen] = useState(true);
+  const [maximized, setMaximized] = useState(false);
   const [message, setMessage] = useState('');
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
@@ -266,16 +267,23 @@ export function PuckAiAssistant({
         </button>
       )}
       {open && (
-        <section className="fixed bottom-0 right-0 z-[70] flex h-[min(640px,86vh)] w-full max-w-sm flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-5 sm:right-5 sm:rounded-2xl">
+        <section
+          className={`fixed right-0 z-[70] flex flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl transition-all ${
+            maximized
+              ? 'inset-2 bottom-2 left-2 top-2 h-auto w-auto rounded-2xl sm:inset-3'
+              : 'bottom-0 h-[min(640px,86vh)] w-full max-w-sm rounded-t-2xl sm:bottom-5 sm:right-5 sm:rounded-2xl'
+          }`}
+        >
           <header className="flex items-center justify-between bg-slate-900 px-4 py-3 text-white">
             <div className="flex items-center gap-2">
               <Bot size={18} />
               <div>
                 <div className="text-sm font-bold">AI Halaman</div>
-                <div className="max-w-[190px] truncate text-[11px] text-slate-300">“{pageTitle ?? pageSlug}” · blok Puck</div>
+                <div className={`truncate text-[11px] text-slate-300 ${maximized ? 'max-w-xs' : 'max-w-[190px]'}`}>“{pageTitle ?? pageSlug}” · blok Puck</div>
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <button type="button" onClick={() => setMaximized((m) => !m)} className="rounded-lg p-1.5 hover:bg-white/10" aria-label={maximized ? 'Kecilkan panel' : 'Perbesar panel'} title={maximized ? 'Kecilkan' : 'Perbesar'}>{maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
               <button type="button" onClick={() => { setMessages([]); }} className="rounded-lg p-1.5 hover:bg-white/10" aria-label="Bersihkan chat" title="Bersihkan chat"><Trash2 size={15} /></button>
               <button type="button" onClick={() => { setOpen(false); onClose?.(); }} className="rounded-lg p-1.5 hover:bg-white/10" aria-label="Tutup"><X size={17} /></button>
             </div>
