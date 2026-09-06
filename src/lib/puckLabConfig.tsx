@@ -8,6 +8,7 @@ import { usePuckDynamic } from '@/lib/puckDynamic';
 import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
+import { withCustomCssJs } from './puckScoped';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -1339,5 +1340,13 @@ export const puckLabConfig: Config<ComponentProps> = {
     },
   },
 };
+
+/**
+ * CSS & JS scoped utk SEMUA blok: tambahkan field `css`/`js` dan bungkus
+ * render-nya sehingga CSS/JS yang ditulis owner hanya berlaku utk blok itu.
+ */
+for (const name of Object.keys(puckLabConfig.components)) {
+  (puckLabConfig.components as any)[name] = withCustomCssJs((puckLabConfig.components as any)[name]);
+}
 
 export default puckLabConfig;
