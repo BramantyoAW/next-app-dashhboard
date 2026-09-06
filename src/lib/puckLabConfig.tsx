@@ -49,6 +49,8 @@ type HeroProps = {
   dark: 'yes' | 'no';
 };
 type TextProps = { heading: string; body: string };
+/** Blok HTML kustom — owner menempel HTML/CSS bebas (Model A: string di JSON). */
+type HtmlSnippetProps = { code: string };
 type ProductsProps = {
   heading: string;
   mode: 'grid' | 'slider';
@@ -77,6 +79,9 @@ type StoreFooterLink = { label: string; href: string };
 type StoreSocial = { platform: string; label?: string; href: string };
 /** Metode pembayaran yang ditampilkan (badge teks/ikon). */
 type StorePayment = { key: string; label: string };
+
+/** Batas maks ukuran HTML kustom per blok (Model A: string di JSON halaman). */
+export const MAX_SNIPPET_CHARS = 30_000;
 
 /** Path SVG logo brand (simple-icons, CC0) per platform — dirender sebagai ikon. */
 const SOCIAL_BRAND_PATHS: Record<string, string> = {
@@ -184,6 +189,7 @@ type ComponentProps = {
   Hero: HeroProps;
   Banner: BannerProps;
   Text: TextProps;
+  HtmlSnippet: HtmlSnippetProps;
   Products: ProductsProps;
   ProductSlot: ProductSlotProps;
   CartSlot: CartSlotProps;
@@ -778,6 +784,32 @@ export const puckLabConfig: Config<ComponentProps> = {
           {body && <p className="mt-2 max-w-prose whitespace-pre-wrap text-sm" style={{ color: 'var(--muted, #7a7568)' }}>{body}</p>}
         </div>
       ),
+    },
+
+    HtmlSnippet: {
+      label: 'HTML Kustom',
+      fields: {
+        code: {
+          type: 'textarea',
+          label: 'Kode HTML/CSS',
+          // rows: 8,
+        },
+      },
+      defaultProps: { code: '<!-- Tempel HTML di sini. CSS inline boleh; script aktif -->\n<div style="padding:24px;background:#fff3cd;border-radius:12px;text-align:center">\n  <strong>Promo spesial!</strong> Gunakan kode <code>HEMAT10</code>.\n</div>' },
+      render: ({ code }) => {
+        // Owner dipercaya (setara custom JS global tema) — dirender as-is.
+        if (!code) return <></>;
+        const tooBig = code.length > MAX_SNIPPET_CHARS;
+        if (tooBig) {
+          return (
+            <div className="px-6 py-6 text-center text-sm text-amber-700 bg-amber-50">
+              HTML melebihi batas {MAX_SNIPPET_CHARS.toLocaleString('id')} karakter — persingkat dulu.
+            </div>
+          );
+        }
+        // eslint-disable-next-line react/no-danger
+        return <div className="html-snippet" dangerouslySetInnerHTML={{ __html: code }} />;
+      },
     },
 
     Products: {
