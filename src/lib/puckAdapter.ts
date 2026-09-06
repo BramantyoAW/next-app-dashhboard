@@ -202,7 +202,17 @@ export function defaultPuckDataFor(slug: string): Data {
     zones: {},
     content: [
       hdr,
-      item('Hero', { eyebrow: 'SELAMAT DATANG', heading: 'Produk Segar & Berkualitas', subheading: 'Temukan pilihan terbaik toko kami — antar cepat, bayar mudah.', cta_text: 'Belanja Sekarang', image_url: '', align: 'left', dark: 'yes' }, 1),
+      item('Banner', {
+        slides: [
+          { mode: 'product', product_sku: 'CUP-BAKSO', badge: 'Terlaris', subheading: 'Bakso jumbo dengan kuah gurih — pesan sekarang!' },
+          { mode: 'product', product_sku: 'CUP-KOPI-SUSU', badge: 'Promo', subheading: 'Kopi susu gula aren kekinian, segar setiap saat.' },
+        ],
+        autoplay: 'yes',
+        interval: 5,
+        align: 'center',
+        height: 420,
+        dark: 'yes',
+      }, 1),
       item('Text', { heading: 'Tentang Kami', body: 'Ceritakan tentang toko Anda di sini. Ubah teks langsung di kanvas.' }, 2),
       item('Products', { heading: 'Menu Favorit', mode: 'grid', limit: 4, autoplay: 'yes' }, 3),
       item('Cta', { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' }, 4),

@@ -27,6 +27,19 @@ export function imageUploadField(): CustomField<string> {
   };
 }
 
+/** Varian utk field di dalam array/object yang nilainya opsional. */
+export function imageUploadFieldOpt(): CustomField<string | undefined> {
+  return {
+    type: 'custom',
+    label: 'Gambar',
+    render: (props) =>
+      ImageUploadControl({
+        value: props.value ?? '',
+        onChange: (v) => props.onChange(v || undefined),
+      }),
+  };
+}
+
 function ImageUploadControl({
   value,
   onChange,

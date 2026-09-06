@@ -64,7 +64,7 @@ export default async function StorefrontHome({
   if (homeBlocks && isPuckStored(homeBlocks)) {
     const puck = puckDataOf(homeBlocks);
     if (puck) {
-      return <StorefrontPuckRenderer data={puck} storeName={storeName} />;
+      return <StorefrontPuckRenderer data={puck} storeName={storeName} dynamic={{ hash }} />;
     }
   }
   const blocks = (Array.isArray(homeBlocks) ? homeBlocks : null) as { type: string; [key: string]: unknown }[] | null;

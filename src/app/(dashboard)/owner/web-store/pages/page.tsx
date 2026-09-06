@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getWebStoreByOwner } from '@/graphql/query/webstore';
 import { deleteWebPage, upsertWebPage } from '@/graphql/mutation/webstore';
 import type { WebPage } from '@/graphql/query/webstore';
@@ -45,6 +45,9 @@ export default function WebPagesPage() {
   const [webStoreId, setWebStoreId] = useState('');
   const [storeId, setStoreId] = useState('');
   const [storeTheme, setStoreTheme] = useState<Record<string, any> | null>(null);
+  const [storeChrome, setStoreChrome] = useState<Record<string, any> | null>(null);
+  const [storeLogo, setStoreLogo] = useState<string | null>(null);
+  const [storeBanner, setStoreBanner] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
   const [slug, setSlug] = useState('home');
   const [loading, setLoading] = useState(true);
@@ -52,6 +55,24 @@ export default function WebPagesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+
+  // Auto-create dari editor: /owner/web-store/pages?new=<slug>
+  const newFromQuery = searchParams.get('new');
+  const didAuto = useRef(false);
+  useEffect(() => {
+    if (!newFromQuery || didAuto.current || !token || loading) return;
+    didAuto.current = true;
+    const existing = pages.find((p) => p.slug === newFromQuery);
+    if (existing) {
+      router.replace(`/owner/web-store/pages/${existing.id}`);
+    } else {
+      setSlug(newFromQuery);
+      // Tunggu state slug ter-set lalu panggil createPage.
+      setTimeout(() => createPageRef.current?.(), 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newFromQuery, token, loading, pages]);
 
   const load = useCallback(async (tok: string) => {
     if (!tok) return;
@@ -68,6 +89,9 @@ export default function WebPagesPage() {
       setStoreId(ws.store_id);
       setStoreName(ws.store_name);
       setStoreTheme(((ws.settings as any)?.theme ?? null) as Record<string, any> | null);
+      setStoreChrome(((ws.settings as any)?.chrome ?? null) as Record<string, any> | null);
+      setStoreLogo(ws.logo_url ?? null);
+      setStoreBanner(ws.banner_url ?? null);
       setPages(ws.pages ?? []);
     } catch (e: any) {
       setError(e?.message ?? 'Gagal memuat halaman');
@@ -109,6 +133,10 @@ export default function WebPagesPage() {
       setSaving(false);
     }
   }
+
+  // Ref terbaru createPage utk auto-create via query ?new=.
+  const createPageRef = useRef(createPage);
+  createPageRef.current = createPage;
 
   async function removePage(id: string) {
     if (!token || !confirm('Hapus halaman ini?')) return;
@@ -157,7 +185,7 @@ export default function WebPagesPage() {
 
       {/* Tema global toko — sinkron dgn page builder & storefront */}
       {token && webStoreId && storeId && (
-        <WebThemePanel token={token} webStoreId={webStoreId} storeId={storeId} storeName={storeName} initialTheme={storeTheme} />
+        <WebThemePanel token={token} webStoreId={webStoreId} storeId={storeId} storeName={storeName} initialTheme={storeTheme} initialChrome={storeChrome} logoUrl={storeLogo} bannerUrl={storeBanner} onMediaChange={(u) => { setStoreLogo(u.logo_url); setStoreBanner(u.banner_url); }} />
       )}
 
       {/* Create new */}

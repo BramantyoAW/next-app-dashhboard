@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
-import { imageUploadField } from './puckImageField';
+import { imageUploadField, imageUploadFieldOpt } from './puckImageField';
 import { ProductCard, ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 import { usePuckDynamic } from '@/lib/puckDynamic';
 import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
+import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -119,6 +120,7 @@ type ColumnsProps = {
 type ComponentProps = {
   StoreHeader: StoreHeaderProps;
   Hero: HeroProps;
+  Banner: BannerProps;
   Text: TextProps;
   Products: ProductsProps;
   ProductSlot: ProductSlotProps;
@@ -630,6 +632,75 @@ export const puckLabConfig: Config<ComponentProps> = {
           </div>
         );
       },
+    },
+
+    Banner: {
+      label: 'Banner Slider',
+      fields: {
+        slides: {
+          type: 'array',
+          label: 'Slide Banner',
+          getItemSummary: (item) =>
+            (item as { heading?: string } | undefined)?.heading ||
+            (item as { product_sku?: string } | undefined)?.product_sku ||
+            'Slide',
+          arrayFields: {
+            mode: {
+              type: 'radio',
+              label: 'Jenis',
+              options: [
+                { label: 'Manual (gambar/teks sendiri)', value: 'manual' },
+                { label: 'Dari Produk (pilih SKU)', value: 'product' },
+              ],
+            },
+            product_sku: { type: 'text', label: 'SKU Produk (mode Produk)' },
+            image_url: imageUploadFieldOpt(),
+            heading: { type: 'text', label: 'Judul' },
+            subheading: { type: 'textarea', label: 'Subjudul / Harga' },
+            cta_text: { type: 'text', label: 'Teks Tombol' },
+            cta_link: { type: 'text', label: 'Link Tombol (path/url)' },
+          },
+        },
+        autoplay: {
+          type: 'radio',
+          label: 'Putar Otomatis',
+          options: [
+            { label: 'Ya', value: 'yes' },
+            { label: 'Tidak', value: 'no' },
+          ],
+        },
+        interval: { type: 'number', label: 'Detik per Slide', min: 1, max: 15 },
+        align: {
+          type: 'radio',
+          label: 'Posisi Teks',
+          options: [
+            { label: 'Kiri', value: 'left' },
+            { label: 'Tengah', value: 'center' },
+            { label: 'Kanan', value: 'right' },
+          ],
+        },
+        height: { type: 'number', label: 'Tinggi (px)', min: 200, max: 900 },
+        dark: {
+          type: 'radio',
+          label: 'Gelapkan Gambar',
+          options: [
+            { label: 'Ya', value: 'yes' },
+            { label: 'Tidak', value: 'no' },
+          ],
+        },
+      },
+      defaultProps: {
+        slides: [
+          { mode: 'manual', heading: 'Banner pertama', subheading: 'Cobalah ubah atau pilih produk otomatis.', cta_text: 'Belanja', cta_link: '#', image_url: 'https://picsum.photos/seed/ombotB1/1600/500' },
+          { mode: 'manual', heading: 'Banner kedua', subheading: 'Tambah slide lain di panel kanan.', cta_text: 'Lihat', cta_link: '#', image_url: 'https://picsum.photos/seed/ombotB2/1600/500' },
+        ],
+        autoplay: 'yes',
+        interval: 4,
+        align: 'center',
+        height: 400,
+        dark: 'yes',
+      },
+      render: BannerView,
     },
 
     Text: {

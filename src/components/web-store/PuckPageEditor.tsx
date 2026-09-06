@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2, Plus } from 'lucide-react';
 import { Puck, Render, resolveAllData, type Data } from '@puckeditor/core';
 import '@puckeditor/core/dist/index.css';
 import { puckLabConfig } from '@/lib/puckLabConfig';
@@ -12,6 +12,17 @@ import { setUploadToken } from '@/lib/puckImageField';
 /** Bentuk halaman yang diterima editor (hasil query web store). */
 type PuckStoredPage = { id: string; slug: string; title: string; blocks: unknown };
 
+/** Tipe halaman yang bisa dibuat dari editor (+ Halaman Baru). */
+const PAGE_TYPES = [
+  { value: 'home', label: 'Beranda (home)' },
+  { value: 'about', label: 'Tentang (about)' },
+  { value: 'contact', label: 'Kontak (contact)' },
+  { value: 'faq', label: 'FAQ (faq)' },
+  { value: 'product', label: 'Halaman Produk / PDP (product)' },
+  { value: 'cart', label: 'Keranjang (cart)' },
+  { value: 'checkout', label: 'Checkout (checkout)' },
+  { value: 'category', label: 'Kategori Produk (category)' },
+];
 
 /**
  * Editor halaman nyata berbasis Puck (plugin, omBot tidak menimpa).
@@ -52,6 +63,8 @@ export default function PuckPageEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [newSlug, setNewSlug] = useState('about');
+  const [creating, setCreating] = useState(false);
 
   const legacy = useMemo(
     () => (isPuckStored(initial.blocks) ? legacyOf(initial.blocks) : legacyOf(initial.blocks)),
@@ -62,8 +75,13 @@ export default function PuckPageEditor({
     setData(next);
   }, []);
 
-  async function save() {
-    setSaving(true);
+  function createNewPage() {
+    // Buka halaman Pages Manager dengan instruksi auto-create utk slug ini.
+    setCreating(true);
+    router.push(`/owner/web-store/pages?new=${newSlug}`);
+  }
+
+  async function save() {    setSaving(true);
     setError(null);
     setOk(null);
     try {
@@ -125,6 +143,25 @@ export default function PuckPageEditor({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {/* Buat halaman baru (langsung dari editor) */}
+            <select
+              value={newSlug}
+              onChange={(e) => setNewSlug(e.target.value)}
+              title="Tipe halaman baru"
+              className="hidden sm:block max-w-[150px] px-2 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 focus:outline-none"
+            >
+              {PAGE_TYPES.filter((t) => t.value !== initial.slug).map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={createNewPage}
+              disabled={creating || !token}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors disabled:opacity-50"
+              title="Buat halaman baru lalu buka editornya"
+            >
+              {creating ? <Loader2 className="animate-spin" size={13} /> : <Plus size={13} />} Halaman Baru
+            </button>
             <button
               onClick={() => setPreview((p) => !p)}
               className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-bold transition-colors ${
@@ -171,6 +208,7 @@ export default function PuckPageEditor({
             onChange={(next) => setData(next as Data)}
             onPublish={handlePublish}
             iframe={{ enabled: false }}
+            overrides={{ headerActions: () => <></> }}
           />
         </div>
       )}
