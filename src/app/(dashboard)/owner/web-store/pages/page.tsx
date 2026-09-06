@@ -120,7 +120,10 @@ export default function WebPagesPage() {
   async function createCustomPage() {
     if (!token) return;
     const s = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
-    if (!s) return;
+    if (!s) {
+      setError('Ketik dulu slug halaman baru, mis. promo, kebijakan, katalog.');
+      return;
+    }
     setSaving(true);
     setError(null);
     setOk(null);
@@ -217,8 +220,8 @@ export default function WebPagesPage() {
             </p>
           </div>
           <button
-            onClick={customSlug ? createCustomPage : undefined}
-            disabled={saving || !token || !customSlug.trim()}
+            onClick={createCustomPage}
+            disabled={saving || !token}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
