@@ -128,10 +128,15 @@ function tplFooter(item: (t: string, p: Record<string, unknown>, n: number) => {
     show_social: 'yes',
     socials_title: 'Ikuti Kami',
     socials: [
-      { label: 'Instagram', href: '#' },
-      { label: 'WhatsApp', href: '#' },
+      { platform: 'instagram', href: '#' },
+      { platform: 'whatsapp', href: '#' },
     ],
     show_payments: 'yes',
+    payments: [
+      { key: 'BCA', label: 'BCA' },
+      { key: 'QRIS', label: 'QRIS' },
+      { key: 'COD', label: 'COD' },
+    ],
     copyright_text: '© ' + new Date().getFullYear() + ' Hak cipta dilindungi.',
   }, t);
 }

@@ -42,12 +42,9 @@ export default function WebPagesPage() {
   const router = useRouter();
   const [token, setToken] = useState('');
   const [pages, setPages] = useState<WebPage[]>([]);
-  const [webStoreId, setWebStoreId] = useState('');
   const [storeId, setStoreId] = useState('');
   const [storeTheme, setStoreTheme] = useState<Record<string, any> | null>(null);
   const [storeChrome, setStoreChrome] = useState<Record<string, any> | null>(null);
-  const [storeLogo, setStoreLogo] = useState<string | null>(null);
-  const [storeBanner, setStoreBanner] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
   const [slug, setSlug] = useState('home');
   const [loading, setLoading] = useState(true);
@@ -85,13 +82,10 @@ export default function WebPagesPage() {
         setError('Web store belum dibuat. Buat dulu di Setup.');
         return;
       }
-      setWebStoreId(ws.id);
       setStoreId(ws.store_id);
       setStoreName(ws.store_name);
       setStoreTheme(((ws.settings as any)?.theme ?? null) as Record<string, any> | null);
       setStoreChrome(((ws.settings as any)?.chrome ?? null) as Record<string, any> | null);
-      setStoreLogo(ws.logo_url ?? null);
-      setStoreBanner(ws.banner_url ?? null);
       setPages(ws.pages ?? []);
     } catch (e: any) {
       setError(e?.message ?? 'Gagal memuat halaman');
@@ -184,8 +178,8 @@ export default function WebPagesPage() {
       )}
 
       {/* Tema global toko — sinkron dgn page builder & storefront */}
-      {token && webStoreId && storeId && (
-        <WebThemePanel token={token} webStoreId={webStoreId} storeId={storeId} storeName={storeName} initialTheme={storeTheme} initialChrome={storeChrome} logoUrl={storeLogo} bannerUrl={storeBanner} onMediaChange={(u) => { setStoreLogo(u.logo_url); setStoreBanner(u.banner_url); }} />
+      {token && storeId && (
+        <WebThemePanel token={token} storeId={storeId} storeName={storeName} initialTheme={storeTheme} initialChrome={storeChrome} />
       )}
 
       {/* Create new */}

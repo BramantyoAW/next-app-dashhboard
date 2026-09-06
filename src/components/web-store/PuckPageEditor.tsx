@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2, Plus } from 'lucide-react';
 import { Puck, Render, resolveAllData, type Data } from '@puckeditor/core';
@@ -70,6 +70,24 @@ export default function PuckPageEditor({
     () => (isPuckStored(initial.blocks) ? legacyOf(initial.blocks) : legacyOf(initial.blocks)),
     [initial.blocks]
   );
+
+  // Halaman baru (blocks kosong): seed default langsung AUTO-SIMPAN sekali,
+  // supaya kalau user menutup editor tanpa klik Simpan, halaman tidak hilang.
+  const didAutoSeed = useRef(false);
+  const isNewPage = useMemo(
+    () => !isPuckStored(initial.blocks) && legacyOf(initial.blocks).length === 0,
+    [initial.blocks]
+  );
+  useEffect(() => {
+    if (!isNewPage || didAutoSeed.current || !token) return;
+    didAutoSeed.current = true;
+    const seed = defaultPuckDataFor(initial.slug);
+    setData(seed);
+    onSave({ puck: seed, legacy: [] })
+      .then(() => setOk('Template default tersimpan otomatis — silakan edit & Simpan lagi.'))
+      .catch(() => setError('Gagal auto-simpan template. Klik Simpan untuk menyimpan.'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNewPage, token]);
 
   const handlePublish = useCallback((next: Data) => {
     setData(next);

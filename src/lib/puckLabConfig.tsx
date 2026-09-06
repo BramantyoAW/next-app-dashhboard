@@ -73,6 +73,49 @@ type CtaProps = { heading: string; body: string; button_text: string; link: stri
 type FaqItem = { q: string; a: string };
 type FaqProps = { heading: string; items: FaqItem[] };
 type StoreFooterLink = { label: string; href: string };
+/** Platform sosial media — render ikon otomatis dari nilai platform. */
+type StoreSocial = { platform: string; label?: string; href: string };
+/** Metode pembayaran yang ditampilkan (badge teks/ikon). */
+type StorePayment = { key: string; label: string };
+
+/** Opsi platform sosmed + label otomatisnya. */
+const SOCIAL_PLATFORMS: { value: string; label: string; icon: string }[] = [
+  { value: 'instagram', label: 'Instagram', icon: 'IG' },
+  { value: 'whatsapp', label: 'WhatsApp', icon: 'WA' },
+  { value: 'tiktok', label: 'TikTok', icon: 'TT' },
+  { value: 'facebook', label: 'Facebook', icon: 'FB' },
+  { value: 'youtube', label: 'YouTube', icon: 'YT' },
+  { value: 'x', label: 'X (Twitter)', icon: 'X' },
+  { value: 'email', label: 'Email', icon: '@' },
+];
+
+/** Daftar metode pembayaran umum Indonesia untuk footer. */
+const PAYMENT_OPTIONS: StorePayment[] = [
+  { key: 'BCA', label: 'BCA' },
+  { key: 'MANDIRI', label: 'Mandiri' },
+  { key: 'BRI', label: 'BRI' },
+  { key: 'BNI', label: 'BNI' },
+  { key: 'OVO', label: 'OVO' },
+  { key: 'GOPAY', label: 'GoPay' },
+  { key: 'DANA', label: 'DANA' },
+  { key: 'QRIS', label: 'QRIS' },
+  { key: 'SHOPEEPAY', label: 'ShopeePay' },
+  { key: 'COD', label: 'COD' },
+];
+
+/** Deteksi platform dari label lama (mis. "Instagram" / "WA" / "Tiktok"). */
+function detectSocialPlatform(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes('whatsapp') || l === 'wa') return 'whatsapp';
+  if (l.includes('instagram') || l === 'ig') return 'instagram';
+  if (l.includes('tiktok') || l === 'tt') return 'tiktok';
+  if (l.includes('facebook') || l === 'fb') return 'facebook';
+  if (l.includes('youtube') || l === 'yt') return 'youtube';
+  if (l === 'x' || l.includes('twitter')) return 'x';
+  if (l.includes('email')) return 'email';
+  return 'instagram';
+}
+
 type StoreFooterProps = {
   about_text: string;
   show_payments: 'yes' | 'no';
@@ -85,7 +128,8 @@ type StoreFooterProps = {
   links: StoreFooterLink[];
   show_social: 'yes' | 'no';
   socials_title: string;
-  socials: StoreFooterLink[];
+  socials: StoreSocial[];
+  payments: StorePayment[];
 };
 type ImageProps = {
   image_url: string;
@@ -1095,10 +1139,19 @@ export const puckLabConfig: Config<ComponentProps> = {
         socials: {
           type: 'array',
           label: 'Sosial Media',
-          getItemSummary: (item) => (item as StoreFooterLink)?.label || 'Sosial',
+          getItemSummary: (item) => {
+            const s = item as Partial<StoreSocial>;
+            const p = SOCIAL_PLATFORMS.find((x) => x.value === s.platform);
+            return (s.label || p?.label || s.platform || 'Sosial') as string;
+          },
           arrayFields: {
-            label: { type: 'text', label: 'Nama (IG / FB / WA)' },
-            href: { type: 'text', label: 'Link' },
+            platform: {
+              type: 'select',
+              label: 'Platform (ikon otomatis)',
+              options: SOCIAL_PLATFORMS.map((p) => ({ label: p.label, value: p.value })),
+            },
+            label: { type: 'text', label: 'Label teks (opsional)' },
+            href: { type: 'text', label: 'Link (mis. https://instagram.com/…)' },
           },
         },
         show_payments: {
@@ -1108,6 +1161,19 @@ export const puckLabConfig: Config<ComponentProps> = {
             { label: 'Ya', value: 'yes' },
             { label: 'Tidak', value: 'no' },
           ],
+        },
+        payments: {
+          type: 'array',
+          label: 'Metode Pembayaran',
+          getItemSummary: (item) => (item as StorePayment)?.label || 'Bayar',
+          arrayFields: {
+            key: {
+              type: 'select',
+              label: 'Metode',
+              options: PAYMENT_OPTIONS.map((p) => ({ label: p.label, value: p.key })),
+            },
+            label: { type: 'text', label: 'Label (opsional, default = metode)' },
+          },
         },
         copyright_text: { type: 'text', label: 'Teks Hak Cipta' },
       },
@@ -1125,13 +1191,18 @@ export const puckLabConfig: Config<ComponentProps> = {
         show_social: 'yes',
         socials_title: 'Ikuti Kami',
         socials: [
-          { label: 'Instagram', href: '#' },
-          { label: 'WhatsApp', href: '#' },
+          { platform: 'instagram', href: '#' },
+          { platform: 'whatsapp', href: '#' },
         ],
         show_payments: 'yes',
+        payments: [
+          { key: 'BCA', label: 'BCA' },
+          { key: 'QRIS', label: 'QRIS' },
+          { key: 'COD', label: 'COD' },
+        ],
         copyright_text: '© 2026 Toko Saya. Hak cipta dilindungi.',
       },
-      render: ({ logo_mode, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, copyright_text }) => {
+      render: ({ logo_mode, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text }) => {
         // Data lama tanpa field toggle → default tampil (kecuali 'no').
         const lm = logo_mode || 'text';
         const aboutOn = show_about !== 'no';
@@ -1139,7 +1210,14 @@ export const puckLabConfig: Config<ComponentProps> = {
         const socialOn = show_social !== 'no';
         const payOn = show_payments !== 'no';
         const linkList = links ?? [];
-        const socialList = socials ?? [];
+        const socialList = (socials ?? []).map((s) => {
+          // Backward compat: data lama { label, href } → deteksi platform dari label.
+          const platform = (s.platform as string) || detectSocialPlatform(String(s.label || ''));
+          const p = SOCIAL_PLATFORMS.find((x) => x.value === platform);
+          return { ...s, platform, icon: p?.icon || '•', label: s.label || p?.label || platform };
+        });
+        const payList = Array.isArray(payments) && payments.length > 0 ? payments : [];
+        const payFromOptions = (k: string) => PAYMENT_OPTIONS.find((p) => p.key === k)?.label || k;
         return (
           <div className="px-6 py-8" style={{ background: 'var(--text, #17150f)', color: 'var(--bg, #f4f1ea)' }}>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -1150,6 +1228,7 @@ export const puckLabConfig: Config<ComponentProps> = {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logo_image} alt="logo" className="max-h-8 w-auto rounded object-contain" />
                   )}
+                  {lm !== 'image' && <span className="text-base font-black tracking-wide">{lm === 'both' ? '' : 'TOKO SAYA'}</span>}
                 </div>
                 {aboutOn && about_text && <p className="mt-2 max-w-xs text-xs opacity-70">{about_text}</p>}
               </div>
@@ -1168,11 +1247,20 @@ export const puckLabConfig: Config<ComponentProps> = {
               {socialOn && (
                 <div>
                   {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider opacity-60">{socials_title}</div>}
-                  <ul className="space-y-1.5 text-xs opacity-80">
+                  <div className="flex flex-wrap gap-2">
                     {socialList.map((s, i) => (
-                      <li key={i}><a href={s.href || '#'} className="hover:opacity-100">{s.label}</a></li>
+                      <a
+                        key={i}
+                        href={s.href || '#'}
+                        title={s.label || s.platform}
+                        aria-label={s.label || s.platform}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-black"
+                        style={{ background: 'var(--bg, #f4f1ea)', color: 'var(--text, #17150f)' }}
+                      >
+                        {s.icon}
+                      </a>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
               {/* Pembayaran */}
@@ -1180,7 +1268,12 @@ export const puckLabConfig: Config<ComponentProps> = {
                 <div>
                   <div className="mb-2 text-xs font-bold uppercase tracking-wider opacity-60">Pembayaran</div>
                   <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
-                    {['BCA', 'OVO', 'GOPAY', 'QRIS'].map((p) => (
+                    {(payList.length > 0 ? payList : []).map((p, i) => (
+                      <span key={i} className="rounded border border-white/30 px-1.5 py-0.5 opacity-90">
+                        {p.label || payFromOptions(String(p.key))}
+                      </span>
+                    ))}
+                    {payList.length === 0 && ['BCA', 'OVO', 'GOPAY', 'QRIS'].map((p) => (
                       <span key={p} className="rounded border border-white/30 px-1.5 py-0.5 opacity-80">{p}</span>
                     ))}
                   </div>
