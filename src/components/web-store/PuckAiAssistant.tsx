@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { askWebStoreAssistant, persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
+import { streamAskAi } from '@/lib/streamAskAi';
 import type { Data } from '@puckeditor/core';
 
 type PuckChange = AiAssistantResult['changes'][number];
@@ -130,6 +131,7 @@ export function PuckAiAssistant({
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [aiBusyLabel, setAiBusyLabel] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
   const [applied, setApplied] = useState<Set<number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
@@ -187,15 +189,20 @@ export function PuckAiAssistant({
       const history = messages
         .filter((m) => m.text && m.text !== '' && !m.text.startsWith('Halo! Saya AI desain untuk halaman'))
         .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
-      const res = await askWebStoreAssistant(token, {
-        web_store_id: webStoreId ?? undefined,
-        scope: 'page',
-        message: text,
-        context,
-        history,
-        images: sendImages.map((im) => ({ data: im.data })),
-      });
-      const result = res.aiWebStoreAssistant;
+      const result = await streamAskAi(
+        token,
+        {
+          web_store_id: webStoreId ?? undefined,
+          scope: 'page',
+          message: text,
+          context,
+          history,
+          images: sendImages.map((im) => ({ data: im.data })),
+        },
+        (stage, msg) => {
+          setAiBusyLabel(msg || (stage === 'thinking' ? 'AI membaca halaman & gambar...' : 'AI mengetik...'));
+        },
+      );
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
       // Simpan ke riwayat toko (memory lintas sesi) — senyap bila gagal.
       if (webStoreId && result.reply) {
@@ -263,7 +270,7 @@ export function PuckAiAssistant({
             ))}
             {loading && (
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                <Loader2 size={14} className="animate-spin" /> AI membaca halaman & gambar...
+                <Loader2 size={14} className="animate-spin" /> {aiBusyLabel || 'AI membaca halaman & gambar...'}
               </div>
             )}
             {historyLoading && !loading && (
