@@ -21,23 +21,6 @@ const SLUG_LABEL: Record<string, string> = {
   category: 'Kategori Produk',
 };
 
-const SLUG_HINT: Record<string, string> = {
-  home: 'Landing utama — sudah aktif.',
-  about: 'Halaman statis profil toko.',
-  contact: 'Halaman statis kontak.',
-  faq: 'Halaman statis pertanyaan umum.',
-  product: 'Template detail produk. Bagian produk (gambar, harga, beli) otomatis dari katalog; taruh blok “Slot Produk (PDP)” di posisi produk.',
-  cart: 'Halaman keranjang.',
-  checkout: 'Halaman checkout & ringkasan pesanan.',
-  category: 'Template halaman daftar produk per kategori.',
-};
-
-const SLUG_OPTIONS: { value: string; label: string; hint: string }[] = Object.keys(SLUG_LABEL).map((k) => ({
-  value: k,
-  label: SLUG_LABEL[k],
-  hint: SLUG_HINT[k] ?? '',
-}));
-
 export default function WebPagesPage() {
   const router = useRouter();
   const [token, setToken] = useState('');
@@ -47,6 +30,7 @@ export default function WebPagesPage() {
   const [storeChrome, setStoreChrome] = useState<Record<string, any> | null>(null);
   const [storeName, setStoreName] = useState('');
   const [slug, setSlug] = useState('home');
+  const [customSlug, setCustomSlug] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -132,6 +116,37 @@ export default function WebPagesPage() {
   const createPageRef = useRef(createPage);
   createPageRef.current = createPage;
 
+  /** Buat halaman statis baru (SLUG BEBAS). Bila slug sudah ada → buka editor existing. */
+  async function createCustomPage() {
+    if (!token) return;
+    const s = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!s) return;
+    setSaving(true);
+    setError(null);
+    setOk(null);
+    try {
+      const existing = pages.find((p) => p.slug === s);
+      if (existing) {
+        setOk(`Halaman "${existing.slug}" sudah ada. Membuka editor...`);
+        router.push(`/owner/web-store/pages/${existing.id}`);
+        return;
+      }
+      const res = await upsertWebPage(token, {
+        slug: s,
+        // Pakai huruf pertama sebagai judul — nanti bisa diganti di editor.
+        title: SLUG_LABEL[s] ?? s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' '),
+        blocks: [],
+        is_published: true,
+      });
+      setOk('Halaman baru dibuat. Buka editor untuk menata blok.');
+      router.push(`/owner/web-store/pages/${res.upsertWebPage.id}`);
+    } catch (e: any) {
+      setError(e?.message ?? 'Gagal membuat halaman');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function removePage(id: string) {
     if (!token || !confirm('Hapus halaman ini?')) return;
     setDeleting(id);
@@ -182,35 +197,32 @@ export default function WebPagesPage() {
         <WebThemePanel token={token} storeId={storeId} storeName={storeName} initialTheme={storeTheme} initialChrome={storeChrome} />
       )}
 
-      {/* Create new */}
+      {/* Create new — SELALU buat halaman baru (slug bebas) */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
           <Plus size={18} className="text-blue-600" /> Buat Halaman Baru
         </h2>
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="w-full sm:w-auto">
-            <select
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {SLUG_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label} ({o.value})
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-xs text-slate-400 max-w-md">
-              {SLUG_HINT[slug]}
+          <div className="w-full sm:w-auto flex-1 max-w-md">
+            <input
+              value={customSlug}
+              onChange={(e) => setCustomSlug(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') createCustomPage(); }}
+              placeholder="ketik slug baru — mis. promo, kebijakan, katalog"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="mt-1.5 text-xs text-slate-400 max-w-md leading-relaxed">
+              Halaman statis baru yang benar-benar baru. Diisi sendiri dengan blok di Page Builder,
+              dan otomatis tampil di <span className="font-mono text-slate-500">/storefront/&lt;hash&gt;/{customSlug || 'slug'}</span>.
             </p>
           </div>
           <button
-            onClick={createPage}
-            disabled={saving || !token}
+            onClick={customSlug ? createCustomPage : undefined}
+            disabled={saving || !token || !customSlug.trim()}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-            Buat / Buka Editor
+            Buat Halaman Baru
           </button>
         </div>
       </div>

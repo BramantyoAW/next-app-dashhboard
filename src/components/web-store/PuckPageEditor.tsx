@@ -12,19 +12,6 @@ import { setUploadToken } from '@/lib/puckImageField';
 /** Bentuk halaman yang diterima editor (hasil query web store). */
 type PuckStoredPage = { id: string; slug: string; title: string; blocks: unknown };
 
-/** Tipe halaman yang bisa dibuat dari editor (+ Halaman Baru). */
-const PAGE_TYPES = [
-  { value: 'home', label: 'Beranda (home)' },
-  { value: 'about', label: 'Tentang (about)' },
-  { value: 'contact', label: 'Kontak (contact)' },
-  { value: 'faq', label: 'FAQ (faq)' },
-  { value: 'product', label: 'Halaman Produk / PDP (product)' },
-  { value: 'cart', label: 'Keranjang (cart)' },
-  { value: 'checkout', label: 'Checkout (checkout)' },
-  { value: 'category', label: 'Kategori Produk (category)' },
-  { value: '__custom__', label: 'Halaman statis baru (slug bebas)' },
-];
-
 /**
  * Editor halaman nyata berbasis Puck (plugin, omBot tidak menimpa).
  *
@@ -64,7 +51,6 @@ export default function PuckPageEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
-  const [newSlug, setNewSlug] = useState('about');
   const [customSlug, setCustomSlug] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -96,19 +82,15 @@ export default function PuckPageEditor({
   }, []);
 
   function createNewPage() {
-    // Slug tujuan: tipe preset, atau slug bebas custom.
-    let slug = newSlug;
-    if (newSlug === '__custom__') {
-      const s = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
-      if (!s) {
-        setError('Isi dulu slug halaman baru (mis. promo, kebijakan, katalog).');
-        return;
-      }
-      slug = s;
+    // SELALU buat halaman statis baru yang literal — slug bebas dari input.
+    const s = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!s) {
+      setError('Isi dulu slug halaman baru (mis. promo, kebijakan, katalog).');
+      return;
     }
     // Buka halaman Pages Manager dengan instruksi auto-create utk slug ini.
     setCreating(true);
-    router.push(`/owner/web-store/pages?new=${encodeURIComponent(slug)}`);
+    router.push(`/owner/web-store/pages?new=${encodeURIComponent(s)}`);
   }
 
   async function save() {    setSaving(true);
@@ -173,24 +155,14 @@ export default function PuckPageEditor({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {/* Buat halaman baru (langsung dari editor) */}
-            <select
-              value={newSlug}
-              onChange={(e) => setNewSlug(e.target.value)}
-              title="Tipe halaman baru"
-              className="hidden sm:block max-w-[150px] px-2 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 focus:outline-none"
-            >
-              {PAGE_TYPES.filter((t) => t.value !== initial.slug || t.value === '__custom__').map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
+            {/* Buat halaman baru (langsung dari editor) — SELALU create literal */}
             <input
               value={customSlug}
               onChange={(e) => setCustomSlug(e.target.value)}
-              placeholder="slug-baru"
-              title="Slug halaman statis baru (huruf kecil, tanpa spasi)"
-              className={`hidden sm:block w-28 px-2 py-2 rounded-lg border text-xs font-semibold focus:outline-none ${newSlug === '__custom__' ? 'border-blue-400 bg-blue-50 text-slate-800' : 'border-slate-200 bg-slate-50 text-slate-300'}`}
-              disabled={newSlug !== '__custom__'}
+              onKeyDown={(e) => { if (e.key === 'Enter') createNewPage(); }}
+              placeholder="slug-baru (mis. promo)"
+              title="Slug halaman baru — huruf kecil, tanpa spasi"
+              className="w-36 px-2.5 py-2 rounded-lg border border-blue-300 bg-blue-50/50 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               onClick={createNewPage}
