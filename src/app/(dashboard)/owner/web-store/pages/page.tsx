@@ -205,28 +205,28 @@ export default function WebPagesPage() {
         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
           <Plus size={18} className="text-blue-600" /> Buat Halaman Baru
         </h2>
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="w-full sm:w-auto flex-1 max-w-md">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 max-w-2xl">
             <input
               value={customSlug}
               onChange={(e) => setCustomSlug(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') createCustomPage(); }}
               placeholder="ketik slug baru — mis. promo, kebijakan, katalog"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="mt-1.5 text-xs text-slate-400 max-w-md leading-relaxed">
-              Halaman statis baru yang benar-benar baru. Diisi sendiri dengan blok di Page Builder,
-              dan otomatis tampil di <span className="font-mono text-slate-500">/storefront/&lt;hash&gt;/{customSlug || 'slug'}</span>.
-            </p>
+            <button
+              onClick={createCustomPage}
+              disabled={saving || !token}
+              className="inline-flex shrink-0 items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
+            >
+              {saving ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
+              Buat Halaman Baru
+            </button>
           </div>
-          <button
-            onClick={createCustomPage}
-            disabled={saving || !token}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
-          >
-            {saving ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
-            Buat Halaman Baru
-          </button>
+          <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+            Halaman statis baru yang benar-benar baru. Diisi sendiri dengan blok di Page Builder,
+            dan otomatis tampil di <span className="font-mono text-slate-500">/storefront/&lt;hash&gt;/{customSlug || 'slug'}</span>.
+          </p>
         </div>
       </div>
 
