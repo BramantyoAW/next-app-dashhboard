@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Bot, Check, Loader2, Send, Sparkles, X, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, X, Trash2 } from 'lucide-react';
 import { askWebStoreAssistant, persistAiMessage, clearAiHistory, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 
-export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onApply }: { context: unknown; webStoreId?: string | null; scope?: 'setup' | 'homepage' | 'pdp' | 'plp' | 'checkout'; onApply: (changes: AiAssistantResult['changes']) => void }) {
+export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onApply }: { context: unknown; webStoreId?: string | null; scope?: 'setup' | 'homepage' | 'pdp' | 'plp' | 'checkout' | 'page'; onApply: (changes: AiAssistantResult['changes']) => void }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [appliedMessages, setAppliedMessages] = useState<Set<number>>(new Set());
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!webStoreId) return;
@@ -26,16 +28,32 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
   async function send() {
     const text = message.trim(); if (!text || loading) return;
     const token = localStorage.getItem('token') || ''; if (!token) return;
-    setMessage(''); setMessages((m) => [...m, { role: 'user', text }]); setLoading(true);
+    const sendImages = images.slice();
+    setImages([]); setMessage(''); setMessages((m) => [...m, { role: 'user', text }]); setLoading(true);
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.text }));
-      const res = await askWebStoreAssistant(token, { web_store_id: webStoreId ?? undefined, scope, message: text, context, history });
+      const res = await askWebStoreAssistant(token, { web_store_id: webStoreId ?? undefined, scope, message: text, context, history, images: sendImages.map((im) => ({ data: im.data })) });
       const result = res.aiWebStoreAssistant;
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
       if (webStoreId) await persistAiMessage(token, webStoreId, text, result.reply);
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI assistant belum dapat dihubungi.' }]);
     } finally { setLoading(false); }
+  }
+
+  function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 3 - images.length);
+    for (const f of files) {
+      if (!f.type.startsWith('image/')) continue;
+      if (f.size > 6 * 1024 * 1024) continue;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result);
+        setImages((prev) => (prev.length >= 3 ? prev : [...prev, { preview: dataUrl, data: dataUrl }]));
+      };
+      reader.readAsDataURL(f);
+    }
+    if (fileRef.current) fileRef.current.value = '';
   }
   return (
     <>
@@ -51,7 +69,27 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
             {messages.map((m, i) => <div key={i} className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm ${m.role === 'user' ? 'ml-auto bg-indigo-600 text-white' : 'bg-white text-slate-700 shadow-sm'}`}><div className="whitespace-pre-wrap">{m.text}</div>{m.result && m.result.changes.length > 0 && <div className="mt-3 border-t border-slate-200 pt-2"><div className="mb-2 text-[11px] font-bold uppercase text-slate-400">Usulan perubahan</div>{m.result.changes.map((c, j) => <div key={j} className="mb-2 text-xs text-slate-600">• {c.description}</div>)}<button type="button" onClick={() => { onApply(m.result!.changes); setAppliedMessages((prev) => new Set(prev).add(i)); }} className="mt-1 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><Check size={14} /> {appliedMessages.has(i) ? 'Sudah Diterapkan ke Draft' : 'Terapkan Perubahan'}</button></div>}{m.result?.warnings?.map((w, j) => <div key={j} className="mt-2 text-xs text-amber-700">⚠ {w}</div>)}</div>)}
             {loading && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 size={14} className="animate-spin" /> AI sedang berpikir...</div>}
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t p-3"><input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis instruksi desain..." className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" /><button type="submit" disabled={loading || !message.trim()} className="rounded-xl bg-indigo-600 px-3 text-white disabled:opacity-40" aria-label="Kirim"><Send size={16} /></button></form>
+          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t p-3">
+            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+              {images.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {images.map((im, i) => (
+                    <div key={i} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={im.preview} alt="referensi" className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
+                      <button type="button" onClick={() => setImages((prev) => prev.filter((_, x) => x !== i))} className="absolute -right-1.5 -top-1.5 rounded-full bg-slate-900 p-0.5 text-white" aria-label="Hapus gambar"><X size={10} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="hidden" onChange={pickFiles} />
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={images.length >= 3 || loading} className="rounded-xl border border-slate-300 px-2.5 text-slate-500 hover:bg-slate-100 disabled:opacity-40" aria-label="Unggah screenshot" title="Unggah screenshot referensi (maks 3, PNG/JPG/WebP ≤ 6MB)"><ImagePlus size={16} /></button>
+                <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis instruksi desain..." className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500" />
+                <button type="submit" disabled={loading || !message.trim()} className="rounded-xl bg-indigo-600 px-3 text-white disabled:opacity-40" aria-label="Kirim"><Send size={16} /></button>
+              </div>
+            </div>
+          </form>
         </section>
       )}
     </>

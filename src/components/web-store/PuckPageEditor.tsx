@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2, Plus, Sparkles } from 'lucide-react';
 import { Puck, Render, resolveAllData, type Data } from '@puckeditor/core';
 import '@puckeditor/core/dist/index.css';
 import { puckLabConfig } from '@/lib/puckLabConfig';
 import { isPuckStored, defaultPuckDataFor, legacyToPuckData, puckDataOf, legacyOf } from '@/lib/puckAdapter';
 import { setUploadToken } from '@/lib/puckImageField';
+import { PuckAiAssistant, applyBlockOpsToPuck } from './PuckAiAssistant';
+import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 
 /** Bentuk halaman yang diterima editor (hasil query web store). */
 type PuckStoredPage = { id: string; slug: string; title: string; blocks: unknown };
@@ -22,12 +24,14 @@ type PuckStoredPage = { id: string; slug: string; title: string; blocks: unknown
 export default function PuckPageEditor({
   token,
   pageId,
+  webStoreId,
   initial,
   onSave,
   themeCss = '',
 }: {
   token: string;
   pageId: string;
+  webStoreId?: string | null;
   initial: PuckStoredPage;
   onSave: (blocks: unknown) => Promise<void>;
   themeCss?: string;
@@ -53,6 +57,10 @@ export default function PuckPageEditor({
   const [ok, setOk] = useState<string | null>(null);
   const [customSlug, setCustomSlug] = useState('');
   const [creating, setCreating] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const dataRef = useRef(data);
+  useEffect(() => { dataRef.current = data; }, [data]);
 
   const legacy = useMemo(
     () => (isPuckStored(initial.blocks) ? legacyOf(initial.blocks) : legacyOf(initial.blocks)),
@@ -133,6 +141,50 @@ export default function PuckPageEditor({
     };
   }, [preview, data]);
 
+  /**
+   * Terapkan usulan AI (block_ops) langsung ke kanvas Puck halaman ini.
+   * Perubahan global (theme/chrome) bukan ranah editor halaman — dilewati
+   * dengan catatan singkat supaya owner pindah ke Setup bila perlu.
+   */
+  function applyAiChanges(changes: AiChangeSuggestion[]) {
+    let applied = 0;
+    let skipped = 0;
+    const localOps: { op: string; id?: string; ids?: string[]; props?: Record<string, unknown>; style?: Record<string, unknown>; blocks?: Record<string, unknown>[] }[] = [];
+
+    for (const change of changes) {
+      const field = change.field || '';
+      const to = change.to as { slug?: string; ops?: unknown[] } | null;
+      const isBlockOps = field === 'block_ops' || field.startsWith('block_ops:');
+      if (isBlockOps && to && Array.isArray(to.ops)) {
+        // Hanya terapkan utk slug halaman ini; slug lain dilewati.
+        const slug = (to.slug ?? field.slice('block_ops:'.length)) || initial.slug;
+        if (slug === initial.slug) {
+          localOps.push(...(to.ops as any[]));
+          applied++;
+        } else {
+          skipped++;
+        }
+      } else {
+        skipped++;
+      }
+    }
+
+    if (localOps.length === 0) {
+      setAiNote(applied > 0 ? 'Semua usulan utk halaman lain — hanya usulan utk halaman ini yang diterapkan.' : 'Tidak ada perubahan blok yang bisa diterapkan ke halaman ini.');
+      return;
+    }
+    // Terapkan ke state mutakhir (dataRef) — aman walau dialog AI menyimpan snapshot lama.
+    const { next, used } = applyBlockOpsToPuck(dataRef.current, initial.slug, localOps);
+    setData(next);
+    dataRef.current = next;
+    if (used === 0) {
+      setAiNote('Ops AI tidak cocok dengan blok halaman ini (id berubah?). Coba minta AI mengulang.');
+      return;
+    }
+    const skippedMsg = skipped > 0 ? ` (${skipped} usulan global/halaman lain dilewati — gunakan halaman Setup utk tema global)` : '';
+    setAiNote(`AI diterapkan ke kanvas (${used} operasi). Tinjau lalu klik Simpan.${skippedMsg}`);
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
       {/* Tema global toko (CSS vars) — biar kanvas editor & preview memakai
@@ -181,6 +233,14 @@ export default function PuckPageEditor({
               <Eye size={15} /> {preview ? 'Edit' : 'Preview'}
             </button>
             <button
+              onClick={() => setAiOpen(true)}
+              disabled={!token || !webStoreId}
+              title={!webStoreId ? 'Web store belum siap' : 'Desain halaman ini dengan AI'}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 disabled:opacity-50 text-white text-sm font-bold shadow"
+            >
+              <Sparkles size={15} /> AI Halaman
+            </button>
+            <button
               onClick={save}
               disabled={saving}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow"
@@ -197,6 +257,12 @@ export default function PuckPageEditor({
         {ok && (
           <div className="flex items-center gap-2 px-4 md:px-6 py-2 bg-emerald-50 border-t border-emerald-200 text-emerald-700 text-xs font-medium">
             <CheckCircle2 size={13} /> {ok}
+          </div>
+        )}
+        {aiNote && (
+          <div className="flex items-center justify-between gap-2 px-4 md:px-6 py-2 bg-fuchsia-50 border-t border-fuchsia-200 text-fuchsia-700 text-xs font-medium">
+            <span className="flex items-center gap-2"><Sparkles size={13} /> {aiNote}</span>
+            <button onClick={() => setAiNote(null)} className="hover:text-fuchsia-900 font-bold" aria-label="Tutup notifikasi AI">✕</button>
           </div>
         )}
       </div>
@@ -221,6 +287,19 @@ export default function PuckPageEditor({
             overrides={{ headerActions: () => <></> }}
           />
         </div>
+      )}
+
+      {aiOpen && token && webStoreId && (
+        <PuckAiAssistant
+          token={token}
+          webStoreId={webStoreId}
+          pageSlug={initial.slug}
+          pageTitle={initial.title}
+          data={data}
+          context={{ current_page: { slug: initial.slug, title: initial.title } }}
+          onApply={applyAiChanges}
+          onClose={() => setAiOpen(false)}
+        />
       )}
     </div>
   );

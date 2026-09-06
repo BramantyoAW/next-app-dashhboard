@@ -28,7 +28,14 @@ const AI_WEB_STORE_ASSISTANT = `
 
 export function askWebStoreAssistant(
   token: string,
-  input: { web_store_id?: string; scope?: string; message: string; context?: unknown; history?: { role: string; content: string }[] },
+  input: {
+    web_store_id?: string;
+    scope?: string;
+    message: string;
+    context?: unknown;
+    history?: { role: string; content: string }[];
+    images?: { data?: string; bytes?: string }[];
+  },
 ) {
   return gqlFetch<{ aiWebStoreAssistant: AiAssistantResult }>(AI_WEB_STORE_ASSISTANT, { input }, token);
 }

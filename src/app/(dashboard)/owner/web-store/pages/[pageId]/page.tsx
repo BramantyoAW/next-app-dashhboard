@@ -27,6 +27,7 @@ export default function PuckEditorRoute() {
 
   const [token, setToken] = useState('');
   const [page, setPage] = useState<WebPage | null>(null);
+  const [storeId, setStoreId] = useState<string | null>(null);
   const [themeCss, setThemeCss] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function PuckEditorRoute() {
       const res = await getWebStoreByOwner(ownerId, tok);
       const ws = res.webStoreByOwner;
       if (!ws) throw new Error('Web store belum dibuat. Buat dulu di Setup.');
+      setStoreId(String(ws.id));
       const pg = ws.pages?.find((p) => String(p.id) === String(pageId));
       if (!pg) throw new Error('Halaman tidak ditemukan.');
       setPage(pg);
@@ -102,5 +104,5 @@ export default function PuckEditorRoute() {
     );
   }
 
-  return <PuckPageEditor token={token} pageId={page.id} initial={page} onSave={handleSave} themeCss={themeCss} />;
+  return <PuckPageEditor token={token} pageId={page.id} webStoreId={storeId} initial={page} onSave={handleSave} themeCss={themeCss} />;
 }
