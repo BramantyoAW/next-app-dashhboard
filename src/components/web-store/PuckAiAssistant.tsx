@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { askWebStoreAssistant, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { askWebStoreAssistant, persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import type { Data } from '@puckeditor/core';
 
 type PuckChange = AiAssistantResult['changes'][number];
@@ -129,20 +130,30 @@ export function PuckAiAssistant({
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [applied, setApplied] = useState<Set<number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    // Konteks awal: halaman aktif
-    setMessages([
-      {
-        role: 'assistant',
-        text: `Halo! Saya AI desain untuk halaman **${pageTitle ?? pageSlug}**. Ceritakan perubahan yang kamu mau, atau unggah screenshot referensi — nanti saya bantu ubah blok halaman ini.`,
-      },
-    ]);
-  }, [open, pageSlug, pageTitle]);
+    const greeting = `Halo! Saya AI desain untuk halaman **${pageTitle ?? pageSlug}**. Ceritakan perubahan yang kamu mau, atau unggah screenshot referensi — nanti saya bantu ubah blok halaman ini.`;
+    if (!webStoreId) {
+      setMessages([{ role: 'assistant', text: greeting }]);
+      return;
+    }
+    setHistoryLoading(true);
+    getAiChatHistory(token, webStoreId)
+      .then((res) => {
+        const saved = (res.aiChatHistory?.messages ?? [])
+          .filter((m) => m.content && m.content.trim() !== '')
+          .map((m) => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, text: m.content }));
+        setMessages([{ role: 'assistant', text: greeting }, ...saved]);
+      })
+      .catch(() => setMessages([{ role: 'assistant', text: greeting }]))
+      .finally(() => setHistoryLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pageSlug, pageTitle, webStoreId]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -172,8 +183,9 @@ export function PuckAiAssistant({
     setMessages((m) => [...m, { role: 'user', text }]);
     setLoading(true);
     try {
+      // Jangan sertakan sapaan (greeting) ke konteks model — hanya pesan asli.
       const history = messages
-        .filter((m) => m.text && m.text !== '')
+        .filter((m) => m.text && m.text !== '' && !m.text.startsWith('Halo! Saya AI desain untuk halaman'))
         .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
       const res = await askWebStoreAssistant(token, {
         web_store_id: webStoreId ?? undefined,
@@ -185,6 +197,10 @@ export function PuckAiAssistant({
       });
       const result = res.aiWebStoreAssistant;
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
+      // Simpan ke riwayat toko (memory lintas sesi) — senyap bila gagal.
+      if (webStoreId && result.reply) {
+        persistAiMessage(token, webStoreId, text, result.reply).catch(() => {});
+      }
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI belum dapat dihubungi. Cek konfigurasi AI.' }]);
     } finally {
@@ -248,6 +264,11 @@ export function PuckAiAssistant({
             {loading && (
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Loader2 size={14} className="animate-spin" /> AI membaca halaman & gambar...
+              </div>
+            )}
+            {historyLoading && !loading && (
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <Loader2 size={13} className="animate-spin" /> Memuat riwayat chat...
               </div>
             )}
           </div>
