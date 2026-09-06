@@ -630,7 +630,16 @@ export const puckLabConfig: Config<ComponentProps> = {
               {menus.map((m, i) => (
                 <span key={i} className="whitespace-nowrap opacity-80 hover:opacity-100">{m}</span>
               ))}
-              {show_search === 'yes' && <span className="hidden rounded-full border border-white/30 px-3 py-0.5 text-xs opacity-70 md:inline">🔍 Cari...</span>}
+              {show_search === 'yes' && (
+                // Search input ASLI (bukan span dekoratif) — supaya CSS scoped
+                // AI (pill/focus) punya target nyata & search bisa dipakai.
+                <input
+                  type="search"
+                  placeholder="Cari produk..."
+                  aria-label="Cari"
+                  className="hidden w-36 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs text-inherit outline-none placeholder:text-white/50 focus:border-emerald-400 md:inline-block"
+                />
+              )}
               <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: 'var(--brand, #d6ff3f)', color: 'var(--text, #17150f)' }}>
                 {cta_text}
               </span>
