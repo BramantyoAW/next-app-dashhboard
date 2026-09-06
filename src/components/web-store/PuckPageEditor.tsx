@@ -22,6 +22,7 @@ const PAGE_TYPES = [
   { value: 'cart', label: 'Keranjang (cart)' },
   { value: 'checkout', label: 'Checkout (checkout)' },
   { value: 'category', label: 'Kategori Produk (category)' },
+  { value: '__custom__', label: 'Halaman statis baru (slug bebas)' },
 ];
 
 /**
@@ -64,6 +65,7 @@ export default function PuckPageEditor({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
   const [newSlug, setNewSlug] = useState('about');
+  const [customSlug, setCustomSlug] = useState('');
   const [creating, setCreating] = useState(false);
 
   const legacy = useMemo(
@@ -94,9 +96,19 @@ export default function PuckPageEditor({
   }, []);
 
   function createNewPage() {
+    // Slug tujuan: tipe preset, atau slug bebas custom.
+    let slug = newSlug;
+    if (newSlug === '__custom__') {
+      const s = customSlug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+      if (!s) {
+        setError('Isi dulu slug halaman baru (mis. promo, kebijakan, katalog).');
+        return;
+      }
+      slug = s;
+    }
     // Buka halaman Pages Manager dengan instruksi auto-create utk slug ini.
     setCreating(true);
-    router.push(`/owner/web-store/pages?new=${newSlug}`);
+    router.push(`/owner/web-store/pages?new=${encodeURIComponent(slug)}`);
   }
 
   async function save() {    setSaving(true);
@@ -168,10 +180,18 @@ export default function PuckPageEditor({
               title="Tipe halaman baru"
               className="hidden sm:block max-w-[150px] px-2 py-2 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 focus:outline-none"
             >
-              {PAGE_TYPES.filter((t) => t.value !== initial.slug).map((t) => (
+              {PAGE_TYPES.filter((t) => t.value !== initial.slug || t.value === '__custom__').map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
+            <input
+              value={customSlug}
+              onChange={(e) => setCustomSlug(e.target.value)}
+              placeholder="slug-baru"
+              title="Slug halaman statis baru (huruf kecil, tanpa spasi)"
+              className={`hidden sm:block w-28 px-2 py-2 rounded-lg border text-xs font-semibold focus:outline-none ${newSlug === '__custom__' ? 'border-blue-400 bg-blue-50 text-slate-800' : 'border-slate-200 bg-slate-50 text-slate-300'}`}
+              disabled={newSlug !== '__custom__'}
+            />
             <button
               onClick={createNewPage}
               disabled={creating || !token}
