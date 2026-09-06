@@ -6,13 +6,14 @@ export type AiHistoryMessage = {
   role: 'user' | 'assistant' | string;
   content: string;
   created_at: string;
+  meta?: { changes?: unknown[] } | null;
 };
 
 export const AI_CHAT_HISTORY = `
   query AiChatHistory($web_store_id: ID!) {
     aiChatHistory(web_store_id: $web_store_id) {
       id web_store_id title
-      messages { id conversation_id role content created_at }
+      messages { id conversation_id role content created_at meta }
     }
   }
 `;

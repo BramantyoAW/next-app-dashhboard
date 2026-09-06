@@ -5,6 +5,7 @@ import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, Trash2, X } from 'lucid
 import { persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
+import { AiChangePreview, changedBlocksOf } from '@/components/web-store/AiChangePreview';
 import type { Data } from '@puckeditor/core';
 
 type PuckChange = AiAssistantResult['changes'][number];
@@ -133,6 +134,7 @@ export function PuckAiAssistant({
   const [loading, setLoading] = useState(false);
   const [aiBusyLabel, setAiBusyLabel] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [confirming, setConfirming] = useState<Set<number>>(new Set());
   const [applied, setApplied] = useState<Set<number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -149,7 +151,25 @@ export function PuckAiAssistant({
       .then((res) => {
         const saved = (res.aiChatHistory?.messages ?? [])
           .filter((m) => m.content && m.content.trim() !== '')
-          .map((m) => ({ role: m.role === 'user' ? 'user' as const : 'assistant' as const, text: m.content }));
+          .map((m) => {
+            const base = { role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant', text: m.content };
+            // Pesan assistant lama yang punya meta.changes → rekonstruksi
+            // `result` supaya kartu preview & tombol Terapkan muncul lagi.
+            if (m.role !== 'user' && Array.isArray(m.meta?.changes) && m.meta!.changes!.length > 0) {
+              return {
+                ...base,
+                result: {
+                  reply: m.content,
+                  language: 'id',
+                  needs_clarification: false,
+                  clarification_question: null,
+                  changes: m.meta!.changes as AiAssistantResult['changes'],
+                  warnings: [],
+                },
+              };
+            }
+            return base;
+          });
         setMessages([{ role: 'assistant', text: greeting }, ...saved]);
       })
       .catch(() => setMessages([{ role: 'assistant', text: greeting }]))
@@ -174,6 +194,22 @@ export function PuckAiAssistant({
       reader.readAsDataURL(f);
     }
     if (fileRef.current) fileRef.current.value = '';
+  }
+
+  /** Dukung paste (Ctrl/Cmd+V) gambar langsung ke kolom chat. */
+  function onPasteImage(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const imgItem = items.find((it) => it.type.startsWith('image/'));
+    if (!imgItem) return; // bukan gambar → biarkan paste teks normal
+    e.preventDefault();
+    const file = imgItem.getAsFile();
+    if (!file || file.size > 6 * 1024 * 1024 || images.length >= 3) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      setImages((prev) => (prev.length >= 3 ? prev : [...prev, { preview: dataUrl, data: dataUrl }]));
+    };
+    reader.readAsDataURL(file);
   }
 
   async function send() {
@@ -205,8 +241,10 @@ export function PuckAiAssistant({
       );
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
       // Simpan ke riwayat toko (memory lintas sesi) — senyap bila gagal.
+      // reply_meta membawa `changes` supaya kartu preview bisa direkonstruksi
+      // saat riwayat dimuat ulang di sesi berikutnya.
       if (webStoreId && result.reply) {
-        persistAiMessage(token, webStoreId, text, result.reply).catch(() => {});
+        persistAiMessage(token, webStoreId, text, result.reply, { changes: result.changes }).catch(() => {});
       }
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI belum dapat dihubungi. Cek konfigurasi AI.' }]);
@@ -249,18 +287,44 @@ export function PuckAiAssistant({
                 <div className="whitespace-pre-wrap">{m.text}</div>
                 {m.result && m.result.changes.length > 0 && (
                   <div className="mt-2.5 border-t border-slate-200 pt-2">
-                    <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">Usulan ({m.result.changes.length})</div>
-                    {m.result.changes.map((c, j) => (
-                      <div key={j} className="mb-1 text-xs text-slate-600">• {c.description}</div>
+                    <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      Usulan perubahan ({m.result.changes.length}) — tinjau sebelum terapkan
+                    </div>
+                    {changedBlocksOf(data, m.result.changes).map(({ change, block }, j) => (
+                      <div key={j} className="mb-2 rounded-xl border border-slate-200 bg-white">
+                        <div className="px-2.5 pt-2 text-xs text-slate-600">{change.description}</div>
+                        <AiChangePreview block={block} change={change} />
+                        <div className="flex items-center justify-end gap-1.5 p-2">
+                          {!confirming.has(i) ? (
+                            <button
+                              type="button"
+                              onClick={() => setConfirming((prev) => new Set(prev).add(i))}
+                              disabled={applied.has(i)}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                              <Sparkles size={12} /> {applied.has(i) ? 'Diterapkan' : 'Terapkan Perubahan'}
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setConfirming((prev) => { const n = new Set(prev); n.delete(i); return n; })}
+                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { apply([change as PuckChange], i); setConfirming((prev) => { const n = new Set(prev); n.delete(i); return n; }); }}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-700"
+                              >
+                                <Check size={13} /> Yakin, Terapkan
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => apply(m.result!.changes, i)}
-                      disabled={applied.has(i)}
-                      className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
-                    >
-                      <Check size={13} /> {applied.has(i) ? 'Diterapkan — Simpan' : 'Terapkan ke Halaman'}
-                    </button>
                   </div>
                 )}
                 {m.result?.warnings?.map((w, j) => (
@@ -311,13 +375,14 @@ export function PuckAiAssistant({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                onPaste={onPasteImage}
                 rows={2}
-                placeholder="Contoh: buat hero promo diskon 50% pakai warna brand, atau upload screenshot & tiru layoutnya..."
+                placeholder="Contoh: buat hero promo diskon 50% pakai warna brand, atau tempel (Ctrl+V) screenshot & tiru layoutnya..."
                 className="min-w-0 flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
               />
               <button type="submit" disabled={loading || !message.trim()} className="rounded-xl bg-indigo-600 p-2.5 text-white disabled:opacity-40" aria-label="Kirim"><Send size={15} /></button>
             </form>
-            <div className="mt-1 text-[10px] text-slate-400">Maks 3 gambar · PNG/JPG/WebP ≤ 6 MB. Perubahan diterapkan ke kanvas — jangan lupa <b>Simpan</b>.</div>
+            <div className="mt-1 text-[10px] text-slate-400">Maks 3 gambar · PNG/JPG/WebP ≤ 6 MB · bisa di-paste (Ctrl+V). Tinjau preview lalu Terapkan — jangan lupa <b>Simpan</b>.</div>
           </div>
         </section>
       )}

@@ -43,9 +43,15 @@ export function askWebStoreAssistant(
 const AI_SEND_MESSAGE = `mutation AiSendMessage($input: AiChatSendInput!) { aiSendMessage(input: $input) { id web_store_id messages { id conversation_id role content created_at } } }`;
 const AI_CLEAR_HISTORY = `mutation AiClearHistory($web_store_id: ID!) { aiClearHistory(web_store_id: $web_store_id) }`;
 
-export function persistAiMessage(token: string, webStoreId: string, message: string, reply?: string) {
+export function persistAiMessage(
+  token: string,
+  webStoreId: string,
+  message: string,
+  reply?: string,
+  replyMeta?: { changes?: AiChangeSuggestion[] } | null,
+) {
   return gqlFetch<{ aiSendMessage: { id: string } }>(AI_SEND_MESSAGE, {
-    input: { web_store_id: webStoreId, message, reply: reply ?? null },
+    input: { web_store_id: webStoreId, message, reply: reply ?? null, reply_meta: replyMeta ?? null },
   }, token);
 }
 
