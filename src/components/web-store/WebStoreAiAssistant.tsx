@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, X, Trash2 } from 'lucide-react';
-import { askWebStoreAssistant, persistAiMessage, clearAiHistory, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { persistAiMessage, clearAiHistory, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { streamAskAi } from '@/lib/streamAskAi';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 
 export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onApply }: { context: unknown; webStoreId?: string | null; scope?: 'setup' | 'homepage' | 'pdp' | 'plp' | 'checkout' | 'page'; onApply: (changes: AiAssistantResult['changes']) => void }) {
@@ -11,6 +12,7 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [busyLabel, setBusyLabel] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
   const [appliedMessages, setAppliedMessages] = useState<Set<number>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
@@ -32,10 +34,11 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
     setImages([]); setMessage(''); setMessages((m) => [...m, { role: 'user', text }]); setLoading(true);
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.text }));
-      const res = await askWebStoreAssistant(token, { web_store_id: webStoreId ?? undefined, scope, message: text, context, history, images: sendImages.map((im) => ({ data: im.data })) });
-      const result = res.aiWebStoreAssistant;
+      const result = await streamAskAi(token, { web_store_id: webStoreId ?? undefined, scope, message: text, context, history, images: sendImages.map((im) => ({ data: im.data })) }, (stage, msg) => {
+        setBusyLabel(msg || (stage === 'thinking' ? 'AI membaca toko & menyusun saran…' : 'AI mengetik…'));
+      });
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
-      if (webStoreId) await persistAiMessage(token, webStoreId, text, result.reply);
+      if (webStoreId) await persistAiMessage(token, webStoreId, text, result.reply, { changes: result.changes });
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI assistant belum dapat dihubungi.' }]);
     } finally { setLoading(false); }
@@ -67,7 +70,7 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
           <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50 p-4">
             {messages.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500"><Sparkles size={16} className="mb-2 text-indigo-500" />Contoh: “Buat homepage lebih premium dengan warna hijau dan CTA ke katalog.”</div>}
             {messages.map((m, i) => <div key={i} className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm ${m.role === 'user' ? 'ml-auto bg-indigo-600 text-white' : 'bg-white text-slate-700 shadow-sm'}`}><div className="whitespace-pre-wrap">{m.text}</div>{m.result && m.result.changes.length > 0 && <div className="mt-3 border-t border-slate-200 pt-2"><div className="mb-2 text-[11px] font-bold uppercase text-slate-400">Usulan perubahan</div>{m.result.changes.map((c, j) => <div key={j} className="mb-2 text-xs text-slate-600">• {c.description}</div>)}<button type="button" onClick={() => { onApply(m.result!.changes); setAppliedMessages((prev) => new Set(prev).add(i)); }} className="mt-1 inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"><Check size={14} /> {appliedMessages.has(i) ? 'Sudah Diterapkan ke Draft' : 'Terapkan Perubahan'}</button></div>}{m.result?.warnings?.map((w, j) => <div key={j} className="mt-2 text-xs text-amber-700">⚠ {w}</div>)}</div>)}
-            {loading && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 size={14} className="animate-spin" /> AI sedang berpikir...</div>}
+            {loading && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 size={14} className="animate-spin" /> {busyLabel || 'AI sedang berpikir...'}</div>}
           </div>
           <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex gap-2 border-t p-3">
             <div className="flex flex-col gap-1.5 flex-1 min-w-0">
