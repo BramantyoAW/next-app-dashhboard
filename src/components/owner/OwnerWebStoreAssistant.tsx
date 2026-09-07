@@ -31,8 +31,12 @@ export function OwnerWebStoreAssistant() {
   }, []);
 
   const scope = useMemo(() => getScope(pathname), [pathname]);
-  // Builder page mounts its own WebStoreAiAssistant wired to live drafts.
-  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || pathname.includes('/builder') || !webStoreId) return null;
+  // Sembunyikan di rute yang sudah punya panel AI sendiri yang lengkap:
+  // - /builder → builder mount sendiri (live draft)
+  // - /pages/<id> → editor Puck punya "AI Halaman" (konteks blok + compare + apply nyata).
+  // Assistant global di sini cuma advisory (onApply no-op) → hanya bikin bingung
+  // dengan tombol "Design dengan AI" yang tak mengubah apa pun.
+  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || pathname.includes('/builder') || pathname.includes('/pages/') || !webStoreId) return null;
 
   return (
     <WebStoreAiAssistant
