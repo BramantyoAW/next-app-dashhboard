@@ -25,7 +25,7 @@ export function FullPageMiniBar({
   return (
     <div
       className="fixed bottom-4 right-4 z-40 flex items-center gap-1 rounded-full py-1.5 pl-1.5 pr-1 shadow-xl"
-      style={{ background: 'var(--text, #17150f)', color: 'var(--brand-contrast, #ffffff)' }}
+      style={{ background: 'var(--text, #161616)', color: 'var(--brand-contrast, #ffffff)' }}
     >
       <Link
         href={`/storefront/${hash}`}

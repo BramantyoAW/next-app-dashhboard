@@ -54,7 +54,7 @@ export async function StorefrontPageRenderer({
 }) {
   if (!Array.isArray(blocks) || blocks.length === 0) {
     return (
-      <div className="py-16 text-center text-sm" style={{ color: 'var(--muted, #7a7568)' }}>
+      <div className="py-16 text-center text-sm" style={{ color: 'var(--muted, #6f6a63)' }}>
         Halaman ini belum memiliki blok.
       </div>
     );
@@ -88,7 +88,7 @@ export async function StorefrontPageRenderer({
                     {eyebrow && (
                       <span
                         className="text-[10px] font-bold uppercase tracking-[0.24em]"
-                        style={{ color: 'var(--muted, #7a7568)' }}
+                        style={{ color: 'var(--muted, #6f6a63)' }}
                       >
                         {eyebrow}
                       </span>
@@ -96,13 +96,13 @@ export async function StorefrontPageRenderer({
                     {heading && (
                       <h1
                         className="text-4xl font-medium leading-[1.05] tracking-tight sm:text-5xl"
-                        style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                        style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}
                       >
                         {heading}
                       </h1>
                     )}
                     {subheading && (
-                      <p className="max-w-md text-sm leading-relaxed sm:text-base" style={{ color: 'var(--muted, #7a7568)' }}>
+                      <p className="max-w-md text-sm leading-relaxed sm:text-base" style={{ color: 'var(--muted, #6f6a63)' }}>
                         {subheading}
                       </p>
                     )}
@@ -111,7 +111,7 @@ export async function StorefrontPageRenderer({
                         <Link
                           href={ctaLink}
                           className="inline-block border-b-2 pb-0.5 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-                          style={{ color: 'var(--brand, #8a6f4d)', borderColor: 'var(--brand, #8a6f4d)' }}
+                          style={{ color: 'var(--accent, #c5a880)', borderColor: 'var(--accent, #c5a880)' }}
                         >
                           {ctaText}
                         </Link>
@@ -119,7 +119,7 @@ export async function StorefrontPageRenderer({
                     )}
                   </div>
                   {/* Image side */}
-                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--text,#17150f)]/5 lg:aspect-auto lg:h-[520px]">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--text,#161616)]/5 lg:aspect-auto lg:h-[520px]">
                     <StorefrontImage
                       src={heroImage}
                       alt={String(heading)}
@@ -139,7 +139,7 @@ export async function StorefrontPageRenderer({
                   backgroundPosition: 'center',
                 }
               : sectionStyle(style, {
-                  background: `linear-gradient(135deg, var(--text, #17150f), #2a2420)`,
+                  background: `linear-gradient(135deg, var(--text, #161616), #2a2420)`,
                 });
 
             const fullWidth = String((style as Record<string, unknown>).full_width ?? 'container') === 'full';
@@ -208,7 +208,7 @@ export async function StorefrontPageRenderer({
                 {b.heading && (
                   <h2
                     className="text-xl font-medium tracking-tight sm:text-2xl"
-                    style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                    style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}
                   >
                     {b.heading}
                   </h2>
@@ -216,7 +216,7 @@ export async function StorefrontPageRenderer({
                 {b.body && (
                   <div
                     className="mt-3 max-w-prose whitespace-pre-wrap text-sm leading-relaxed sm:text-base"
-                    style={{ color: 'var(--muted, #7a7568)' }}
+                    style={{ color: 'var(--muted, #6f6a63)' }}
                   >
                     {b.body}
                   </div>
@@ -244,14 +244,14 @@ export async function StorefrontPageRenderer({
                 key={idx}
                 className="px-6 py-14 text-center sm:py-20"
                 style={sectionStyle(style, {
-                  background: 'var(--text, #17150f)',
-                  color: 'var(--bg, #f4f1ea)',
+                  background: 'var(--text, #161616)',
+                  color: 'var(--bg, #faf9f6)',
                 })}
               >
                 {b.heading && (
                   <h2
                     className="text-2xl font-medium tracking-tight sm:text-3xl"
-                    style={{ fontFamily: 'var(--font)' }}
+                    style={{ fontFamily: 'var(--font-body)' }}
                   >
                     {b.heading}
                   </h2>
@@ -264,7 +264,7 @@ export async function StorefrontPageRenderer({
                     <Link
                       href={b.button_link || '#products'}
                       className="inline-block border-b-2 border-current/40 pb-0.5 text-[11px] font-bold uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
-                      style={{ color: 'var(--brand, #d6ff3f)' }}
+                      style={{ color: 'var(--accent, #c5a880)' }}
                     >
                       {b.button_text}
                     </Link>
@@ -280,24 +280,24 @@ export async function StorefrontPageRenderer({
                 {b.heading && (
                   <h2
                     className="mb-5 text-xl font-medium tracking-tight sm:text-2xl"
-                    style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+                    style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}
                   >
                     {b.heading}
                   </h2>
                 )}
-                <div className="divide-y" style={{ borderColor: 'var(--text, #17150f)', opacity: 0.1 }}>
+                <div className="divide-y" style={{ borderColor: 'var(--text, #161616)', opacity: 0.1 }}>
                   {(b.items ?? []).map((it: any, i: number) => (
                     <details key={i} className="group py-4">
                       <summary
                         className="cursor-pointer text-sm font-medium list-none flex items-center justify-between"
-                        style={{ color: 'var(--text, #17150f)' }}
+                        style={{ color: 'var(--text, #161616)' }}
                       >
                         <span>{it.q}</span>
                         <span className="ml-4 text-lg transition-transform group-open:rotate-45">+</span>
                       </summary>
                       <p
                         className="mt-2 text-sm leading-relaxed"
-                        style={{ color: 'var(--muted, #7a7568)' }}
+                        style={{ color: 'var(--muted, #6f6a63)' }}
                       >
                         {it.a}
                       </p>
@@ -354,7 +354,7 @@ export async function StorefrontPageRenderer({
                 key={idx}
                 className="w-full border-0"
                 style={{
-                  borderTop: `${style.height ?? 1}px solid ${style.color ?? 'var(--text, #17150f)'}`,
+                  borderTop: `${style.height ?? 1}px solid ${style.color ?? 'var(--text, #161616)'}`,
                   opacity: 0.1,
                   margin: style.margin ?? '32px 0',
                 }}

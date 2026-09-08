@@ -103,7 +103,7 @@ export default async function StorefrontOrderDetailPage({
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-lg font-extrabold tracking-tight text-slate-900">{o.order_number}</h1>
+          <h1 className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{o.order_number}</h1>
           <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusStyle}`}>{statusLabel}</span>
         </div>
         <div className="mt-1 text-xs text-slate-500">{new Date(o.created_at).toLocaleString('id-ID')}</div>

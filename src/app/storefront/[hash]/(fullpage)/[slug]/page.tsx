@@ -45,7 +45,7 @@ export default async function StorefrontFullPage({
     if (puck) {
       return (
         <div className="min-h-screen">
-          <StorefrontPuckRenderer data={puck} />
+          <StorefrontPuckRenderer data={puck} dynamic={{ hash }} />
         </div>
       );
     }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Truck, ShieldCheck, MessageSquare, CreditCard, Search } from 'lucide-react';
+import { MessageSquare, Search } from 'lucide-react';
 import { waLink } from '@/lib/storefront-ui';
 
 /**
@@ -24,7 +24,7 @@ export function StorefrontHeader({
   chrome?: { header: { show_search: boolean; show_orders: boolean } };
 }) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--text,#17150f)]/10 bg-[var(--bg,#f4f1ea)]/92 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-[var(--text,#161616)]/10 bg-[var(--bg,#faf9f6)]/92 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo / brand */}
         <Link href={`/storefront/${hash}`} className="flex min-w-0 items-center gap-2.5 py-4">
@@ -33,8 +33,8 @@ export function StorefrontHeader({
             <img src={logoUrl} alt={storeName} className="h-8 w-8 shrink-0 rounded object-cover" />
           ) : null}
           <span
-            className="truncate text-base font-bold uppercase tracking-[0.14em]"
-            style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+            className="truncate text-xl font-semibold tracking-tight"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--text, #161616)' }}
           >
             {storeName}
           </span>
@@ -47,7 +47,7 @@ export function StorefrontHeader({
               key={p.slug}
               href={`/storefront/${hash}/${p.slug}`}
               className="py-4 transition-colors hover:text-[var(--brand)]"
-              style={{ color: 'var(--muted, #7a7568)' }}
+              style={{ color: 'var(--muted, #6f6a63)', fontFamily: 'var(--font-body)' }}
             >
               {p.title}
             </Link>
@@ -63,7 +63,7 @@ export function StorefrontHeader({
                 name="q"
                 placeholder="Search"
                 className="w-44 border-b border-current/20 bg-transparent py-1.5 pr-7 pl-0 text-[12px] uppercase tracking-widest placeholder:opacity-50 focus:border-[var(--brand)] focus:outline-none"
-                style={{ color: 'var(--text, #17150f)' }}
+                style={{ color: 'var(--text, #161616)' }}
               />
               <Search size={14} className="absolute right-1 top-1/2 -translate-y-1/2 opacity-40" />
             </form>
@@ -73,11 +73,19 @@ export function StorefrontHeader({
             <Link
               href={`/storefront/${hash}/account`}
               className="text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors hover:text-[var(--brand)]"
-              style={{ color: 'var(--muted, #7a7568)' }}
+              style={{ color: 'var(--muted, #6f6a63)' }}
             >
               Akun
             </Link>
           )}
+
+          <Link
+            href={`/storefront/${hash}/cart`}
+            className="hidden rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-80 sm:inline-block"
+            style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}
+          >
+            Belanja
+          </Link>
 
           <CartBadge hash={hash} />
         </div>
@@ -96,14 +104,14 @@ export function StorefrontHeader({
 /** Mobile search (visible under header on small screens). */
 export function StorefrontMobileSearch({ hash, brand }: { hash: string; brand: string }) {
   return (
-    <form action={`/storefront/${hash}`} method="get" className="border-b border-[var(--text,#17150f)]/5 px-4 py-2.5 sm:hidden">
+    <form action={`/storefront/${hash}`} method="get" className="border-b border-[var(--text,#161616)]/5 px-4 py-2.5 sm:hidden">
       <div className="relative">
         <input
           type="search"
           name="q"
           placeholder="Search products…"
           className="w-full border-b border-current/20 bg-transparent py-2 pr-7 pl-0 text-[12px] uppercase tracking-widest placeholder:opacity-50 focus:border-[var(--brand)] focus:outline-none"
-          style={{ color: 'var(--text, #17150f)' }}
+          style={{ color: 'var(--text, #161616)' }}
         />
         <Search size={14} className="absolute right-1 top-1/2 -translate-y-1/2 opacity-40" />
       </div>
@@ -111,27 +119,27 @@ export function StorefrontMobileSearch({ hash, brand }: { hash: string; brand: s
   );
 }
 
-/** Feature strip under the header — editorial trust signals. */
-export function StorefrontFeatureStrip({ waPhone }: { waPhone: string | null | undefined }) {
+/** Announcement bar — strip marquee info toko (Atelier style). */
+export function StorefrontFeatureStrip({
+  waPhone,
+  items,
+}: {
+  waPhone?: string | null | undefined;
+  items?: string[];
+}) {
   const wa = waLink(waPhone, 'Halo, saya ingin bertanya tentang produk Anda');
-  const items = [
-    { icon: <Truck className="h-3.5 w-3.5" />, label: 'Pengiriman Cepat' },
-    { icon: <ShieldCheck className="h-3.5 w-3.5" />, label: 'Garansi Original' },
-    { icon: <CreditCard className="h-3.5 w-3.5" />, label: 'Bayar di Tempat' },
-  ];
-  if (wa) items.push({ icon: <MessageSquare className="h-3.5 w-3.5" />, label: 'Chat Kami' });
+  const list = (items && items.length > 0 ? items : []).map((t) => t.trim()).filter(Boolean);
 
   return (
-    <div className="border-b border-[var(--text,#17150f)]/10 bg-[var(--bg,#f4f1ea)]">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-1 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em]">
-        {items.map((it) => (
-          <span
-            key={it.label}
-            className="inline-flex items-center gap-1.5"
-            style={{ color: 'var(--muted, #7a7568)' }}
-          >
-            <span style={{ color: 'var(--brand, #8a6f4d)' }}>{it.icon}</span>
-            {it.label}
+    <div
+      className="overflow-hidden text-[10px] font-semibold uppercase tracking-[0.22em]"
+      style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}
+    >
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5">
+        {list.map((it, i) => (
+          <span key={i} className="inline-flex items-center gap-2 opacity-90">
+            <span aria-hidden style={{ color: 'var(--accent, #c5a880)' }}>✦</span>
+            {it}
           </span>
         ))}
         {wa && (
@@ -139,11 +147,10 @@ export function StorefrontFeatureStrip({ waPhone }: { waPhone: string | null | u
             href={wa}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 border-b border-current pb-0.5 transition-opacity hover:opacity-70"
-            style={{ color: 'var(--brand, #8a6f4d)' }}
+            className="inline-flex items-center gap-1.5 opacity-90 transition-opacity hover:opacity-60"
           >
-            <MessageSquare className="h-3 w-3" />
-            WhatsApp
+            <MessageSquare className="h-3 w-3" style={{ color: 'var(--accent, #c5a880)' }} />
+            <span className="border-b border-current pb-0.5">WhatsApp</span>
           </a>
         )}
       </div>

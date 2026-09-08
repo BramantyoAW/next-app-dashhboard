@@ -5,6 +5,10 @@ import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
 import { imageUploadField, imageUploadFieldOpt } from './puckImageField';
 import { ProductCard, ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 import { usePuckDynamic } from '@/lib/puckDynamic';
+import { addToCart } from '@/lib/cart';
+import Link from 'next/link';
+import { StorefrontCartBadge } from '@/components/storefront/StorefrontCartBadge';
+import { MessageSquare, Menu as MenuIcon, X as MenuX } from 'lucide-react';
 import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
@@ -73,6 +77,7 @@ type CategorySlotProps = {
   limit: number;
 };
 type CtaProps = { heading: string; body: string; button_text: string; link: string };
+type AnnouncementBarProps = { items: { text: string }[] };
 type FaqItem = { q: string; a: string };
 type FaqProps = { heading: string; items: FaqItem[] };
 type StoreFooterLink = { label: string; href: string };
@@ -142,6 +147,7 @@ function detectSocialPlatform(label: string): string {
 
 type StoreFooterProps = {
   about_text: string;
+  logo_text: string;
   show_payments: 'yes' | 'no';
   copyright_text: string;
   logo_image: string;
@@ -187,6 +193,7 @@ type ColumnsProps = {
 
 type ComponentProps = {
   StoreHeader: StoreHeaderProps;
+  AnnouncementBar: AnnouncementBarProps;
   Hero: HeroProps;
   Banner: BannerProps;
   Text: TextProps;
@@ -214,9 +221,9 @@ const Root: RootConfig<{ props: RootProps; fields: Record<string, never> }> = {
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        background: 'var(--bg, #f4f1ea)',
-        color: 'var(--text, #17150f)',
-        fontFamily: 'var(--font)',
+        background: 'var(--bg, #faf9f6)',
+        color: 'var(--text, #161616)',
+        fontFamily: 'var(--font-body)',
       }}
     >
       {/* SATU KANVAS: header, body, footer semua di-drag dalam satu urutan vertikal */}
@@ -226,6 +233,127 @@ const Root: RootConfig<{ props: RootProps; fields: Record<string, never> }> = {
 };
 
 /* ---------- Komponen storefront ---------- */
+
+/** Resolve slug menu statis blok header → rute storefront nyata. */
+function menuHref(m: string, hash: string): string {
+  const key = (m || '').trim().toLowerCase();
+  const base = `/storefront/${hash}`;
+  if (!key) return base;
+  if (key === 'home' || key === 'beranda' || key === 'beranda ') return base;
+  const map: Record<string, string> = {
+    'produk': '/products', 'produk kami': '/products', 'katalog': '/products', 'belanja': '/products',
+    'tentang': '/about', 'tentang kami': '/about',
+    'cara order': '/cara-order', 'cara beli': '/cara-order', 'order': '/cara-order',
+    'kontak': '/contact', 'faq': '/faq', 'pertanyaan': '/faq', 'testimoni': '/faq',
+  };
+  return base + (map[key] ?? '/' + m.trim().toLowerCase().replace(/\s+/g, '-'));
+}
+
+/**
+ * Header blok (kanvas) — versi fungsional: menu link, search, akun & cart badge.
+ * Dipakai blok StoreHeader saat dirender di storefront.
+ */
+function StoreHeaderBar(props: {
+  lm: 'text' | 'image' | 'both'; logo_image?: string; logo_text?: string;
+  show_search?: string; menus: string[]; cta_text?: string; sticky?: string;
+}) {
+  const { hash } = usePuckDynamic();
+  const { lm, logo_image, logo_text, show_search, menus, cta_text, sticky } = props;
+  const [open, setOpen] = useState(false);
+  const h = hash || '';
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-4 py-3 sm:px-6 sm:py-3.5"
+      style={{
+        background: 'var(--surface, #faf9f6)',
+        color: 'var(--text, #161616)',
+        fontFamily: 'var(--font-body)',
+        borderColor: 'var(--line, rgba(22,22,22,0.12))',
+        position: sticky === 'yes' ? 'sticky' : 'static',
+        top: 0,
+        zIndex: 30,
+      }}
+    >
+      <Link href={h ? `/storefront/${h}` : '#'} className="flex min-w-0 items-center gap-2">
+        {(lm === 'image' || lm === 'both') && logo_image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo_image} alt={logo_text || 'logo'} className="max-h-9 w-auto rounded object-contain" />
+        )}
+        {(lm === 'text' || lm === 'both') && logo_text && (
+          <span className="truncate text-lg font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text, #161616)' }}>{logo_text}</span>
+        )}
+      </Link>
+
+      <div className="flex flex-1 items-center justify-end gap-4 text-sm">
+        {/* Menu — klik ke halaman statis */}
+        {menus.length > 0 && (
+          <nav className="hidden items-center gap-5 md:flex">
+            {menus.map((m, i) => (
+              <Link key={i} href={h ? menuHref(m, h) : '#'} className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] transition-opacity hover:opacity-100" style={{ color: 'var(--muted, #6f6a63)' }}>{m}</Link>
+            ))}
+          </nav>
+        )}
+
+        {show_search === 'yes' && (
+          <form action={h ? `/storefront/${h}` : '#'} method="get" className="hidden md:block">
+            <input
+              type="search"
+              name="q"
+              placeholder="Cari produk..."
+              aria-label="Cari"
+              className="w-36 rounded-full border px-3 py-1 text-xs outline-none placeholder:opacity-60 focus:border-[var(--brand)]"
+              style={{ borderColor: 'var(--line, rgba(22,22,22,0.2))', background: 'transparent', color: 'var(--text)' }}
+            />
+          </form>
+        )}
+
+        {/* Akun — tetap (tidak customable), tampil semua ukuran */}
+        {h && (
+          <Link href={`/storefront/${h}/account`} className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-opacity hover:opacity-80" style={{ color: 'var(--muted, #6f6a63)' }}>
+            Akun
+          </Link>
+        )}
+
+        {/* Cart badge — tetap (tidak customable), membuka drawer global */}
+        {h && <StorefrontCartBadge hash={h} />}
+
+        {/* Hamburger mobile — buka menu */}
+        {h && menus.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? 'Tutup menu' : 'Buka menu'}
+            className="rounded-lg p-1 transition hover:bg-black/5 md:hidden"
+            style={{ color: 'var(--text, #161616)' }}
+          >
+            {open ? <MenuX /> : <MenuIcon />}
+          </button>
+        )}
+
+        {/* CTA */}
+        {cta_text && (
+          <Link href={h ? `/storefront/${h}/cart` : '#'} className="hidden rounded-full px-4 py-1.5 text-xs font-bold sm:inline-block" style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}>
+            {cta_text}
+          </Link>
+        )}
+      </div>
+
+      {/* Menu mobile (dropdown) — daftar menu blok header */}
+      {open && h && menus.length > 0 && (
+        <nav className="flex flex-col gap-1 border-t pb-2 pt-1 md:hidden" style={{ borderColor: 'var(--line, rgba(22,22,22,0.12))' }}>
+          {menus.map((m, i) => {
+            const mh = menuHref(m, h);
+            return (
+              <Link key={i} href={mh} onClick={() => setOpen(false)} className="px-1 py-2 text-sm font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--text, #161616)' }}>
+                {m}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+    </div>
+  );
+}
 
 /** Slider: carousel sederhana (auto-play + tombol panah), tanpa dep eksternal. */
 function SliderView({ heading, slides, interval, autoplay }: SliderProps) {
@@ -238,16 +366,16 @@ function SliderView({ heading, slides, interval, autoplay }: SliderProps) {
   }, [autoplay, list.length, interval]);
   if (list.length === 0) {
     return (
-      <div className="px-6 py-6 text-center text-sm opacity-50" style={{ color: 'var(--text, #17150f)' }}>
+      <div className="px-6 py-6 text-center text-sm opacity-50" style={{ color: 'var(--text, #161616)' }}>
         Tambahkan slide (gambar) dari panel kanan untuk membuat slider.
       </div>
     );
   }
   const go = (d: number) => setIdx((i) => (i + d + list.length) % list.length);
   return (
-    <div className="px-6 py-6" style={{ fontFamily: 'var(--font)' }}>
-      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
-      <div className="relative overflow-hidden rounded-2xl" style={{ background: 'var(--text, #17150f)' }}>
+    <div className="px-6 py-6" style={{ fontFamily: 'var(--font-body)' }}>
+      {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
+      <div className="relative overflow-hidden rounded-2xl" style={{ background: 'var(--text, #161616)' }}>
         <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${idx * 100}%)` }}>
           {list.map((s, i) => (
             <div key={i} className="relative w-full shrink-0">
@@ -280,7 +408,7 @@ function SliderView({ heading, slides, interval, autoplay }: SliderProps) {
 /** Columns: susun 2 sel (gambar kiri + teks kanan dst) ala section split. */
 function ColumnsView({ layout, gap, left, right }: ColumnsProps) {
   const col = (cell: ColumnCell, dark?: boolean) => (
-    <div className="flex flex-col items-start" style={{ color: 'var(--text, #17150f)' }}>
+    <div className="flex flex-col items-start" style={{ color: 'var(--text, #161616)' }}>
       {cell.image_url && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={cell.image_url} alt={cell.title || ''} className="mb-3 aspect-[4/3] w-full rounded-xl object-cover" />
@@ -288,7 +416,7 @@ function ColumnsView({ layout, gap, left, right }: ColumnsProps) {
       {cell.title && <h3 className="text-lg font-medium">{cell.title}</h3>}
       {cell.text && <p className="mt-1 text-sm opacity-70">{cell.text}</p>}
       {cell.button_text && (
-        <a href={cell.button_link || '#'} className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: 'var(--brand, #8a6f4d)', color: dark ? '#111' : '#fff' }}>
+        <a href={cell.button_link || '#'} className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: 'var(--accent, #c5a880)', color: dark ? '#111' : '#fff' }}>
           {cell.button_text}
         </a>
       )}
@@ -296,7 +424,7 @@ function ColumnsView({ layout, gap, left, right }: ColumnsProps) {
   );
   const grid = layout === '60-40' ? 'lg:grid-cols-[3fr_2fr]' : layout === '40-60' ? 'lg:grid-cols-[2fr_3fr]' : 'lg:grid-cols-2';
   return (
-    <div className="px-6 py-6" style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}>
+    <div className="px-6 py-6" style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}>
       <div className={`grid items-start gap-4 ${grid}`} style={{ gap }}>
         <div>{col(left)}</div>
         <div>{col(right)}</div>
@@ -362,8 +490,8 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
   const card = (i: number) => (
     <div key={i} className="overflow-hidden rounded-xl border border-black/10">
       <div className="aspect-square bg-black/5" />
-      <div className="p-2 text-xs font-semibold" style={{ color: 'var(--text, #17150f)' }}>Produk {i + 1}</div>
-      <div className="px-2 pb-2 text-xs font-bold" style={{ color: 'var(--brand, #8a6f4d)' }}>Rp 25.000</div>
+      <div className="p-2 text-xs font-semibold" style={{ color: 'var(--text, #161616)' }}>Produk {i + 1}</div>
+      <div className="px-2 pb-2 text-xs font-bold" style={{ color: 'var(--accent, #c5a880)' }}>Rp 25.000</div>
     </div>
   );
 
@@ -381,8 +509,8 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
     const maxIdx = Math.max(show - perView, 0);
     const i0 = Math.min(idx, maxIdx);
     return (
-      <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
-        {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+      <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+        {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
         <div className="relative">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {Array.from({ length: Math.min(perView, show) }).map((_, j) => {
@@ -403,8 +531,8 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
     );
   }
   return (
-    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
-      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+      {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {body(show > 0 ? show : total)}
       </div>
@@ -423,7 +551,7 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
 
   if (!product) {
     return (
-      <div className="px-6 py-16 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>
+      <div className="px-6 py-16 text-center text-sm" style={{ color: 'var(--text, #161616)' }}>
         {product === undefined ? 'Memuat produk...' : 'Produk tidak ditemukan.'}
       </div>
     );
@@ -435,30 +563,37 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
   const wa = `https://wa.me/?text=${encodeURIComponent(`Halo ${storeName ? 'kak ' + storeName : ''}, saya mau pesan: ${name} (${hash ? '' : ''})`)}`;
 
   return (
-    <div className="px-6 py-6" style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}>
-      <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-2xl bg-black/5">
+    <div className="px-6 py-10 sm:px-10" style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}>
+      <div className="mx-auto grid max-w-6xl gap-8 sm:grid-cols-2 lg:gap-12">
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-[var(--text)]/5">
           {url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={url} alt={name} className="h-full w-full object-cover" />
           ) : null}
         </div>
         <div className="flex flex-col justify-center">
-          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--brand, #8a6f4d)' }}>
+          <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--accent, #725b38)' }}>
             {product.sku || mp?.sku || 'PRODUK'}
           </span>
-          <h1 className="mt-2 text-3xl font-black leading-tight tracking-tight">{name}</h1>
-          <p className="mt-2 text-lg font-bold" style={{ color: 'var(--brand, #8a6f4d)' }}>
+          <h1 className="mt-3 text-3xl font-medium leading-tight sm:text-4xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{name}</h1>
+          <p className="mt-3 text-xl font-semibold" style={{ color: 'var(--text, #161616)' }}>
             {Number.isFinite(price) && price > 0 ? `Rp ${price.toLocaleString('id-ID')}` : 'Hubungi kami'}
           </p>
-          <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted, #7a7568)' }}>
+          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: 'var(--muted, #6f6a63)' }}>
             {product.description || mp?.description || ''}
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-full px-6 py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
-              style={{ background: 'var(--brand, #8a6f4d)', color: '#fff' }}
+              onClick={() => {
+                const id = (product as any).id ?? (mp as any).id;
+                const image = url;
+                if (!id || !hash) return;
+                addToCart(hash, { store_product_id: id, sku: String(product.sku ?? mp?.sku ?? ''), name, price: Number.isFinite(price) ? price : 0, image }, 1);
+                window.location.href = `/storefront/${hash}/cart`;
+              }}
+              className="rounded-full px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-85"
+              style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}
             >
               {btn}
             </button>
@@ -466,8 +601,8 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
               href={wa}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border px-6 py-2.5 text-sm font-bold"
-              style={{ borderColor: 'var(--brand, #8a6f4d)', color: 'var(--brand, #8a6f4d)' }}
+              className="rounded-full border px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-75"
+              style={{ borderColor: 'var(--line, rgba(22,22,22,0.25))', color: 'var(--text, #161616)' }}
             >
               Order via WhatsApp
             </a>
@@ -482,11 +617,11 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
 function CartSlotView({ heading }: CartSlotProps) {
   const { hash } = usePuckDynamic();
   if (!hash) {
-    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Keranjang (slot dinamis)</div>;
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #161616)' }}>Keranjang (slot dinamis)</div>;
   }
   return (
-    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
-      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+      {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
       <CartView hash={hash} jumpToCheckout={false} />
     </div>
   );
@@ -496,11 +631,11 @@ function CartSlotView({ heading }: CartSlotProps) {
 function CheckoutSlotView({ heading }: CheckoutSlotProps) {
   const { hash } = usePuckDynamic();
   if (!hash) {
-    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Checkout (slot dinamis)</div>;
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #161616)' }}>Checkout (slot dinamis)</div>;
   }
   return (
-    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
-      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+      {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
       <CheckoutForm hash={hash} />
     </div>
   );
@@ -545,13 +680,13 @@ function CategorySlotView({ heading, limit }: CategorySlotProps) {
   }, [hash, categorySlug, n]);
 
   if (!hash) {
-    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #17150f)' }}>Produk Kategori (slot dinamis)</div>;
+    return <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text, #161616)' }}>Produk Kategori (slot dinamis)</div>;
   }
   return (
-    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
-      {heading && <h2 className="mb-3 text-xl font-medium" style={{ color: 'var(--text, #17150f)' }}>{heading}</h2>}
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+      {heading && <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>{heading}</h2>}
       {items.length === 0 && state === 'loading' ? (
-        <div className="py-8 text-center text-sm" style={{ color: 'var(--muted, #7a7568)' }}>Memuat produk...</div>
+        <div className="py-8 text-center text-sm" style={{ color: 'var(--muted, #6f6a63)' }}>Memuat produk...</div>
       ) : (
         <ProductGrid hash={hash} products={items} />
       )}
@@ -562,6 +697,43 @@ function CategorySlotView({ heading, limit }: CategorySlotProps) {
 export const puckLabConfig: Config<ComponentProps> = {
   root: Root,
   components: {
+    AnnouncementBar: {
+      label: 'Announcement Bar',
+      fields: {
+        items: {
+          type: 'array',
+          label: 'Pesan / Info',
+          getItemSummary: (item) => (item as { text?: string } | undefined)?.text || 'Info',
+          arrayFields: {
+            text: { type: 'text', label: 'Teks' },
+          },
+        },
+      },
+      defaultProps: {
+        items: [
+          { text: 'Dukung Karya Anak Bangsa' },
+          { text: 'Gratis Ongkir Se-Indonesia' },
+          { text: 'WhatsApp 08:00 - 21:00' },
+        ],
+      },
+      render: ({ items }: AnnouncementBarProps) => {
+        const list = (items ?? [])
+          .map((x) => (typeof x === 'string' ? x : String((x as { text?: string })?.text ?? '')))
+          .map((s) => s.trim()).filter(Boolean);
+        return (
+          <div className="overflow-hidden text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5">
+              {list.map((it, i) => (
+                <span key={i} className="inline-flex items-center gap-2 opacity-90">
+                  <span aria-hidden style={{ color: 'var(--accent, #c5a880)' }}>✦</span>
+                  {it}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      },
+    },
     StoreHeader: {
       label: 'Header Toko (custom)',
       fields: {
@@ -598,53 +770,21 @@ export const puckLabConfig: Config<ComponentProps> = {
           ],
         },
       },
-      defaultProps: { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Cara Order', menu_3: '', menu_4: '', cta_text: 'Pesan', sticky: 'yes' },
+      defaultProps: { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Cara Order', menu_3: '', menu_4: '', cta_text: '', sticky: 'yes' },
       render: ({ logo_mode, logo_text, logo_image, show_search, menu_1, menu_2, menu_3, menu_4, cta_text, sticky }) => {
         // Data lama tanpa logo_mode → perlakukan sebagai mode nama (text).
         const lm: 'text' | 'image' | 'both' = logo_mode || 'text';
         const menus = [menu_1, menu_2, menu_3, menu_4].filter(Boolean);
         return (
-          <div
-            className="flex items-center justify-between gap-3 px-6 py-3"
-            style={{
-              background: 'var(--text, #17150f)',
-              color: 'var(--bg, #f4f1ea)',
-              fontFamily: 'var(--font)',
-              position: sticky === 'yes' ? 'sticky' : 'static',
-              top: 0,
-              zIndex: 30,
-            }}
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              {(lm === 'image' || lm === 'both') && logo_image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo_image} alt={logo_text || 'logo'} className="max-h-9 w-auto rounded object-contain" />
-              )}
-              {(lm === 'text' || lm === 'both') && logo_text && (
-                <div className="truncate font-bold tracking-wide" style={{ color: lm === 'text' ? 'var(--brand, #d6ff3f)' : 'var(--bg, #f4f1ea)' }}>
-                  {logo_text}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              {menus.map((m, i) => (
-                <span key={i} className="whitespace-nowrap opacity-80 hover:opacity-100">{m}</span>
-              ))}
-              {show_search === 'yes' && (
-                // Search input ASLI (bukan span dekoratif) — supaya CSS scoped
-                // AI (pill/focus) punya target nyata & search bisa dipakai.
-                <input
-                  type="search"
-                  placeholder="Cari produk..."
-                  aria-label="Cari"
-                  className="hidden w-36 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs text-inherit outline-none placeholder:text-white/50 focus:border-emerald-400 md:inline-block"
-                />
-              )}
-              <span className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: 'var(--brand, #d6ff3f)', color: 'var(--text, #17150f)' }}>
-                {cta_text}
-              </span>
-            </div>
-          </div>
+          <StoreHeaderBar
+            lm={lm}
+            logo_image={logo_image}
+            logo_text={logo_text}
+            show_search={show_search}
+            menus={menus}
+            cta_text={cta_text}
+            sticky={sticky}
+          />
         );
       },
     },
@@ -678,34 +818,43 @@ export const puckLabConfig: Config<ComponentProps> = {
       render: ({ eyebrow, heading, subheading, cta_text, image_url, align, dark }) => {
         const isDark = dark === 'yes';
         const isCenter = align === 'center';
+        const serif = { fontFamily: 'var(--font-display, Georgia, serif)' } as const;
+        const bodyFont = { fontFamily: 'var(--font-body)' } as const;
+        const btnStyle = isDark || image_url
+          ? { background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }
+          : { background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' };
         if (!isCenter && image_url) {
           return (
-            <div className="grid items-center gap-6 px-6 py-10 lg:grid-cols-2" style={{ background: 'var(--bg, #f4f1ea)', color: 'var(--text, #17150f)' }}>
+            <div className="grid items-center gap-8 px-6 py-14 sm:px-10 lg:grid-cols-2 lg:px-16" style={{ background: 'var(--surface, #faf9f6)', color: 'var(--text, #161616)' }}>
               <div>
-                {eyebrow && <div className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--brand, #8a6f4d)' }}>{eyebrow}</div>}
-                {heading && <h1 className="text-4xl font-medium leading-tight">{heading}</h1>}
-                {subheading && <p className="mt-2 max-w-md text-sm opacity-70">{subheading}</p>}
-                {cta_text && <div className="mt-4 inline-block rounded-full px-4 py-2 text-sm font-bold" style={{ background: 'var(--brand, #8a6f4d)', color: 'var(--brand-contrast, #fff)' }}>{cta_text}</div>}
+                {eyebrow && <div className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--accent, #c5a880)' }}>{eyebrow}</div>}
+                {heading && <h1 className="mt-2 text-4xl font-medium leading-[1.1] sm:text-5xl" style={serif}>{heading}</h1>}
+                {subheading && <p className="mt-3 max-w-md text-[15px] leading-relaxed opacity-70" style={bodyFont}>{subheading}</p>}
+                {cta_text && (
+                  <a href="#produk" className="mt-6 inline-block rounded-full px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-85" style={btnStyle}>
+                    {cta_text}
+                  </a>
+                )}
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image_url} alt="" className="aspect-[4/3] w-full rounded-xl object-cover" />
+              <img src={image_url} alt="" className="aspect-[4/3] w-full rounded-lg object-cover" />
             </div>
           );
         }
         const bg = image_url
           ? { backgroundImage: `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
           : isDark
-            ? { background: 'linear-gradient(135deg, var(--text, #17150f), #2a2420)' }
-            : { background: 'var(--bg, #f4f1ea)' };
+            ? { background: 'linear-gradient(135deg, var(--text, #161616), #3a342e)' }
+            : { background: 'var(--surface, #faf9f6)' };
         return (
-          <div className="px-6 py-16 text-center" style={{ ...bg, color: isDark || image_url ? '#fff' : 'var(--text, #17150f)' }}>
-            {eyebrow && <div className="text-xs font-bold uppercase tracking-[0.25em] opacity-70">{eyebrow}</div>}
-            {heading && <h1 className="mx-auto max-w-2xl text-4xl font-medium leading-tight sm:text-5xl">{heading}</h1>}
-            {subheading && <p className="mx-auto mt-3 max-w-xl text-sm opacity-80">{subheading}</p>}
+          <div className="px-6 py-20 text-center sm:py-24" style={{ ...bg, color: isDark || image_url ? '#fff' : 'var(--text, #161616)' }}>
+            {eyebrow && <div className="text-[11px] font-bold uppercase tracking-[0.25em]" style={{ color: isDark || image_url ? 'var(--accent, #c5a880)' : 'var(--accent, #725b38)' }}>{eyebrow}</div>}
+            {heading && <h1 className="mx-auto mt-3 max-w-3xl text-4xl font-medium leading-[1.08] sm:text-6xl" style={serif}>{heading}</h1>}
+            {subheading && <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed opacity-80" style={bodyFont}>{subheading}</p>}
             {cta_text && (
-              <span className="mt-5 inline-block rounded-full px-5 py-2.5 text-sm font-bold" style={{ background: 'var(--brand, #d6ff3f)', color: 'var(--text, #17150f)' }}>
+              <a href="#produk" className="mt-7 inline-block rounded-full px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-85" style={btnStyle}>
                 {cta_text}
-              </span>
+              </a>
             )}
           </div>
         );
@@ -789,9 +938,9 @@ export const puckLabConfig: Config<ComponentProps> = {
       },
       defaultProps: { heading: 'Tentang Kami', body: 'Tulis paragraf di sini. Kamu bisa mengubah teks langsung dari panel kanan.' },
       render: ({ heading, body }) => (
-        <div className="px-6 py-4" style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}>
-          {heading && <h2 className="text-xl font-medium">{heading}</h2>}
-          {body && <p className="mt-2 max-w-prose whitespace-pre-wrap text-sm" style={{ color: 'var(--muted, #7a7568)' }}>{body}</p>}
+        <div className="px-6 py-10" style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}>
+          {heading && <h2 className="text-2xl font-medium sm:text-3xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{heading}</h2>}
+          {body && <p className="mt-3 max-w-prose whitespace-pre-wrap text-[15px] leading-relaxed" style={{ color: 'var(--muted, #6f6a63)' }}>{body}</p>}
         </div>
       ),
     },
@@ -894,14 +1043,20 @@ export const puckLabConfig: Config<ComponentProps> = {
         link: { type: 'text', label: 'Link (wa.me / #)' },
       },
       defaultProps: { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' },
-      render: ({ heading, body, button_text }) => (
-        <div className="px-6 py-10 text-center" style={{ background: 'var(--text, #17150f)', color: 'var(--bg, #f4f1ea)' }}>
-          {heading && <h2 className="text-2xl font-medium">{heading}</h2>}
-          {body && <p className="mx-auto mt-2 max-w-md text-sm opacity-70">{body}</p>}
+      render: ({ heading, body, button_text, link }) => (
+        <div className="px-6 py-14 text-center sm:py-16" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
+          {heading && <h2 className="text-2xl font-medium sm:text-3xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{heading}</h2>}
+          {body && <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed opacity-70" style={{ fontFamily: 'var(--font-body)' }}>{body}</p>}
           {button_text && (
-            <span className="mt-4 inline-block rounded-full px-5 py-2.5 text-sm font-bold" style={{ background: 'var(--brand, #d6ff3f)', color: 'var(--text, #17150f)' }}>
+            <a
+              href={link || '#'}
+              target={link?.startsWith('http') ? '_blank' : undefined}
+              rel="noreferrer"
+              className="mt-6 inline-block rounded-full px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-85"
+              style={{ background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }}
+            >
               {button_text}
-            </span>
+            </a>
           )}
         </div>
       ),
@@ -929,12 +1084,12 @@ export const puckLabConfig: Config<ComponentProps> = {
         ],
       },
       render: ({ heading, items }) => (
-        <div className="px-6 py-4" style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}>
-          {heading && <h2 className="mb-3 text-xl font-medium">{heading}</h2>}
+        <div className="px-6 py-10" style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}>
+          {heading && <h2 className="mb-4 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{heading}</h2>}
           {(items ?? []).map((it, i) => (
-            <div key={i} className="border-b border-black/10 py-2">
-              <div className="text-sm font-semibold">{it.q}</div>
-              <div className="text-xs opacity-60">{it.a}</div>
+            <div key={i} className="border-b border-[var(--line, rgba(22,22,22,0.12))] py-3">
+              <div className="text-[15px] font-semibold">{it.q}</div>
+              <div className="mt-1 text-sm leading-relaxed opacity-60">{it.a}</div>
             </div>
           ))}
         </div>
@@ -979,7 +1134,7 @@ export const puckLabConfig: Config<ComponentProps> = {
       render: ({ image_url, alt, caption, aspect, fit, radius }) => {
         if (!image_url) {
           return (
-            <div className="px-6 py-10 text-center text-sm opacity-40" style={{ color: 'var(--text, #17150f)' }}>
+            <div className="px-6 py-10 text-center text-sm opacity-40" style={{ color: 'var(--text, #161616)' }}>
               Isi URL gambar pada panel kanan untuk menampilkan gambar.
             </div>
           );
@@ -989,10 +1144,10 @@ export const puckLabConfig: Config<ComponentProps> = {
         const fitCls = fit === 'contain' ? 'object-contain' : 'object-cover';
         const radiusCls = radius === 'full' ? 'rounded-full' : radius === 'md' ? 'rounded-xl' : '';
         return (
-          <figure className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+          <figure className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image_url} alt={alt || ''} className={`w-full ${aspectCls} ${fitCls} ${radiusCls}`} />
-            {caption && <figcaption className="mt-1 text-center text-xs opacity-50" style={{ color: 'var(--text, #17150f)' }}>{caption}</figcaption>}
+            {caption && <figcaption className="mt-1 text-center text-xs opacity-50" style={{ color: 'var(--text, #161616)' }}>{caption}</figcaption>}
           </figure>
         );
       },
@@ -1032,7 +1187,7 @@ export const puckLabConfig: Config<ComponentProps> = {
       render: ({ video_url, caption, autoplay, loop, mute }) => {
         if (!video_url) {
           return (
-            <div className="px-6 py-10 text-center text-sm opacity-40" style={{ color: 'var(--text, #17150f)' }}>
+            <div className="px-6 py-10 text-center text-sm opacity-40" style={{ color: 'var(--text, #161616)' }}>
               Tempel URL video (YouTube / file MP4) pada panel kanan.
             </div>
           );
@@ -1040,7 +1195,7 @@ export const puckLabConfig: Config<ComponentProps> = {
         // YouTube embed → format iframe; selain itu <video>.
         const yt = video_url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
         return (
-          <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+          <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
             <div className="overflow-hidden rounded-xl bg-black/90">
               {yt ? (
                 <iframe
@@ -1061,7 +1216,7 @@ export const puckLabConfig: Config<ComponentProps> = {
                 />
               )}
             </div>
-            {caption && <div className="mt-1 text-center text-xs opacity-50" style={{ color: 'var(--text, #17150f)' }}>{caption}</div>}
+            {caption && <div className="mt-1 text-center text-xs opacity-50" style={{ color: 'var(--text, #161616)' }}>{caption}</div>}
           </div>
         );
       },
@@ -1154,11 +1309,12 @@ export const puckLabConfig: Config<ComponentProps> = {
           type: 'radio',
           label: 'Logo Footer',
           options: [
-            { label: 'Tanpa logo', value: 'text' },
+            { label: 'Nama toko', value: 'text' },
             { label: 'Gambar logo', value: 'image' },
             { label: 'Gambar + nama', value: 'both' },
           ],
         },
+        logo_text: { type: 'text', label: 'Nama Toko' },
         logo_image: imageUploadField(),
         about_text: { type: 'textarea', label: 'Teks Tentang Toko' },
         show_about: {
@@ -1239,6 +1395,7 @@ export const puckLabConfig: Config<ComponentProps> = {
       },
       defaultProps: {
         logo_mode: 'text',
+        logo_text: 'TOKO SAYA',
         logo_image: '',
         about_text: 'Toko online terpercaya untuk kebutuhan harian Anda.',
         show_about: 'yes',
@@ -1262,9 +1419,10 @@ export const puckLabConfig: Config<ComponentProps> = {
         ],
         copyright_text: '© 2026 Toko Saya. Hak cipta dilindungi.',
       },
-      render: ({ logo_mode, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text }) => {
+      render: ({ logo_mode, logo_text, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text }) => {
         // Data lama tanpa field toggle → default tampil (kecuali 'no').
         const lm = logo_mode || 'text';
+        const logoWord = (logo_text ?? '').trim() || 'TOKO SAYA';
         const aboutOn = show_about !== 'no';
         const linksOn = show_links !== 'no';
         const socialOn = show_social !== 'no';
@@ -1279,7 +1437,7 @@ export const puckLabConfig: Config<ComponentProps> = {
         const payList = Array.isArray(payments) && payments.length > 0 ? payments : [];
         const payFromOptions = (k: string) => PAYMENT_OPTIONS.find((p) => p.key === k)?.label || k;
         return (
-          <div className="px-6 py-8" style={{ background: 'var(--text, #17150f)', color: 'var(--bg, #f4f1ea)' }}>
+          <div className="px-6 py-8" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {/* Kolom brand */}
               <div className="sm:col-span-2 lg:col-span-1">
@@ -1288,14 +1446,15 @@ export const puckLabConfig: Config<ComponentProps> = {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={logo_image} alt="logo" className="max-h-8 w-auto rounded object-contain" />
                   )}
-                  {lm !== 'image' && <span className="text-base font-black tracking-wide">{lm === 'both' ? '' : 'TOKO SAYA'}</span>}
+                  {lm === 'text' && <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>}
+                  {lm === 'both' && logoWord && <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>}
                 </div>
                 {aboutOn && about_text && <p className="mt-2 max-w-xs text-xs opacity-70">{about_text}</p>}
               </div>
               {/* Kolom menu */}
               {linksOn && (
                 <div>
-                  {links_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider opacity-60">{links_title}</div>}
+                  {links_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{links_title}</div>}
                   <ul className="space-y-1.5 text-xs opacity-80">
                     {linkList.map((l, i) => (
                       <li key={i}><a href={l.href || '#'} className="hover:opacity-100">{l.label}</a></li>
@@ -1306,7 +1465,7 @@ export const puckLabConfig: Config<ComponentProps> = {
               {/* Kolom sosial */}
               {socialOn && (
                 <div>
-                  {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider opacity-60">{socials_title}</div>}
+                  {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{socials_title}</div>}
                   <div className="flex flex-wrap gap-2">
                     {socialList.map((s, i) => (
                       <a
@@ -1315,7 +1474,7 @@ export const puckLabConfig: Config<ComponentProps> = {
                         title={s.label || s.platform}
                         aria-label={s.label || s.platform}
                         className="flex h-8 w-8 items-center justify-center rounded-full"
-                        style={{ background: 'var(--bg, #f4f1ea)', color: 'var(--text, #17150f)' }}
+                        style={{ background: 'var(--bg, #faf9f6)', color: 'var(--text, #161616)' }}
                       >
                         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
                           <path d={s.icon} />
@@ -1328,7 +1487,7 @@ export const puckLabConfig: Config<ComponentProps> = {
               {/* Pembayaran */}
               {payOn && (
                 <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wider opacity-60">Pembayaran</div>
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>Pembayaran</div>
                   <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
                     {(payList.length > 0 ? payList : []).map((p, i) => (
                       <span key={i} className="rounded border border-white/30 px-1.5 py-0.5 opacity-90">

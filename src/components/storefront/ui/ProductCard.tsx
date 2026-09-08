@@ -23,8 +23,8 @@ export type StorefrontProduct = {
 };
 
 /**
- * Product card — editorial design.
- * 3:4 aspect ratio, serif name, badge overlay, subtle hover.
+ * Product card — editorial Atelier.
+ * 3:4 aspect, image+name link to PDP, standalone Add to Cart button below.
  */
 export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct }) {
   const name = p.master_product?.name ?? 'Produk';
@@ -37,8 +37,9 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
 
   return (
     <li className="group relative flex flex-col">
+      {/* Gambar → link ke PDP */}
       <Link href={href} className="block">
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--text,#17150f)]/5">
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--text,#161616)]/5">
           <StorefrontImage
             src={img}
             alt={name}
@@ -47,51 +48,51 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
           {/* Badge overlay */}
           {badge && (
             <span
-              className="absolute left-3 top-3 bg-[var(--bg,#f4f1ea)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em]"
-              style={{ color: 'var(--text, #17150f)' }}
+              className="absolute left-3 top-3 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
+              style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}
             >
               {badge}
             </span>
           )}
-          {/* Quick add — visible on hover */}
-          <div className="absolute inset-x-0 bottom-0 flex justify-center pb-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <AddToCartButton
-              hash={hash}
-              item={{
-                store_product_id: p.id,
-                sku: p.master_product?.sku ?? '',
-                name,
-                price,
-                image: img,
-              }}
-            />
-          </div>
         </div>
       </Link>
 
-      <div className="flex flex-col gap-0.5 pt-3">
+      <div className="flex flex-1 flex-col gap-1 pt-3">
         {category && (
           <span
             className="text-[10px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: 'var(--muted, #7a7568)' }}
+            style={{ color: 'var(--muted, #6f6a63)' }}
           >
             {category}
           </span>
         )}
         <Link href={href}>
           <h3
-            className="text-sm font-medium leading-snug transition-colors group-hover:text-[var(--brand)]"
-            style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+            className="text-[15px] font-semibold leading-snug transition-colors group-hover:text-[var(--brand)]"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}
           >
             {name}
           </h3>
         </Link>
         <span
-          className="text-sm font-bold tracking-tight"
-          style={{ color: 'var(--brand, #8a6f4d)' }}
+          className="text-[15px] font-semibold tracking-tight"
+          style={{ color: 'var(--text, #161616)' }}
         >
           {formatIDR(price)}
         </span>
+        {/* Tombol add-to-cart mandiri (bukan di dalam link) */}
+        <div className="mt-auto pt-2">
+          <AddToCartButton
+            hash={hash}
+            item={{
+              store_product_id: p.id,
+              sku: p.master_product?.sku ?? '',
+              name,
+              price,
+              image: img,
+            }}
+          />
+        </div>
       </div>
     </li>
   );
@@ -101,7 +102,7 @@ export function ProductGrid({ hash, products, heading, count }: { hash: string; 
   if (!products || products.length === 0) {
     return (
       <div className="py-16 text-center">
-        <p className="text-sm" style={{ color: 'var(--muted, #7a7568)' }}>
+        <p className="text-sm" style={{ color: 'var(--muted, #6f6a63)' }}>
           Belum ada produk untuk ditampilkan.
         </p>
       </div>
@@ -113,15 +114,15 @@ export function ProductGrid({ hash, products, heading, count }: { hash: string; 
       {heading && (
         <div className="mb-5 flex items-baseline justify-between">
           <h2
-            className="text-xl font-medium tracking-tight"
-            style={{ fontFamily: 'var(--font)', color: 'var(--text, #17150f)' }}
+            className="text-2xl font-medium tracking-tight"
+            style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}
           >
             {heading}
           </h2>
           {count && (
             <span
               className="text-[11px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: 'var(--muted, #7a7568)' }}
+              style={{ color: 'var(--muted, #6f6a63)' }}
             >
               {products.length} products
             </span>

@@ -57,6 +57,15 @@ export const THEME_PRESETS: { name: string; theme: Omit<WebTheme, 'custom_css' |
       buttonStyle: 'rounded',
     },
   },
+  {
+    name: 'Atelier (UMKM Nusantara)',
+    theme: {
+      font: 'playfair',
+      colors: { brand: '#161616', bg: '#faf9f6', text: '#161616', muted: '#6f6a63' },
+      radius: 4,
+      buttonStyle: 'rounded',
+    },
+  },
 ];
 
 export const FONT_OPTIONS: { value: string; label: string; css: string }[] = [
@@ -66,13 +75,15 @@ export const FONT_OPTIONS: { value: string; label: string; css: string }[] = [
   { value: 'inter', label: 'Inter (modern)', css: '"Inter", ui-sans-serif, sans-serif' },
   { value: 'poppins', label: 'Poppins (rounded)', css: '"Poppins", ui-sans-serif, sans-serif' },
   { value: 'playfair', label: 'Playfair (elegan)', css: '"Playfair Display", Georgia, serif' },
+  { value: 'jakarta', label: 'Jakarta (modern sans)', css: '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif' },
 ];
 
 export function defaultTheme(): WebTheme {
+  // Default baru = preset "Atelier (UMKM Nusantara)" — lihat THEME_PRESETS.
   return {
-    font: 'system',
-    colors: { brand: '#0ea5e9', bg: '#ffffff', text: '#0f172a', muted: '#64748b' },
-    radius: 12,
+    font: 'playfair',
+    colors: { brand: '#161616', bg: '#faf9f6', text: '#161616', muted: '#6f6a63' },
+    radius: 4,
     buttonStyle: 'rounded',
     custom_css: '',
     custom_js: '',
@@ -84,6 +95,7 @@ export function defaultTheme(): WebTheme {
  * Owner bisa atur lewat Setup — tanpa perlu sentuh blok per halaman.
  */
 export type WebChrome = {
+  announcement: { enabled: boolean; items: string[] };
   header: {
     show_search: boolean;
     show_feature_strip: boolean;
@@ -100,6 +112,10 @@ export type WebChrome = {
 
 export function defaultChrome(): WebChrome {
   return {
+    announcement: {
+      enabled: true,
+      items: ['Dukung Karya Anak Bangsa', 'Gratis Ongkir Se-Indonesia Min. Belanja Rp150.000', 'Konsultasi WhatsApp 08:00 – 21:00'],
+    },
     header: {
       show_search: true,
       show_feature_strip: true,
@@ -120,6 +136,13 @@ export function normalizeChrome(raw: unknown): WebChrome {
   const c = (raw ?? {}) as Partial<WebChrome>;
   const d = defaultChrome();
   return {
+    announcement: {
+      enabled: c.announcement?.enabled ?? d.announcement.enabled,
+      items:
+        Array.isArray(c.announcement?.items) && c.announcement.items.length > 0
+          ? c.announcement.items
+          : d.announcement.items,
+    },
     header: {
       show_search: c.header?.show_search ?? d.header.show_search,
       show_feature_strip: c.header?.show_feature_strip ?? d.header.show_feature_strip,
@@ -166,18 +189,36 @@ export function fontImport(theme: WebTheme): string | null {
     case 'poppins':
       return '@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap");';
     case 'playfair':
-      return '@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&display=swap");';
+      return '@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");';
     default:
       return null;
   }
 }
 
+/** Warna turunan Atelier — dihitung dari warna tema utama, tanpa ubah schema. */
+function deriveAccent(theme: WebTheme): string {
+  // Brass hangat bila brand netral gelap; bila brand berwarna, aksen = brand.
+  const brand = theme.colors.brand.toLowerCase();
+  const neutral = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/.test(brand) &&
+    ['161616', '111', '000', '111827', '0f172a', '292524', '1a1c1a'].includes(brand.replace('#', ''));
+  return neutral ? '#c5a880' : theme.colors.brand;
+}
+
 /** Konversi theme → string CSS (CSS variables + custom CSS). */
 export function themeToCss(theme: WebTheme): string {
   const f = FONT_OPTIONS.find((o) => o.value === theme.font)?.css ?? 'ui-sans-serif, system-ui, sans-serif';
+  const display =
+    theme.font === 'playfair'
+      ? '"Playfair Display", Georgia, serif'
+      : theme.font === 'serif'
+        ? 'Georgia, "Times New Roman", serif'
+        : f;
+  const bodyFont =
+    theme.font === 'playfair' ? '"Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif' : f;
   const importCss = fontImport(theme);
   const radius =
     theme.buttonStyle === 'pill' ? '9999px' : theme.buttonStyle === 'square' ? '0px' : `${theme.radius}px`;
+  const accent = deriveAccent(theme);
   return `${importCss ? importCss + '\n' : ''}:root {
   --brand: ${theme.colors.brand};
   --brand-contrast: #ffffff;
@@ -185,10 +226,17 @@ export function themeToCss(theme: WebTheme): string {
   --text: ${theme.colors.text};
   --muted: ${theme.colors.muted};
   --font: ${f};
+  --font-display: ${display};
+  --font-body: ${bodyFont};
+  --accent: ${accent};
+  --surface: ${theme.colors.bg};
+  --surface-2: ${theme.colors.bg === '#ffffff' ? '#f5f5f4' : '#f3efe9'};
+  --line: ${theme.colors.muted}33;
   --radius: ${theme.radius}px;
   --btn-radius: ${radius};
 }
-body, .storefront-root { font-family: var(--font); background: var(--bg); color: var(--text); }
+body, .storefront-root { font-family: var(--font-body); background: var(--bg); color: var(--text); }
+h1, h2, h3, h4, .font-display { font-family: var(--font-display); }
 ${theme.custom_css || ''}`;
 }
 

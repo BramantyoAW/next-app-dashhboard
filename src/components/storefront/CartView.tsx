@@ -13,6 +13,7 @@ import {
 } from '@/lib/cart';
 import { getCustomerToken } from '@/lib/customer-token';
 import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
+import { CartRecommendations } from '@/components/storefront/CartRecommendations';
 
 export function CartView({ hash, jumpToCheckout }: { hash: string; jumpToCheckout: boolean }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -122,6 +123,11 @@ export function CartView({ hash, jumpToCheckout }: { hash: string; jumpToCheckou
           Lanjut Belanja
         </Link>
       </aside>
+
+      {/* Rekomendasi produk — strip horizontal default (tidak customable) */}
+      <div className="lg:col-span-2">
+        <CartRecommendations hash={hash} />
+      </div>
     </div>
   );
 }

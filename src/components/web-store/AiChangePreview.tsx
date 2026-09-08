@@ -60,8 +60,11 @@ function BlockPreview({ block, forceCss }: { block: PuckBlock; forceCss?: Record
       if (!def?.render) return null;
       // props asli + css/js yang di-force (usulan AI) utk "sesudah"
       const props: Record<string, unknown> = { ...(block.props ?? {}), ...(forceCss ?? {}) };
-      const el = def.render(props);
-      return el;
+      // Render sbg ELEMEN React (bukan panggil fungsi) supaya hook di dalam
+      // render func (bila ada) dikelola React per instance — aman saat banyak
+      // preview dirender sekaligus (full message).
+      const El = def.render;
+      return <El {...props} />;
     } catch {
       return null;
     }

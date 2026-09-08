@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Check, ImagePlus, Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Check, Clock, ImagePlus, Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
@@ -131,7 +131,7 @@ export function PuckAiAssistant({
   const [maximized, setMaximized] = useState(false);
   const [message, setMessage] = useState('');
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult }[]>([]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; text: string; result?: AiAssistantResult; history?: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
   const [aiBusyLabel, setAiBusyLabel] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -153,9 +153,11 @@ export function PuckAiAssistant({
         const saved = (res.aiChatHistory?.messages ?? [])
           .filter((m) => m.content && m.content.trim() !== '')
           .map((m) => {
-            const base = { role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant', text: m.content };
+            const base = { role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant', text: m.content, history: true as const };
             // Pesan assistant lama yang punya meta.changes → rekonstruksi
-            // `result` supaya kartu preview & tombol Terapkan muncul lagi.
+            // `result` utk preview saja — TANPA tombol Terapkan (lihat render):
+            // usulan lama bisa menarget id/kondisi yang sudah berubah, jadi
+            // menerapkannya ke halaman sekarang berisiko & terasa "tak berubah".
             if (m.role !== 'user' && Array.isArray(m.meta?.changes) && m.meta!.changes!.length > 0) {
               return {
                 ...base,
@@ -278,7 +280,7 @@ export function PuckAiAssistant({
             <div className="flex items-center gap-2">
               <Bot size={18} />
               <div>
-                <div className="text-sm font-bold">AI Halaman</div>
+                <div className="text-sm font-bold">Design With OmBot Ai</div>
                 <div className={`truncate text-[11px] text-slate-300 ${maximized ? 'max-w-xs' : 'max-w-[190px]'}`}>“{pageTitle ?? pageSlug}” · blok Puck</div>
               </div>
             </div>
@@ -303,7 +305,13 @@ export function PuckAiAssistant({
                         <div className="px-2.5 pt-2 text-xs text-slate-600">{change.description}</div>
                         <AiChangePreview block={block} change={change} />
                         <div className="flex items-center justify-end gap-1.5 p-2">
-                          {!confirming.has(i) ? (
+                          {m.history ? (
+                            // Usulan dari riwayat sesi lalu: preview saja, tak bisa
+                            // di-apply lagi (id/kondisi bisa sudah berubah).
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-semibold text-slate-500">
+                              <Clock size={12} /> Usulan lama (riwayat) — minta AI ulangi utk kondisi sekarang
+                            </span>
+                          ) : !confirming.has(i) ? (
                             <button
                               type="button"
                               onClick={() => setConfirming((prev) => new Set(prev).add(i))}

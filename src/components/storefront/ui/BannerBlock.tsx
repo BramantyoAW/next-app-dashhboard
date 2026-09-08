@@ -90,7 +90,7 @@ export function BannerView(props: BannerProps) {
     return (
       <div
         className="flex items-center justify-center text-sm"
-        style={{ height: height, color: 'var(--muted, #7a7568)', fontFamily: 'var(--font)' }}
+        style={{ height: height, color: 'var(--muted, #6f6a63)', fontFamily: 'var(--font-body)' }}
       >
         Banner kosong — pilih gambar/produk di panel kanan.
       </div>
@@ -122,7 +122,7 @@ export function BannerView(props: BannerProps) {
   const view = resolveSlide(slides[safeIdx]);
 
   return (
-    <div className="px-6 py-4" style={{ fontFamily: 'var(--font)' }}>
+    <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
       <div className="relative w-full overflow-hidden rounded-3xl" style={{ height }}>
         {view.image ? (
           <StorefrontImage
@@ -131,7 +131,7 @@ export function BannerView(props: BannerProps) {
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0" style={{ background: 'var(--bg, #f0fdf4)' }} />
+          <div className="absolute inset-0" style={{ background: 'var(--surface, #faf9f6)' }} />
         )}
         {dark === 'yes' && <div className="absolute inset-0 bg-black/40" />}
 
@@ -140,13 +140,13 @@ export function BannerView(props: BannerProps) {
             {view.badge ? (
               <span
                 className="inline-flex w-fit rounded-full px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: 'var(--brand, #8a6f4d)', color: '#fff' }}
+                style={{ background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }}
               >
                 {view.badge}
               </span>
             ) : null}
             {view.heading ? (
-              <h2 className="max-w-2xl text-3xl font-extrabold leading-tight drop-shadow sm:text-4xl">
+              <h2 className="max-w-2xl text-3xl font-medium leading-tight drop-shadow sm:text-4xl lg:text-5xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>
                 {view.heading}
               </h2>
             ) : null}
@@ -156,7 +156,7 @@ export function BannerView(props: BannerProps) {
                 <Link
                   href={view.ctaLink}
                   className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
-                  style={{ background: 'var(--brand, #8a6f4d)' }}
+                  style={{ background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }}
                 >
                   {view.ctaText}
                 </Link>

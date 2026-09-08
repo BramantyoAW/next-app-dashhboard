@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Save, Eye, AlertCircle, CheckCircle2, Trash2, Plus, Sparkles } from 'lucide-react';
-import { Puck, Render, resolveAllData, type Data } from '@puckeditor/core';
+import { Puck, Render, resolveAllData, usePuck, type Data } from '@puckeditor/core';
 import '@puckeditor/core/dist/index.css';
 import { puckLabConfig } from '@/lib/puckLabConfig';
 import { isPuckStored, defaultPuckDataFor, legacyToPuckData, puckDataOf, legacyOf } from '@/lib/puckAdapter';
@@ -13,6 +13,28 @@ import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 
 /** Bentuk halaman yang diterima editor (hasil query web store). */
 type PuckStoredPage = { id: string; slug: string; title: string; blocks: unknown };
+
+/**
+ * Jembatan store internal Puck ↔ state React editor.
+ *
+ * Puck memakai `data` prop hanya sekali saat mount (initial state); perubahan
+ * `data` dari luar (mis. Terapkan perubahan AI) TIDAK otomatis masuk ke store
+ * internal → kanvas tak berubah walau state React sudah baru. Bridge ini
+ * meregistrasi `dispatch` (dan getState) ke ref agar kode editor (apply AI,
+ * seed default, publish) bisa dispatch action `setData` saat dibutuhkan —
+ * tanpa sync otomatis tiap render (hindari loop onChange ↔ setData).
+ */
+function PuckStoreBridge({ onApi }: { onApi: (api: { dispatch: (a: any) => void; getState: () => unknown }) => void }) {
+  const { dispatch } = usePuck();
+  const apiRef = useRef({ dispatch, getState: () => null });
+  apiRef.current.dispatch = dispatch;
+  useEffect(() => {
+    onApi(apiRef.current);
+    return () => onApi({ dispatch: () => {}, getState: () => null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onApi, dispatch]);
+  return null;
+}
 
 /**
  * Editor halaman nyata berbasis Puck (plugin, omBot tidak menimpa).
@@ -61,6 +83,20 @@ export default function PuckPageEditor({
   const [aiNote, setAiNote] = useState<string | null>(null);
   const dataRef = useRef(data);
   useEffect(() => { dataRef.current = data; }, [data]);
+  // API store internal Puck (dispatch setData) — diisi PuckStoreBridge saat mount.
+  const puckApiRef = useRef<{ dispatch: (a: any) => void } | null>(null);
+  const setPuckApi = useCallback((api: { dispatch: (a: any) => void; getState: () => unknown }) => {
+    puckApiRef.current = api;
+  }, []);
+
+  /** Set data editor & sinkronkan store internal Puck (apply AI / seed). */
+  const commitData = useCallback((next: Data) => {
+    dataRef.current = next;
+    setData(next);
+    // Store internal Puck memakai data prop hanya saat mount; dorong manual
+    // supaya kanvas ikut berubah (Terapkan AI / publish).
+    puckApiRef.current?.dispatch({ type: 'setData', data: next });
+  }, []);
 
   const legacy = useMemo(
     () => (isPuckStored(initial.blocks) ? legacyOf(initial.blocks) : legacyOf(initial.blocks)),
@@ -175,8 +211,7 @@ export default function PuckPageEditor({
     }
     // Terapkan ke state mutakhir (dataRef) — aman walau dialog AI menyimpan snapshot lama.
     const { next, used } = applyBlockOpsToPuck(dataRef.current, initial.slug, localOps);
-    setData(next);
-    dataRef.current = next;
+    commitData(next);
     if (used === 0) {
       setAiNote('Ops AI tidak cocok dengan blok halaman ini (id berubah?). Coba minta AI mengulang.');
       return;
@@ -238,7 +273,7 @@ export default function PuckPageEditor({
               title={!webStoreId ? 'Web store belum siap' : 'Desain halaman ini dengan AI'}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 disabled:opacity-50 text-white text-sm font-bold shadow"
             >
-              <Sparkles size={15} /> AI Halaman
+              <Sparkles size={15} /> Design With OmBot Ai
             </button>
             <button
               onClick={save}
@@ -284,7 +319,17 @@ export default function PuckPageEditor({
             onChange={(next) => setData(next as Data)}
             onPublish={handlePublish}
             iframe={{ enabled: false }}
-            overrides={{ headerActions: () => <></> }}
+            overrides={{
+              headerActions: () => <></>,
+              // Bungkus kanvas editor default: sisipkan bridge store internal
+              // (dispatch setData) TANPA mengganti kanvas/interaksi editor.
+              preview: ({ children }: { children?: React.ReactNode }) => (
+                <>
+                  <PuckStoreBridge onApi={setPuckApi} />
+                  {children}
+                </>
+              ),
+            }}
           />
         </div>
       )}

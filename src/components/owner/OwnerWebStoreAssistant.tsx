@@ -31,12 +31,11 @@ export function OwnerWebStoreAssistant() {
   }, []);
 
   const scope = useMemo(() => getScope(pathname), [pathname]);
-  // Sembunyikan di rute yang sudah punya panel AI sendiri yang lengkap:
+  // Sembunyikan di rute yang tidak butuh / sudah punya panel sendiri:
   // - /builder → builder mount sendiri (live draft)
-  // - /pages/<id> → editor Puck punya "AI Halaman" (konteks blok + compare + apply nyata).
-  // Assistant global di sini cuma advisory (onApply no-op) → hanya bikin bingung
-  // dengan tombol "Design dengan AI" yang tak mengubah apa pun.
-  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || pathname.includes('/builder') || pathname.includes('/pages/') || !webStoreId) return null;
+  // - /pages (daftar) & /pages/<id> → desain halaman ditangani editor Puck
+  //   ("Design With OmBot Ai" per halaman); assistant global tak relevan.
+  if (!pathname.startsWith('/owner/web-store') || pathname === '/owner/web-store' || pathname.includes('/builder') || pathname.includes('/pages') || !webStoreId) return null;
 
   return (
     <WebStoreAiAssistant

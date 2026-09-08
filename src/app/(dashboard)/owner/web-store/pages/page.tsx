@@ -12,6 +12,7 @@ import WebThemePanel from '@/components/web-store/WebThemePanel';
 
 const SLUG_LABEL: Record<string, string> = {
   home: 'Beranda',
+  thankyou: 'Terima Kasih (Thank You)',
   about: 'Tentang',
   contact: 'Kontak',
   faq: 'FAQ',
@@ -20,6 +21,9 @@ const SLUG_LABEL: Record<string, string> = {
   checkout: 'Checkout',
   category: 'Kategori Produk',
 };
+
+/** Slug halaman bawaan — tidak bisa dihapus (cocok dgn WebPage::SYSTEM_SLUGS BE). */
+const SYSTEM_SLUGS = ['home', 'thankyou', 'about', 'contact', 'faq', 'product', 'cart', 'checkout', 'category'];
 
 export default function WebPagesPage() {
   const router = useRouter();
@@ -253,9 +257,13 @@ export default function WebPagesPage() {
                     <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">
                       {p.slug}
                     </span>
-                    {p.slug === 'home' && (
-                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 uppercase tracking-wide">
-                        Landing
+                    {SYSTEM_SLUGS.includes(p.slug) ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                        Bawaan
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                        Custom
                       </span>
                     )}
                   </div>
@@ -271,12 +279,13 @@ export default function WebPagesPage() {
                   >
                     <ExternalLink size={14} /> Edit Blok
                   </Link>
-                  {p.slug !== 'home' && (
+                  {!SYSTEM_SLUGS.includes(p.slug) && (
                     <button
                       onClick={() => removePage(p.id)}
                       disabled={deleting === p.id}
                       className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
                       aria-label="Hapus"
+                      title="Halaman custom dapat dihapus"
                     >
                       {deleting === p.id ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
                     </button>

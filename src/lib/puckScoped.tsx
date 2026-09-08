@@ -140,11 +140,14 @@ export function withCustomCssJs<D extends { fields?: Record<string, unknown>; re
       delete (rest as any).css;
       delete (rest as any).js;
       const scope = `[data-pb-block="${id}"]`;
+      // Render asli sbg ELEMEN (bukan panggil fungsi) → hook di dalam komponen
+      // (Banner/Products dll) dikelola React per instance (rules-of-hooks aman).
+      const Inner = render as (p: Record<string, unknown>) => ReactElement;
       return (
         <div data-pb-block={id} className="pb-scoped">
           {css.trim() && <style>{scopeCss(css, scope)}</style>}
           <ScopedJs code={js} />
-          {render(rest)}
+          <Inner {...rest} />
         </div>
       );
     },

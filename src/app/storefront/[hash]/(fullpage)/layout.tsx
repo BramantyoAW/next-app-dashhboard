@@ -1,14 +1,13 @@
 import { notFound } from 'next/navigation';
 import { getWebStoreByHashServer } from '@/lib/storefront-server';
-import { FullPageMiniBar } from '@/components/storefront/FullPageMiniBar';
 
 /**
- * Layout untuk halaman page-builder full-page (mode Stitch).
+ * Layout halaman page-builder full-page (mode Stitch).
  *
- * Tema sudah disuntikkan oleh [hash]/layout.tsx. Di sini TIDAK ada
- * header/footer global — halaman adalah kanvas penuh. Satu-satunya elemen
- * chrome adalah floating mini-bar (home + akun + WhatsApp + keranjang) agar
- * checkout tetap terjangkau.
+ * Tema + provider drawer keranjang disuntikkan [hash]/layout.tsx.
+ * Chrome header/footer adalah blok kanvas milik owner
+ * (StoreHeader/AnnouncementBar/StoreFooter) — jadi tidak ada chrome
+ * global di sini. Checkout & order detail (thankyou) tak punya header.
  */
 export default async function FullPageLayout({
   children,
@@ -21,10 +20,5 @@ export default async function FullPageLayout({
   const webStore = await getWebStoreByHashServer(hash);
   if (!webStore || !webStore.is_active) notFound();
 
-  return (
-    <>
-      {children}
-      <FullPageMiniBar hash={hash} storeName={webStore.store_name} waPhone={webStore.notify_whatsapp} />
-    </>
-  );
+  return <>{children}</>;
 }

@@ -145,6 +145,10 @@ function tplFooter(item: (t: string, p: Record<string, unknown>, n: number) => {
  * Data awal (default) halaman kanvas per tipe (slug). Halaman dinamis seperti
  * PDP mendapat template dgn SLOT dinamis (ProductSlot) — area produk diisi
  * otomatis dari data aktif saat halaman dibuka di storefront.
+ *
+ * CATATAN: chrome (announcement/header/footer) TIDAK lagi bagian konten blok —
+ * sekarang global dari layout induk (GlobalStorefrontChrome). Konten blok
+ * hanya isi halaman.
  */
 export function defaultPuckDataFor(slug: string): Data {
   const t = Date.now();
@@ -152,17 +156,13 @@ export function defaultPuckDataFor(slug: string): Data {
     type: type as never,
     props: { id: `puck-def-${t}-${n}`, ...props },
   });
-  const hdr = tplHeader(item, 0);
-  const ftr = tplFooter(item, 999);
 
   if (slug === 'product') {
     return {
       root: { props: { title: 'Produk' } },
       zones: {},
       content: [
-        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
         item('ProductSlot', { cta_text: 'Beli Sekarang' }, 1),
-        ftr,
       ],
     };
   }
@@ -171,10 +171,8 @@ export function defaultPuckDataFor(slug: string): Data {
       root: { props: { title: 'Keranjang' } },
       zones: {},
       content: [
-        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
         item('CartSlot', { heading: 'Keranjang Belanja' }, 1),
-        item('Cta', { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' }, 2),
-        ftr,
+        item('Cta', { heading: 'Siap Pesan?', body: 'Hubungi kami lewat WhatsApp untuk bantuan checkout.', button_text: 'Chat WhatsApp', link: '#' }, 2),
       ],
     };
   }
@@ -183,9 +181,7 @@ export function defaultPuckDataFor(slug: string): Data {
       root: { props: { title: 'Checkout' } },
       zones: {},
       content: [
-        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
         item('CheckoutSlot', { heading: '' }, 1),
-        ftr,
       ],
     };
   }
@@ -194,10 +190,8 @@ export function defaultPuckDataFor(slug: string): Data {
       root: { props: { title: 'Kategori' } },
       zones: {},
       content: [
-        item('StoreHeader', { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Produk', cta_text: 'Pesan', sticky: 'yes' }, 0),
-        item('Hero', { eyebrow: 'KATEGORI', heading: 'Jelajahi Koleksi Kami', subheading: 'Pilih kategori favorit Anda.', cta_text: '', image_url: '', align: 'center', dark: 'yes' }, 1),
+        item('Hero', { eyebrow: 'KATEGORI', heading: 'Jelajahi Koleksi Kami', subheading: 'Pilih kategori favorit Anda.', cta_text: '', image_url: '', align: 'center', dark: 'no' }, 1),
         item('CategorySlot', { heading: 'Produk', limit: 50 }, 2),
-        ftr,
       ],
     };
   }
@@ -206,22 +200,30 @@ export function defaultPuckDataFor(slug: string): Data {
     root: { props: { title: 'Home' } },
     zones: {},
     content: [
-      hdr,
-      item('Banner', {
-        slides: [
-          { mode: 'product', product_sku: 'CUP-BAKSO', badge: 'Terlaris', subheading: 'Bakso jumbo dengan kuah gurih — pesan sekarang!' },
-          { mode: 'product', product_sku: 'CUP-KOPI-SUSU', badge: 'Promo', subheading: 'Kopi susu gula aren kekinian, segar setiap saat.' },
-        ],
-        autoplay: 'yes',
-        interval: 5,
+      // Hero terang alabaster (Atelier) — headline toko, CTA charcoal.
+      item('Hero', {
+        eyebrow: 'KURASI PILIHAN • PRODUK LOKAL',
+        heading: 'Dari Tangan Berbakat, Ke Rumah Anda',
+        subheading: 'Temukan produk pilihan dengan kualitas terbaik — diracik, dibuat, dan dikirim dengan penuh perhatian. Pesan mudah lewat WhatsApp.',
+        cta_text: 'Jelajahi Produk',
+        image_url: '',
         align: 'center',
-        height: 420,
-        dark: 'yes',
+        dark: 'no',
       }, 1),
-      item('Text', { heading: 'Tentang Kami', body: 'Ceritakan tentang toko Anda di sini. Ubah teks langsung di kanvas.' }, 2),
-      item('Products', { heading: 'Menu Favorit', mode: 'grid', limit: 4, autoplay: 'yes' }, 3),
-      item('Cta', { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' }, 4),
-      ftr,
+      // Produk unggulan — isi otomatis dari katalog toko.
+      item('Products', { heading: 'Produk Pilihan', mode: 'grid', limit: 8, autoplay: 'no' }, 2),
+      // Kenapa belanja di sini (value).
+      item('Text', {
+        heading: 'Kenapa belanja di sini?',
+        body: 'Produk berkualitas dengan sentuhan lokal, harga bersahabat, pengiriman cepat ke seluruh Indonesia. Order mudah lewat WhatsApp — tim kami siap membantu Anda.',
+      }, 3),
+      // CTA band gelap + tombol brass.
+      item('Cta', {
+        heading: 'Siap Pesan?',
+        body: 'Hubungi kami langsung lewat WhatsApp untuk order atau konsultasi produk.',
+        button_text: 'Chat WhatsApp',
+        link: '#',
+      }, 4),
     ],
   };
 }

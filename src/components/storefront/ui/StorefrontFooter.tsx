@@ -36,35 +36,35 @@ export function StorefrontFooter({
     <footer
       className="mt-20 border-t"
       style={{
-        background: 'var(--text, #17150f)',
+        background: 'var(--text, #161616)',
         borderColor: 'rgba(255,255,255,0.1)',
       }}
     >
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:px-8 py-14 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:px-8 py-14 sm:grid-cols-2 lg:grid-cols-4">
         {/* Brand column */}
-        <div>
+        <div className="lg:col-span-2">
           <div
-            className="text-sm font-bold uppercase tracking-[0.16em]"
-            style={{ color: 'var(--bg, #f4f1ea)' }}
+            className="text-2xl font-semibold tracking-tight"
+            style={{ color: 'var(--bg, #faf9f6)', fontFamily: 'var(--font-display, Georgia, serif)' }}
           >
             {storeName}
           </div>
           <p
-            className="mt-3 max-w-xs text-sm leading-relaxed"
-            style={{ color: 'rgba(245,245,243,0.5)' }}
+            className="mt-3 max-w-sm text-sm leading-relaxed"
+            style={{ color: 'rgba(245,245,243,0.55)' }}
           >
             {aboutText}
           </p>
           {socials.length > 0 && (
-            <div className="mt-4 flex items-center gap-2">
+            <div className="mt-5 flex items-center gap-2">
               {socials.map((s, i) => (
                 <a
                   key={i}
                   href={s.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-8 w-8 items-center justify-center border transition-colors hover:border-white/30"
-                  style={{ color: 'rgba(245,245,243,0.5)', borderColor: 'rgba(255,255,255,0.1)' }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border transition-all hover:border-white/40 hover:text-white"
+                  style={{ color: 'rgba(245,245,243,0.55)', borderColor: 'rgba(255,255,255,0.14)' }}
                   title={s.platform}
                 >
                   <SocialIcon platform={s.platform} />
@@ -77,12 +77,12 @@ export function StorefrontFooter({
         {/* Navigation */}
         <div>
           <div
-            className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ color: 'rgba(245,245,243,0.35)' }}
+            className="mb-5 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'var(--accent, #c5a880)' }}
           >
             Navigasi
           </div>
-          <ul className="space-y-2.5">
+          <ul className="space-y-3">
             <li>
               <Link
                 href={`/storefront/${hash}`}
@@ -127,8 +127,8 @@ export function StorefrontFooter({
         {/* Payments + info */}
         <div>
           <div
-            className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em]"
-            style={{ color: 'rgba(245,245,243,0.35)' }}
+            className="mb-5 text-[10px] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'var(--accent, #c5a880)' }}
           >
             Pembayaran
           </div>
@@ -136,8 +136,8 @@ export function StorefrontFooter({
             {payments.map((p) => (
               <span
                 key={p}
-                className="border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: 'rgba(245,245,243,0.6)', borderColor: 'rgba(255,255,255,0.1)' }}
+                className="rounded border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors hover:border-white/30 hover:text-white"
+                style={{ color: 'rgba(245,245,243,0.6)', borderColor: 'rgba(255,255,255,0.14)' }}
               >
                 {p}
               </span>
