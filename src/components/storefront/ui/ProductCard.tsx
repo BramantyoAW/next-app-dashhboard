@@ -3,6 +3,7 @@ import { formatIDR } from '@/lib/cart';
 import { productImage, productPrice } from '@/lib/storefront-ui';
 import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
 import { AddToCartButton } from '@/components/storefront/AddToCartButton';
+import { WishlistButton } from '@/components/storefront/WishlistButton';
 
 export type StorefrontProduct = {
   id: string;
@@ -54,6 +55,8 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
               {badge}
             </span>
           )}
+          {/* Tombol hati wishlist — pojok kanan atas */}
+          <WishlistButton hash={hash} storeProductId={p.id} className="absolute right-2.5 top-2.5" />
         </div>
       </Link>
 

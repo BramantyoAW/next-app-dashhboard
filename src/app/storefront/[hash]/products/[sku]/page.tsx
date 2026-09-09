@@ -6,6 +6,7 @@ import { productImage, productPrice, waLink } from '@/lib/storefront-ui';
 import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
 import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { ProductActions } from '@/components/storefront/ProductActions';
+import { WishlistButton } from '@/components/storefront/WishlistButton';
 import { ProductGrid } from '@/components/storefront/ui/ProductCard';
 import type { ProductAttribute } from '@/graphql/query/webstore';
 import StorefrontPuckRenderer from '@/components/storefront/StorefrontPuckRenderer';
@@ -167,15 +168,18 @@ export default async function StorefrontProductPage({
 
           <div className="mt-6">
             {hasVariant ? (
-              <ProductActions
-                hash={hash}
-                itemProps={baseItem}
-                attributes={sp.attributes ?? []}
-                variantImages={variantImages}
-                variantPrices={variantPrices}
-              />
+              <div>
+                <ProductActions
+                  hash={hash}
+                  itemProps={baseItem}
+                  attributes={sp.attributes ?? []}
+                  variantImages={variantImages}
+                  variantPrices={variantPrices}
+                />
+                <WishlistButton hash={hash} storeProductId={sp.id} className="mt-3" />
+              </div>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <AddToCartButton hash={hash} item={baseItem} />
                 <Link
                   href={`/storefront/${hash}/cart?checkout=1`}
@@ -183,6 +187,7 @@ export default async function StorefrontProductPage({
                 >
                   Beli Sekarang
                 </Link>
+                <WishlistButton hash={hash} storeProductId={sp.id} className="h-11 w-11 rounded-lg border border-slate-200" />
               </div>
             )}
           </div>

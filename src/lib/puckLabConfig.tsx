@@ -15,6 +15,7 @@ import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
 import { withCustomCssJs } from './puckScoped';
 import { waLink } from './storefront-ui';
+import { WishlistButton } from '@/components/storefront/WishlistButton';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -650,6 +651,9 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
             >
               Order via WhatsApp
             </a>
+            {hash && ((product as any)?.id ?? (mp as any)?.id) ? (
+              <WishlistButton hash={hash} storeProductId={String((product as any).id ?? (mp as any).id)} />
+            ) : null}
           </div>
         </div>
       </div>
