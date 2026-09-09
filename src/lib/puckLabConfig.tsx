@@ -726,6 +726,144 @@ function CategorySlotView({ heading, limit }: CategorySlotProps) {
   );
 }
 
+/**
+ * Announcement bar (strip info atas) — dipakai blok AnnouncementBar di kanvas
+ * DAN chrome halaman system (account/orders) agar konsisten dgn halaman Puck.
+ */
+export function StorefrontAnnouncementBar({ items }: { items: (string | { text?: string })[] }) {
+  const list = (items ?? [])
+    .map((x) => (typeof x === 'string' ? x : String((x as { text?: string })?.text ?? '')))
+    .map((s) => s.trim()).filter(Boolean);
+  if (list.length === 0) return null;
+  return (
+    <div className="overflow-hidden text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5">
+        {list.map((it, i) => (
+          <span key={i} className="inline-flex items-center gap-2 opacity-90">
+            <span aria-hidden style={{ color: 'var(--accent, #c5a880)' }}>✦</span>
+            {it}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Header blok dari props StoreHeader — dipakai render konfig AND chrome system. */
+export function StorefrontHeaderFromProps(props: {
+  logo_mode?: string; logo_text?: string; logo_image?: string;
+  show_search?: string; menu_1?: string; menu_2?: string; menu_3?: string; menu_4?: string;
+  cta_text?: string; sticky?: string;
+}) {
+  const { logo_mode, logo_text, logo_image, show_search, menu_1, menu_2, menu_3, menu_4, cta_text, sticky } = props;
+  const lm: 'text' | 'image' | 'both' = (logo_mode as 'text' | 'image' | 'both') || 'text';
+  const menus: string[] = [menu_1, menu_2, menu_3, menu_4].filter((m): m is string => Boolean(m));
+  return (
+    <StoreHeaderBar
+      lm={lm}
+      logo_image={logo_image}
+      logo_text={logo_text}
+      show_search={show_search}
+      menus={menus}
+      cta_text={cta_text}
+      sticky={sticky}
+    />
+  );
+}
+
+/**
+ * Footer blok dari props StoreFooter — dipakai render konfig AND chrome system
+ * (agar footer halaman akun/pesanan sama dgn footer blok custom owner).
+ */
+export function StorefrontFooterBlock(props: {
+  logo_mode?: string; logo_text?: string; logo_image?: string;
+  about_text?: string; show_about?: string; show_links?: string; links_title?: string;
+  links?: StoreFooterLink[]; show_social?: string; socials_title?: string;
+  socials?: StoreSocial[]; show_payments?: string; payments?: StorePayment[];
+  copyright_text?: string;
+}) {
+  const { logo_mode, logo_text, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text } = props;
+  const lm = logo_mode || 'text';
+  const logoWord = (logo_text ?? '').trim() || 'TOKO SAYA';
+  const aboutOn = show_about !== 'no';
+  const linksOn = show_links !== 'no';
+  const socialOn = show_social !== 'no';
+  const payOn = show_payments !== 'no';
+  const linkList = links ?? [];
+  const socialList = (socials ?? []).map((s) => {
+    const platform = (s.platform as string) || detectSocialPlatform(String(s.label || ''));
+    const p = SOCIAL_PLATFORMS.find((x) => x.value === platform);
+    return { ...s, platform, icon: p?.icon || SOCIAL_BRAND_PATHS.instagram || '•', label: s.label || p?.label || platform };
+  });
+  const payList = Array.isArray(payments) && payments.length > 0 ? payments : [];
+  const payFromOptions = (k: string) => PAYMENT_OPTIONS.find((p) => p.key === k)?.label || k;
+  return (
+    <div className="px-6 py-8" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-2">
+            {(lm === 'image' || lm === 'both') && logo_image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo_image} alt="logo" className="max-h-8 w-auto rounded object-contain" />
+            )}
+            {(lm === 'text' || lm === 'both') && logoWord && (
+              <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>
+            )}
+          </div>
+          {aboutOn && about_text && <p className="mt-2 max-w-xs text-xs opacity-70">{about_text}</p>}
+        </div>
+        {linksOn && (
+          <div>
+            {links_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{links_title}</div>}
+            <ul className="space-y-1.5 text-xs opacity-80">
+              {linkList.map((l, i) => (
+                <li key={i}><a href={l.href || '#'} className="hover:opacity-100">{l.label}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {socialOn && (
+          <div>
+            {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{socials_title}</div>}
+            <div className="flex flex-wrap gap-2">
+              {socialList.map((s, i) => (
+                <a
+                  key={i}
+                  href={s.href || '#'}
+                  title={s.label || s.platform}
+                  aria-label={s.label || s.platform}
+                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  style={{ background: 'var(--bg, #faf9f6)', color: 'var(--text, #161616)' }}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+                    <path d={s.icon} />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+        {payOn && (
+          <div>
+            <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>Pembayaran</div>
+            <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+              {(payList.length > 0 ? payList : []).map((p, i) => (
+                <span key={i} className="rounded border border-white/30 px-1.5 py-0.5 opacity-90">
+                  {p.label || payFromOptions(String(p.key))}
+                </span>
+              ))}
+              {payList.length === 0 && ['BCA', 'OVO', 'GOPAY', 'QRIS'].map((p) => (
+                <span key={p} className="rounded border border-white/30 px-1.5 py-0.5 opacity-80">{p}</span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      {copyright_text && <div className="mt-6 border-t border-white/10 pt-3 text-[10px] opacity-50">{copyright_text}</div>}
+    </div>
+  );
+}
+
 export const puckLabConfig: Config<ComponentProps> = {
   root: Root,
   components: {
@@ -748,23 +886,9 @@ export const puckLabConfig: Config<ComponentProps> = {
           { text: 'WhatsApp 08:00 - 21:00' },
         ],
       },
-      render: ({ items }: AnnouncementBarProps) => {
-        const list = (items ?? [])
-          .map((x) => (typeof x === 'string' ? x : String((x as { text?: string })?.text ?? '')))
-          .map((s) => s.trim()).filter(Boolean);
-        return (
-          <div className="overflow-hidden text-[10px] font-semibold uppercase tracking-[0.14em]" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
-            <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-1 px-4 py-2.5">
-              {list.map((it, i) => (
-                <span key={i} className="inline-flex items-center gap-2 opacity-90">
-                  <span aria-hidden style={{ color: 'var(--accent, #c5a880)' }}>✦</span>
-                  {it}
-                </span>
-              ))}
-            </div>
-          </div>
-        );
-      },
+      render: ({ items }: AnnouncementBarProps) => (
+        <StorefrontAnnouncementBar items={items ?? []} />
+      ),
     },
     StoreHeader: {
       label: 'Header Toko (custom)',
@@ -803,22 +927,7 @@ export const puckLabConfig: Config<ComponentProps> = {
         },
       },
       defaultProps: { logo_mode: 'both', logo_text: 'TOKO SAYA', logo_image: '', show_search: 'yes', menu_1: 'Tentang', menu_2: 'Cara Order', menu_3: '', menu_4: '', cta_text: '', sticky: 'yes' },
-      render: ({ logo_mode, logo_text, logo_image, show_search, menu_1, menu_2, menu_3, menu_4, cta_text, sticky }) => {
-        // Data lama tanpa logo_mode → perlakukan sebagai mode nama (text).
-        const lm: 'text' | 'image' | 'both' = logo_mode || 'text';
-        const menus = [menu_1, menu_2, menu_3, menu_4].filter(Boolean);
-        return (
-          <StoreHeaderBar
-            lm={lm}
-            logo_image={logo_image}
-            logo_text={logo_text}
-            show_search={show_search}
-            menus={menus}
-            cta_text={cta_text}
-            sticky={sticky}
-          />
-        );
-      },
+      render: (props) => <StorefrontHeaderFromProps {...props} />,
     },
 
     Hero: {
@@ -1451,92 +1560,7 @@ export const puckLabConfig: Config<ComponentProps> = {
         ],
         copyright_text: '© 2026 Toko Saya. Hak cipta dilindungi.',
       },
-      render: ({ logo_mode, logo_text, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text }) => {
-        // Data lama tanpa field toggle → default tampil (kecuali 'no').
-        const lm = logo_mode || 'text';
-        const logoWord = (logo_text ?? '').trim() || 'TOKO SAYA';
-        const aboutOn = show_about !== 'no';
-        const linksOn = show_links !== 'no';
-        const socialOn = show_social !== 'no';
-        const payOn = show_payments !== 'no';
-        const linkList = links ?? [];
-        const socialList = (socials ?? []).map((s) => {
-          // Backward compat: data lama { label, href } → deteksi platform dari label.
-          const platform = (s.platform as string) || detectSocialPlatform(String(s.label || ''));
-          const p = SOCIAL_PLATFORMS.find((x) => x.value === platform);
-          return { ...s, platform, icon: p?.icon || SOCIAL_BRAND_PATHS.instagram || '•', label: s.label || p?.label || platform };
-        });
-        const payList = Array.isArray(payments) && payments.length > 0 ? payments : [];
-        const payFromOptions = (k: string) => PAYMENT_OPTIONS.find((p) => p.key === k)?.label || k;
-        return (
-          <div className="px-6 py-8" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Kolom brand */}
-              <div className="sm:col-span-2 lg:col-span-1">
-                <div className="flex items-center gap-2">
-                  {(lm === 'image' || lm === 'both') && logo_image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logo_image} alt="logo" className="max-h-8 w-auto rounded object-contain" />
-                  )}
-                  {lm === 'text' && <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>}
-                  {lm === 'both' && logoWord && <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>}
-                </div>
-                {aboutOn && about_text && <p className="mt-2 max-w-xs text-xs opacity-70">{about_text}</p>}
-              </div>
-              {/* Kolom menu */}
-              {linksOn && (
-                <div>
-                  {links_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{links_title}</div>}
-                  <ul className="space-y-1.5 text-xs opacity-80">
-                    {linkList.map((l, i) => (
-                      <li key={i}><a href={l.href || '#'} className="hover:opacity-100">{l.label}</a></li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {/* Kolom sosial */}
-              {socialOn && (
-                <div>
-                  {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{socials_title}</div>}
-                  <div className="flex flex-wrap gap-2">
-                    {socialList.map((s, i) => (
-                      <a
-                        key={i}
-                        href={s.href || '#'}
-                        title={s.label || s.platform}
-                        aria-label={s.label || s.platform}
-                        className="flex h-8 w-8 items-center justify-center rounded-full"
-                        style={{ background: 'var(--bg, #faf9f6)', color: 'var(--text, #161616)' }}
-                      >
-                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-                          <path d={s.icon} />
-                        </svg>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Pembayaran */}
-              {payOn && (
-                <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>Pembayaran</div>
-                  <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
-                    {(payList.length > 0 ? payList : []).map((p, i) => (
-                      <span key={i} className="rounded border border-white/30 px-1.5 py-0.5 opacity-90">
-                        {p.label || payFromOptions(String(p.key))}
-                      </span>
-                    ))}
-                    {payList.length === 0 && ['BCA', 'OVO', 'GOPAY', 'QRIS'].map((p) => (
-                      <span key={p} className="rounded border border-white/30 px-1.5 py-0.5 opacity-80">{p}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            {copyright_text && <div className="mt-6 border-t border-white/10 pt-3 text-[10px] opacity-50">{copyright_text}</div>}
-          </div>
-        );
-      },
+      render: (props) => <StorefrontFooterBlock {...props} />,
     },
   },
 };

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import { StorefrontHeader, StorefrontMobileSearch, StorefrontFeatureStrip } from '@/components/storefront/ui/StorefrontHeader';
 import { StorefrontFooter } from '@/components/storefront/ui/StorefrontFooter';
-import { getWebStoreByHashServer } from '@/lib/storefront-server';
+import { getWebStoreByHashServer, getPageByHashAndSlug } from '@/lib/storefront-server';
 import { normalizeChrome } from '@/lib/webTheme';
+import StorefrontPuckChrome from '@/components/storefront/StorefrontPuckChrome';
 
 /**
  * Chrome toko (mode shop): header, search, feature strip, main, footer.
@@ -13,6 +14,11 @@ import { normalizeChrome } from '@/lib/webTheme';
  *
  * Home full-canvas Puck TIDAK memakai shell ini — chromenya dikelola owner
  * lewat block di dalam kanvas (Shopify-like).
+ *
+ * Sejak Task D: bila home sudah memakai blok Puck (StoreHeader/Footer/
+ * AnnouncementBar dari page builder), halaman system ikut memakai chrome blok
+ * itu (konsisten + customable). Fallback ke chrome klasik hanya untuk home
+ * legacy (belum di-builder).
  */
 export default async function StorefrontShopShell({
   hash,
@@ -25,6 +31,18 @@ export default async function StorefrontShopShell({
 }) {
   const webStore = await getWebStoreByHashServer(hash);
   if (!webStore || !webStore.is_active) notFound();
+
+  const homePage = await getPageByHashAndSlug(hash, 'home');
+  const homeBlocks = homePage?.blocks ?? null;
+  const puckContent = Array.isArray(homeBlocks)
+    ? homeBlocks
+    : (homeBlocks as any)?.puck?.content ?? [];
+  const hasPuckChrome = puckContent.some((b: any) =>
+    b?.type === 'StoreHeader' || b?.type === 'StoreFooter' || b?.type === 'AnnouncementBar');
+
+  if (hasPuckChrome) {
+    return <StorefrontPuckChrome hash={hash} homeBlocks={homeBlocks}>{children}</StorefrontPuckChrome>;
+  }
 
   const brand = webStore.theme_color || '#111111';
   const settings = (webStore.settings ?? {}) as any;
