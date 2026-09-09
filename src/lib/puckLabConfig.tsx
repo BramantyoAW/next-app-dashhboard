@@ -8,7 +8,7 @@ import { usePuckDynamic } from '@/lib/puckDynamic';
 import { addToCart } from '@/lib/cart';
 import Link from 'next/link';
 import { StorefrontCartBadge } from '@/components/storefront/StorefrontCartBadge';
-import { MessageSquare, Menu as MenuIcon, X as MenuX } from 'lucide-react';
+import { MessageSquare, Menu as MenuIcon, Search, X as MenuX } from 'lucide-react';
 import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
@@ -260,6 +260,7 @@ function StoreHeaderBar(props: {
   const { hash } = usePuckDynamic();
   const { lm, logo_image, logo_text, show_search, menus, cta_text, sticky } = props;
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const h = hash || '';
   return (
     <div
@@ -307,6 +308,19 @@ function StoreHeaderBar(props: {
           </form>
         )}
 
+        {/* Search mobile — toggle form di bawah baris header */}
+        {show_search === 'yes' && h && (
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-label={searchOpen ? 'Tutup pencarian' : 'Buka pencarian'}
+            className="rounded-lg p-1 transition hover:bg-black/5 md:hidden"
+            style={{ color: 'var(--text, #161616)' }}
+          >
+            <Search size={18} />
+          </button>
+        )}
+
         {/* Akun — tetap (tidak customable), tampil semua ukuran */}
         {h && (
           <Link href={`/storefront/${h}/account`} className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-opacity hover:opacity-80" style={{ color: 'var(--muted, #6f6a63)' }}>
@@ -337,6 +351,23 @@ function StoreHeaderBar(props: {
           </Link>
         )}
       </div>
+
+      {/* Search mobile (expand) — muncul saat ikon search diketuk */}
+      {searchOpen && show_search === 'yes' && h && (
+        <form action={`/storefront/${h}`} method="get" className="flex w-full gap-2 border-t pt-2 md:hidden" style={{ borderColor: 'var(--line, rgba(22,22,22,0.12))' }}>
+          <input
+            type="search"
+            name="q"
+            placeholder="Cari produk..."
+            aria-label="Cari"
+            className="min-w-0 flex-1 rounded-full border px-3 py-1.5 text-xs outline-none placeholder:opacity-60"
+            style={{ borderColor: 'var(--line, rgba(22,22,22,0.2))', background: 'transparent', color: 'var(--text)' }}
+          />
+          <button type="submit" className="rounded-full px-3 py-1.5 text-xs font-bold" style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}>
+            Cari
+          </button>
+        </form>
+      )}
 
       {/* Menu mobile (dropdown) — daftar menu blok header */}
       {open && h && menus.length > 0 && (
@@ -450,6 +481,7 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
     // Hash storefront: dari path /storefront/<hash> ATAU subdomain host
     // (dev *.lvh.me, prod *.<domain>).
     const fromPath = window.location.pathname.match(/\/storefront\/([^/]+)/)?.[1];
+    const q = new URLSearchParams(window.location.search).get('q') || '';
     const host = window.location.hostname;
     const fromHost = host.includes('.') && !/^localhost$|^\d/.test(host)
       ? host.split('.')[0]
@@ -466,13 +498,13 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
       try {
         const { gqlFetch } = await import('@/lib/graphqlClient');
         const res = await gqlFetch<{ storefrontProducts: StorefrontProduct[] | null }>(
-          `query($slug: String!, $limit: Int) {
-            storefrontProducts(web_store_slug: $slug, limit: $limit) {
+          `query($slug: String!, $search: String, $limit: Int) {
+            storefrontProducts(web_store_slug: $slug, search: $search, limit: $limit) {
               id price_override image is_active
               master_product { id sku name price image }
             }
           }`,
-          { slug: h, limit: total }
+          { slug: h, search: q || null, limit: total }
         );
         if (on) {
           setItems((res?.storefrontProducts ?? []).filter((p) => p.is_active !== false));
