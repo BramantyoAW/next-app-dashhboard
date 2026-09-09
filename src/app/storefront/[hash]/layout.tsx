@@ -4,6 +4,8 @@ import { getWebStoreByHashServer } from '@/lib/storefront-server';
 import { storefrontMetadata } from '@/lib/storefront-metadata';
 import { normalizeTheme, themeToCss, sanitizeCustomJs } from '@/lib/webTheme';
 import { CartDrawerProvider } from '@/components/storefront/CartDrawer';
+import { StoreSettingsProvider } from '@/components/storefront/storeSettings';
+import { chromeSettingsFromWs } from '@/components/storefront/storeSettingsData';
 
 export async function generateMetadata({
   params,
@@ -57,7 +59,9 @@ export default async function StorefrontLayout({
         <script dangerouslySetInnerHTML={{ __html: sanitizeCustomJs(theme.custom_js) }} />
       )}
       {/* Drawer keranjang global — ikon cart mana pun membuka tray geser ini */}
-      <CartDrawerProvider hash={hash}>{children}</CartDrawerProvider>
+      <StoreSettingsProvider value={chromeSettingsFromWs(webStore)}>
+        <CartDrawerProvider hash={hash}>{children}</CartDrawerProvider>
+      </StoreSettingsProvider>
     </div>
   );
 }

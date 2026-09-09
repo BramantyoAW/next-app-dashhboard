@@ -5,6 +5,7 @@ import type { Config, DefaultRootProps, RootConfig } from '@puckeditor/core';
 import { imageUploadField, imageUploadFieldOpt } from './puckImageField';
 import { ProductCard, ProductGrid, type StorefrontProduct } from '@/components/storefront/ui/ProductCard';
 import { usePuckDynamic } from '@/lib/puckDynamic';
+import { useStoreSettings } from '@/components/storefront/storeSettings';
 import { addToCart } from '@/lib/cart';
 import Link from 'next/link';
 import { StorefrontCartBadge } from '@/components/storefront/StorefrontCartBadge';
@@ -13,6 +14,7 @@ import { CartView } from '@/components/storefront/CartView';
 import { CheckoutForm } from '@/components/storefront/CheckoutForm';
 import { BannerView, type BannerSlide, type BannerProps } from '@/components/storefront/ui/BannerBlock';
 import { withCustomCssJs } from './puckScoped';
+import { waLink } from './storefront-ui';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -438,21 +440,31 @@ function SliderView({ heading, slides, interval, autoplay }: SliderProps) {
 
 /** Columns: susun 2 sel (gambar kiri + teks kanan dst) ala section split. */
 function ColumnsView({ layout, gap, left, right }: ColumnsProps) {
-  const col = (cell: ColumnCell, dark?: boolean) => (
-    <div className="flex flex-col items-start" style={{ color: 'var(--text, #161616)' }}>
-      {cell.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={cell.image_url} alt={cell.title || ''} className="mb-3 aspect-[4/3] w-full rounded-xl object-cover" />
-      )}
-      {cell.title && <h3 className="text-lg font-medium">{cell.title}</h3>}
-      {cell.text && <p className="mt-1 text-sm opacity-70">{cell.text}</p>}
-      {cell.button_text && (
-        <a href={cell.button_link || '#'} className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: 'var(--accent, #c5a880)', color: dark ? '#111' : '#fff' }}>
-          {cell.button_text}
-        </a>
-      )}
-    </div>
-  );
+  const store = useStoreSettings();
+  const col = (cell: ColumnCell, dark?: boolean) => {
+    // Placeholder link WA (wa.me kosong / '#') → nomor WA asli store.
+    let href = cell.button_link || '';
+    if (!href || href === '#' || href.includes('wa.me/')) {
+      href = store.waPhone
+        ? waLink(store.waPhone, 'Halo, saya mau order produk Anda')
+        : href;
+    }
+    return (
+      <div className="flex flex-col items-start" style={{ color: 'var(--text, #161616)' }}>
+        {cell.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cell.image_url} alt={cell.title || ''} className="mb-3 aspect-[4/3] w-full rounded-xl object-cover" />
+        )}
+        {cell.title && <h3 className="text-lg font-medium">{cell.title}</h3>}
+        {cell.text && <p className="mt-1 text-sm opacity-70">{cell.text}</p>}
+        {cell.button_text && (
+          <a href={href || '#'} target={href?.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className="mt-3 inline-block rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: 'var(--accent, #c5a880)', color: dark ? '#111' : '#fff' }}>
+            {cell.button_text}
+          </a>
+        )}
+      </div>
+    );
+  };
   const grid = layout === '60-40' ? 'lg:grid-cols-[3fr_2fr]' : layout === '40-60' ? 'lg:grid-cols-[2fr_3fr]' : 'lg:grid-cols-2';
   return (
     <div className="px-6 py-6" style={{ fontFamily: 'var(--font-body)', color: 'var(--text, #161616)' }}>
@@ -731,7 +743,11 @@ function CategorySlotView({ heading, limit }: CategorySlotProps) {
  * DAN chrome halaman system (account/orders) agar konsisten dgn halaman Puck.
  */
 export function StorefrontAnnouncementBar({ items }: { items: (string | { text?: string })[] }) {
-  const list = (items ?? [])
+  const store = useStoreSettings();
+  const effective = (items ?? []).length > 0
+    ? items
+    : (store.announcement ?? []);
+  const list = (effective ?? [])
     .map((x) => (typeof x === 'string' ? x : String((x as { text?: string })?.text ?? '')))
     .map((s) => s.trim()).filter(Boolean);
   if (list.length === 0) return null;
@@ -781,8 +797,15 @@ export function StorefrontFooterBlock(props: {
   links?: StoreFooterLink[]; show_social?: string; socials_title?: string;
   socials?: StoreSocial[]; show_payments?: string; payments?: StorePayment[];
   copyright_text?: string;
+  /** Props legacy (blok lama): link sosmed langsung di blok. */
+  social_whatsapp?: string; social_instagram?: string;
 }) {
-  const { logo_mode, logo_text, logo_image, about_text, show_about, show_links, links_title, links, show_social, socials_title, socials, show_payments, payments, copyright_text } = props;
+  const {
+    logo_mode, logo_text, logo_image, about_text, show_about, show_links, links_title, links,
+    show_social, socials_title, socials, show_payments, payments, copyright_text,
+    social_whatsapp, social_instagram,
+  } = props;
+  const store = useStoreSettings();
   const lm = logo_mode || 'text';
   const logoWord = (logo_text ?? '').trim() || 'TOKO SAYA';
   const aboutOn = show_about !== 'no';
@@ -790,13 +813,33 @@ export function StorefrontFooterBlock(props: {
   const socialOn = show_social !== 'no';
   const payOn = show_payments !== 'no';
   const linkList = links ?? [];
-  const socialList = (socials ?? []).map((s) => {
+  // Sosmed: blok owner dulu (array `socials` ATAU field legacy social_whatsapp/
+  // social_instagram); kalau kosong/'#' → fallback sosmed dari Setup.
+  const legacySocials: StoreSocial[] = [
+    ...(social_instagram ? [{ platform: 'instagram', label: 'Instagram', href: social_instagram }] : []),
+    ...(social_whatsapp ? [{ platform: 'whatsapp', label: 'WhatsApp', href: social_whatsapp }] : []),
+  ];
+  const blokSocialsRaw = legacySocials.length > 0 ? legacySocials : (socials ?? []);
+  const blokSocials = blokSocialsRaw.filter((s) => s.href && s.href !== '#');
+  const effSocials: StoreSocial[] = blokSocials.length > 0
+    ? blokSocialsRaw
+    : (store.socials ?? []).map((x) => {
+        const platform = String(x.platform || '').toLowerCase();
+        const p = SOCIAL_PLATFORMS.find((sp) => sp.value === platform);
+        return { platform, label: p?.label || platform, href: x.url || '#', icon: p?.icon };
+      });
+  const socialList = effSocials.map((s) => {
     const platform = (s.platform as string) || detectSocialPlatform(String(s.label || ''));
     const p = SOCIAL_PLATFORMS.find((x) => x.value === platform);
     return { ...s, platform, icon: p?.icon || SOCIAL_BRAND_PATHS.instagram || '•', label: s.label || p?.label || platform };
   });
-  const payList = Array.isArray(payments) && payments.length > 0 ? payments : [];
+  const effPayments: StorePayment[] = (Array.isArray(payments) && payments.length > 0)
+    ? payments
+    : (store.payments ?? []).map((k) => ({ key: k, label: PAYMENT_OPTIONS.find((po) => po.key === k)?.label || k }));
+  const payList = Array.isArray(effPayments) && effPayments.length > 0 ? effPayments : [];
   const payFromOptions = (k: string) => PAYMENT_OPTIONS.find((p) => p.key === k)?.label || k;
+  const effAbout = about_text || store.about_text;
+  const effCopyright = copyright_text || store.copyright_text;
   return (
     <div className="px-6 py-8" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -810,7 +853,7 @@ export function StorefrontFooterBlock(props: {
               <span className="text-xl font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{logoWord}</span>
             )}
           </div>
-          {aboutOn && about_text && <p className="mt-2 max-w-xs text-xs opacity-70">{about_text}</p>}
+          {aboutOn && effAbout && <p className="mt-2 max-w-xs text-xs opacity-70">{effAbout}</p>}
         </div>
         {linksOn && (
           <div>
@@ -822,7 +865,7 @@ export function StorefrontFooterBlock(props: {
             </ul>
           </div>
         )}
-        {socialOn && (
+        {socialOn && socialList.length > 0 && (
           <div>
             {socials_title && <div className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--accent, #c5a880)' }}>{socials_title}</div>}
             <div className="flex flex-wrap gap-2">
@@ -859,7 +902,7 @@ export function StorefrontFooterBlock(props: {
           </div>
         )}
       </div>
-      {copyright_text && <div className="mt-6 border-t border-white/10 pt-3 text-[10px] opacity-50">{copyright_text}</div>}
+      {effCopyright && <div className="mt-6 border-t border-white/10 pt-3 text-[10px] opacity-50">{effCopyright}</div>}
     </div>
   );
 }
@@ -1184,23 +1227,35 @@ export const puckLabConfig: Config<ComponentProps> = {
         link: { type: 'text', label: 'Link (wa.me / #)' },
       },
       defaultProps: { heading: 'Pesan Sekarang!', body: 'Jangan lewatkan promo minggu ini.', button_text: 'Chat WhatsApp', link: '#' },
-      render: ({ heading, body, button_text, link }) => (
-        <div className="px-6 py-14 text-center sm:py-16" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
-          {heading && <h2 className="text-2xl font-medium sm:text-3xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{heading}</h2>}
-          {body && <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed opacity-70" style={{ fontFamily: 'var(--font-body)' }}>{body}</p>}
-          {button_text && (
-            <a
-              href={link || '#'}
-              target={link?.startsWith('http') ? '_blank' : undefined}
-              rel="noreferrer"
-              className="mt-6 inline-block rounded-full px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-85"
-              style={{ background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }}
-            >
-              {button_text}
-            </a>
-          )}
-        </div>
-      ),
+      render: (p) => {
+        const { heading, body, button_text, link } = p;
+        const store = useStoreSettings();
+        // CTA placeholder ('#' / wa.me kosong) & tombol WA → pakai nomor WA asli store.
+        const isWaCta = /wa\.me|whatsapp/i.test(button_text ?? '') || (link ?? '').includes('wa.me');
+        let effLink = link;
+        if (!effLink || effLink === '#' || effLink.includes('wa.me/')) {
+          effLink = store.waPhone ? waLink(store.waPhone, 'Halo, saya mau order produk Anda') : effLink === '#' ? '#' : '';
+        } else if (isWaCta && !effLink.includes('wa.me') && store.waPhone) {
+          effLink = waLink(store.waPhone, 'Halo, saya mau order produk Anda');
+        }
+        return (
+          <div className="px-6 py-14 text-center sm:py-16" style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}>
+            {heading && <h2 className="text-2xl font-medium sm:text-3xl" style={{ fontFamily: 'var(--font-display, Georgia, serif)' }}>{heading}</h2>}
+            {body && <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed opacity-70" style={{ fontFamily: 'var(--font-body)' }}>{body}</p>}
+            {button_text && (
+              <a
+                href={effLink || '#'}
+                target={effLink?.startsWith('http') ? '_blank' : undefined}
+                rel="noreferrer"
+                className="mt-6 inline-block rounded-full px-7 py-3 text-sm font-semibold transition-opacity hover:opacity-85"
+                style={{ background: 'var(--accent, #c5a880)', color: 'var(--text, #161616)' }}
+              >
+                {button_text}
+              </a>
+            )}
+          </div>
+        );
+      },
     },
 
     Faq: {
