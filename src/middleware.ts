@@ -61,5 +61,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  // Jangan rewrite aset statis (public/*): gambar, font, dll. Kalau tidak,
+  // request /atlas/img-01.png di subdomain toko ikut di-prefix
+  // /storefront/<hash>/atlas/... → 404 (gambar produk & placeholder rusak).
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.[a-z0-9]+$).*)'],
 };
