@@ -120,6 +120,32 @@ function ScopedJs({ code }: { code?: string }) {
 }
 
 /**
+ * Bungkus 1 blok Puck dgn scoping css/js (sama seperti denganCustomCssJs).
+ * Dipakai StorefrontPuckChrome (chrome halaman system) supaya css/js yang AI
+ * set pada blok StoreHeader/StoreFooter home ikut ter-scope di halaman akun.
+ */
+export function ScopedBlockWrap({
+  id,
+  css,
+  js,
+  children,
+}: {
+  id?: string;
+  css?: string;
+  js?: string;
+  children: React.ReactNode;
+}) {
+  const scope = id ? `[data-pb-block="${id}"]` : '[data-pb-block]';
+  return (
+    <div data-pb-block={id || ''} className="pb-scoped">
+      {css?.trim() ? <style>{scopeCss(css, scope)}</style> : null}
+      <ScopedJs code={js} />
+      {children}
+    </div>
+  );
+}
+
+/**
  * Bungkus def komponen Puck: tambah field `css` + `js` dan scope render-nya.
  * Render asli dipanggil TANPA props `css`/`js`/`id` (tetap dgn id utk key internal?).
  */

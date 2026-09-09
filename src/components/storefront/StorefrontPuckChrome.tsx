@@ -6,6 +6,7 @@ import {
   StorefrontHeaderFromProps,
   StorefrontFooterBlock,
 } from '@/lib/puckLabConfig';
+import { ScopedBlockWrap } from '@/lib/puckScoped';
 import type { ReactNode } from 'react';
 
 /**
@@ -34,12 +35,26 @@ export default function StorefrontPuckChrome({
   const header = content.find((b) => b.type === 'StoreHeader');
   const footer = content.find((b) => b.type === 'StoreFooter');
 
+  const id = (b?: { props?: Record<string, any> }) => String(b?.props?.id ?? '');
+
   return (
     <PuckDynamicContext.Provider value={{ hash, storeName: '', product: null, products: [], cart: [] }}>
-      {announcement?.props && <StorefrontAnnouncementBar items={announcement.props.items ?? []} />}
-      {header?.props && <StorefrontHeaderFromProps {...header.props} />}
+      {announcement?.props && (
+        <ScopedBlockWrap id={id(announcement)} css={announcement.props.css} js={announcement.props.js}>
+          <StorefrontAnnouncementBar items={announcement.props.items ?? []} />
+        </ScopedBlockWrap>
+      )}
+      {header?.props && (
+        <ScopedBlockWrap id={id(header)} css={header.props.css} js={header.props.js}>
+          <StorefrontHeaderFromProps {...header.props} />
+        </ScopedBlockWrap>
+      )}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>
-      {footer?.props && <StorefrontFooterBlock {...footer.props} />}
+      {footer?.props && (
+        <ScopedBlockWrap id={id(footer)} css={footer.props.css} js={footer.props.js}>
+          <StorefrontFooterBlock {...footer.props} />
+        </ScopedBlockWrap>
+      )}
     </PuckDynamicContext.Provider>
   );
 }
