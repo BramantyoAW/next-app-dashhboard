@@ -16,6 +16,7 @@ import { BannerView, type BannerSlide, type BannerProps } from '@/components/sto
 import { withCustomCssJs } from './puckScoped';
 import { waLink } from './storefront-ui';
 import { WishlistButton } from '@/components/storefront/WishlistButton';
+import { ProductReviews } from '@/components/storefront/ProductReviews';
 
 /**
  * PUCK LAB — prototipe visual editor ala Google Sites / Stitch.
@@ -657,6 +658,13 @@ function ProductSlotView({ cta_text }: ProductSlotProps) {
           </div>
         </div>
       </div>
+      {hash && (
+        <ProductReviews
+          hash={hash}
+          storeProductId={String((product as any).id ?? (mp as any).id ?? '')}
+          slug={String(product.sku ?? mp?.sku ?? '')}
+        />
+      )}
     </div>
   );
 }

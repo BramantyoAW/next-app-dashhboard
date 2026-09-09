@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Globe, Package, Layers, ShoppingCart, MessageCircle, Settings, LogOut, X, ArrowLeft, FileText, Ticket, FolderTree } from 'lucide-react';
+import { Home, Globe, Package, Layers, ShoppingCart, MessageCircle, Settings, LogOut, X, ArrowLeft, FileText, Ticket, FolderTree, MessageSquareQuote } from 'lucide-react';
 
 const MAIN_NAV = [
   { href: '/owner', label: 'Overview', icon: Home, exact: true },
@@ -15,6 +15,7 @@ const WEB_STORE_NAV = [
   { href: '/owner/web-store/categories', label: 'Kategori', icon: FolderTree },
   { href: '/owner/web-store/orders', label: 'Web Orders', icon: ShoppingCart },
   { href: '/owner/web-store/coupons', label: 'Kupon', icon: Ticket },
+  { href: '/owner/web-store/reviews', label: 'Ulasan Produk', icon: MessageSquareQuote },
 ];
 
 export function OwnerSidebar({

@@ -7,6 +7,7 @@ import { StorefrontImage } from '@/components/storefront/ui/StorefrontImage';
 import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { ProductActions } from '@/components/storefront/ProductActions';
 import { WishlistButton } from '@/components/storefront/WishlistButton';
+import { ProductReviews } from '@/components/storefront/ProductReviews';
 import { ProductGrid } from '@/components/storefront/ui/ProductCard';
 import type { ProductAttribute } from '@/graphql/query/webstore';
 import StorefrontPuckRenderer from '@/components/storefront/StorefrontPuckRenderer';
@@ -222,6 +223,9 @@ export default async function StorefrontProductPage({
           </div>
         </div>
       </article>
+
+      {/* Ulasan produk */}
+      <ProductReviews hash={hash} storeProductId={sp.id} slug={sp.master_product.sku ?? ''} />
 
       {relatedProducts.length > 0 && (
         <section>
