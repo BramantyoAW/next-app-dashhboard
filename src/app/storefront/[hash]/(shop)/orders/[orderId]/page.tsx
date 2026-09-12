@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { gqlFetchServer } from '@/lib/gql-server';
 import { formatIDR } from '@/lib/cart';
+import MidtransPayButton from '@/components/storefront/MidtransPayButton';
 
 type Item = { id: string; store_id?: string | null; name: string | null; qty: number; price: number; subtotal: number; store?: { id: string; name: string } | null };
 type Order = {
@@ -20,6 +21,7 @@ type Order = {
     base_amount?: number | null;
     fulfillment_type?: string | null;
     payment_method?: {
+      type?: string | null;
       name?: string | null;
       bank_name?: string | null;
       account_number?: string | null;
@@ -168,6 +170,17 @@ export default async function StorefrontOrderDetailPage({
             )}
             {pm.instructions && <div className="mt-1 text-xs text-amber-700">{pm.instructions}</div>}
             <div className="mt-1 text-xs text-amber-700">Setelah transfer, konfirmasi pembayaran Anda ke penjual.</div>
+          </div>
+        )}
+
+        {o.status === 'pending_payment' && pm?.type === 'midtrans' && token && (
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
+            <div className="font-bold text-emerald-800">Pembayaran Midtrans</div>
+            <p className="mt-1 text-xs text-emerald-700">
+              Klik tombol di bawah untuk membayar via VA / QRIS / e-Wallet. Jika popup tertutup,
+              Anda bisa membayar lagi dari halaman ini atau riwayat pesanan.
+            </p>
+            <MidtransPayButton hash={hash} orderId={o.id} customerToken={token} />
           </div>
         )}
 

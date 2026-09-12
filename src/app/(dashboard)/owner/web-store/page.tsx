@@ -108,6 +108,9 @@ export default function OwnerWebStoreSetupPage() {
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [mtServerKey, setMtServerKey] = useState('');
+  const [mtClientKey, setMtClientKey] = useState('');
+  const [mtIsProduction, setMtIsProduction] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [activeTab, setActiveTab] = useState<'toko' | 'tema' | 'pembayaran' | 'pengiriman' | 'lanjutan'>('toko');
 
@@ -148,6 +151,10 @@ export default function OwnerWebStoreSetupPage() {
           setNotifyWhatsapp(w.notify_whatsapp ?? '');
           setNotifyTelegram(w.notify_telegram ?? '');
           setPaymentMethods(w.payment_methods ?? []);
+          const mt = (w.settings as any)?.midtrans ?? null;
+          setMtServerKey(mt?.server_key ?? '');
+          setMtClientKey(mt?.client_key ?? '');
+          setMtIsProduction(!!mt?.is_production);
           setShippingMethods(w.shipping_methods ?? []);
           setDraftPages(w.pages ?? []);
           setPagesDirty(false);
@@ -326,6 +333,11 @@ export default function OwnerWebStoreSetupPage() {
           shipping_methods: shippingMethods,
           theme,
           chrome,
+          midtrans: {
+            server_key: mtServerKey.trim(),
+            client_key: mtClientKey.trim(),
+            is_production: mtIsProduction,
+          },
         },
         payment_methods: paymentMethods,
         custom_domain: customDomain.trim() || null,
@@ -668,6 +680,53 @@ export default function OwnerWebStoreSetupPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Midtrans gateway (per toko) */}
+                <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-indigo-700">
+                      <CreditCard size={14} /> Payment Gateway Midtrans
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${mtServerKey.trim() && mtClientKey.trim() ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                      {mtServerKey.trim() && mtClientKey.trim() ? 'Terhubung' : 'Belum diisi'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] leading-relaxed text-indigo-600/70">
+                    Aktifkan pembayaran otomatis (VA / QRIS / e-Wallet) via Midtrans. Saat key terisi,
+                    metode <b>"Midtrans"</b> otomatis muncul di checkout. Ambil key dari dashboard
+                    Midtrans Anda (menu Settings → Access Keys).
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Server Key</label>
+                      <input
+                        className="w-full rounded-lg border bg-white px-2.5 py-1.5 text-sm font-mono"
+                        placeholder="SB-Mid-server-xxxx atau Mid-server-xxxx"
+                        value={mtServerKey}
+                        onChange={(e) => setMtServerKey(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Client Key</label>
+                      <input
+                        className="w-full rounded-lg border bg-white px-2.5 py-1.5 text-sm font-mono"
+                        placeholder="SB-Mid-client-xxxx atau Mid-client-xxxx"
+                        value={mtClientKey}
+                        onChange={(e) => setMtClientKey(e.target.value)}
+                      />
+                    </div>
+                    <label className="mt-1 flex items-center gap-2 text-xs font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={mtIsProduction}
+                        onChange={(e) => setMtIsProduction(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      Mode Production
+                      <span className="text-[10px] text-slate-400">(lepas centang = Sandbox / testing)</span>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Notifications */}
