@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   Coins,
+  Sparkles,
   Store,
   Zap,
   Globe,
@@ -159,8 +160,28 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  // Saldo AI Point ditampilkan real time: panel OmBot AI mengirim nilai terbaru
+  // lewat event `aiPointsChanged` setiap kali poin terpotong, sehingga angka di
+  // header ikut turun tanpa perlu refresh halaman.
+  const [aiPoints, setAiPoints] = useState(0)
 
   const isStaff = profile?.me?.user?.store_role === 'staff';
+
+  // Sumber awal: profil dari server.
+  useEffect(() => {
+    const dariProfil = profile?.me?.user?.user_ai_points
+    if (typeof dariProfil === 'number') setAiPoints(dariProfil)
+  }, [profile?.me?.user?.user_ai_points])
+
+  // Pembaruan real time dari panel AI / halaman points.
+  useEffect(() => {
+    const onAiPoints = (e: Event) => {
+      const detail = (e as CustomEvent<{ aiPoints?: number }>).detail
+      if (typeof detail?.aiPoints === 'number') setAiPoints(detail.aiPoints)
+    }
+    window.addEventListener('aiPointsChanged', onAiPoints)
+    return () => window.removeEventListener('aiPointsChanged', onAiPoints)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -321,18 +342,34 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Budget Pill */}
+            {/* Budget Pill — poin order + AI Point berdampingan */}
             {!isStaff && (
-            <Link
-              href="/dashboard/points"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group flex-shrink-0"
-            >
-              <Coins size={15} className="text-amber-500" />
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">Budget</span>
-                <span className="text-sm font-black tracking-tight">{profile?.me?.user?.user_points?.toLocaleString() ?? profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
-              </div>
-            </Link>
+            <>
+              <Link
+                href="/dashboard/points"
+                title="Point Order — 1 poin per order masuk"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group flex-shrink-0"
+              >
+                <Coins size={15} className="text-amber-500" />
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">Budget</span>
+                  <span className="text-sm font-black tracking-tight">{profile?.me?.user?.user_points?.toLocaleString() ?? profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
+                </div>
+              </Link>
+
+              {/* AI Point — ikut berkurang seketika saat owner memakai fitur AI */}
+              <Link
+                href="/dashboard/points"
+                title="AI Point — 1 poin per permintaan AI"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-100 rounded-xl text-violet-700 hover:bg-violet-100 transition-all shadow-sm group flex-shrink-0"
+              >
+                <Sparkles size={15} className="text-violet-500" />
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">AI Point</span>
+                  <span className="text-sm font-black tracking-tight">{aiPoints.toLocaleString()}</span>
+                </div>
+              </Link>
+            </>
             )}
 
             <UserMenu

@@ -10,6 +10,7 @@ const PROFILE_QUERY = gql`
         store_name
         store_points
         user_points
+        user_ai_points
         store_image
         store_phone
         store_address

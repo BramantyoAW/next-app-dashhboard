@@ -37,7 +37,15 @@ export async function streamAskAi(
 
   if (!res.ok || !res.body) {
     const txt = await res.text().catch(() => '');
-    throw new Error(`AI stream HTTP ${res.status}: ${txt.slice(0, 200)}`);
+    // Backend membalas JSON { message, code } — tampilkan pesannya apa adanya,
+    // terutama saat saldo AI Point habis (HTTP 402), bukan dump JSON mentah.
+    let pesan = '';
+    try {
+      pesan = String(JSON.parse(txt)?.message ?? '');
+    } catch {
+      pesan = txt.slice(0, 200);
+    }
+    throw new Error(pesan || `AI stream HTTP ${res.status}`);
   }
 
   const reader = res.body.getReader();
