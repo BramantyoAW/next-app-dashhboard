@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getInventoryPooled, InventoryPooledItem } from '@/graphql/query/inventory/getInventoryPooled'
 import { myStoresService, MyStore } from '@/graphql/query/myStores'
-import { getStockLogs } from '@/graphql/query/inventory/getLogs'
+import { getStockLogs, getVariantStockLogs } from '@/graphql/query/inventory/getLogs'
 import { toast } from 'sonner'
 import { StockCard } from '@/components/catalog/StockCard'
 import { StockHistory } from '@/components/catalog/StockHistory'
@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
+import { formatVariantKey } from '@/lib/variants'
 
 export default function InventoryPage() {
   const [search, setSearch] = useState('')
@@ -67,14 +68,29 @@ export default function InventoryPage() {
     }
   }
 
-  // Fetch logs untuk produk yang dipilih
+  /**
+   * Ambil riwayat stok untuk drawer "Stock Audit Trail".
+   *
+   * Produk ber-varian mencatat perubahannya di product_variant_stock_logs,
+   * bukan product_stock_logs — kalau hanya satu tabel yang dibaca, perubahan
+   * stok varian (termasuk dari OmBot AI) tidak muncul sama sekali.
+   */
   const fetchLogs = async (productId: string) => {
     try {
       const token = localStorage.getItem('token')
       if (!token) throw new Error('Token not found')
 
-      const logs = await getStockLogs(token, productId)
-      setLogs(logs)
+      const [productLogs, variantLogs] = await Promise.all([
+        getStockLogs(token, productId).catch(() => []),
+        getVariantStockLogs(token, productId).catch(() => []),
+      ])
+
+      const merged = [
+        ...productLogs,
+        ...variantLogs.map((l: any) => ({ ...l, variant_key: l.variant_stock?.variant_key ?? null })),
+      ].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      setLogs(merged)
     } catch (err) {
       console.error(err)
       toast.error('Gagal memuat log stok')
@@ -313,6 +329,11 @@ export default function InventoryPage() {
                         <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">{log.source || 'Manual Edit'}</span>
                         <span className="text-[10px] text-slate-400 font-bold">{new Date(log.created_at).toLocaleDateString()}</span>
                       </div>
+                      {log.variant_key && (
+                        <span className="inline-block mt-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                          {formatVariantKey(log.variant_key)}
+                        </span>
+                      )}
                       <p className="text-sm text-slate-700 font-medium mt-1 truncate">{log.note || 'No description provided'}</p>
                     </div>
                   </div>
