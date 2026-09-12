@@ -5,6 +5,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getProfile } from '@/graphql/query/getProfile'
 import UserMenu from '@/components/UserMenu'
+import OmBotAiAssistance from '@/components/ai-ops/OmBotAiAssistance'
 import { resolveImageUrl } from '@/lib/imageUtils'
 import {
   Home,
@@ -368,6 +369,10 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </footer>
         )}
       </div>
+
+      {/* OmBot AI Assistance — panel melayang, tampil di semua halaman /dashboard/*.
+          Staff tidak melihatnya (staff diarahkan ke /chat). */}
+      {!isStaff && <OmBotAiAssistance />}
     </div>
   )
 }

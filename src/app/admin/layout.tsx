@@ -15,7 +15,9 @@ import {
   CreditCard,
   History,
   Phone,
-  ShieldCheck
+  ShieldCheck,
+  HelpCircle,
+  Sparkles
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -128,6 +130,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/terms" icon={<ShieldCheck size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Syarat & Ketentuan
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/faq" icon={<HelpCircle size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            FAQ OmBot AI
           </AdminSidebarLink>
         </nav>
 
