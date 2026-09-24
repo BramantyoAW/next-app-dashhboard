@@ -11,6 +11,8 @@ type SP = {
   price_override: number | null;
   image: string | null;
   is_active: boolean;
+  /** false = habis (dihitung backend lintas outlet & tabel stok varian). */
+  is_in_stock: boolean | null;
   master_product: { id: string; sku: string; name: string; description: string | null; price: number; image: string | null };
 };
 
@@ -60,6 +62,19 @@ export default async function StorefrontHome({
   const homePage = ws.pages?.find((p) => p.slug === 'home');
   const homeBlocks = homePage?.blocks ?? null;
 
+  // Hasil pencarian HARUS menggantikan halaman depan, bukan disisipkan di
+  // bawahnya. Sebelumnya blok produk berada setelah hero + section promosi,
+  // sehingga kartu hasil pertama muncul di Y≈1050px — di bawah lipatan layar
+  // untuk desktop (900px) maupun HP (844px). Pembeli menekan cari, tidak
+  // melihat perubahan apa pun, dan menyimpulkan pencariannya rusak.
+  if (q.trim() !== '') {
+    return (
+      <StorefrontShopShell hash={hash}>
+        <SearchResultView hash={hash} q={q} min={min} max={max} page={page} />
+      </StorefrontShopShell>
+    );
+  }
+
   // Mode 1: home full-canvas dari page builder (data Puck).
   if (homeBlocks && isPuckStored(homeBlocks)) {
     const puck = puckDataOf(homeBlocks);
@@ -107,7 +122,7 @@ async function HomeContent({
   const data = await gqlFetchServer<{ storefrontProducts: SP[] }>({
     query: `query($slug: String!, $search: String, $min_price: Float, $max_price: Float, $page: Int, $limit: Int) {
       storefrontProducts(web_store_slug: $slug, search: $search, min_price: $min_price, max_price: $max_price, page: $page, limit: $limit) {
-        id price_override image is_active
+        id price_override image is_active is_in_stock
         master_product { id sku name description price image }
       }
     }`,
@@ -269,6 +284,104 @@ function CategoryChips({
           </Link>
         ))}
       </div>
+    </section>
+  );
+}
+
+/**
+ * Halaman hasil pencarian.
+ *
+ * Ditampilkan sebagai pengganti halaman depan saat pembeli menekan cari —
+ * bukan disisipkan di bawah hero. Alasan: pada halaman depan normal, kartu
+ * produk pertama berada di Y≈1050px, di bawah lipatan layar desktop (900px)
+ * maupun HP (844px). Akibatnya pembeli melihat "tidak terjadi apa-apa" dan
+ * menyimpulkan pencariannya rusak, padahal hasilnya ada.
+ *
+ * Selalu memberi umpan balik: jumlah hasil bila ketemu, atau penjelasan dan
+ * jalan keluar bila tidak — supaya "nol hasil" tidak terasa seperti error.
+ */
+async function SearchResultView({
+  hash,
+  q,
+  min,
+  max,
+  page,
+}: {
+  hash: string;
+  q: string;
+  min: string;
+  max: string;
+  page: string;
+}) {
+  const data = await gqlFetchServer<{ storefrontProducts: SP[] }>({
+    query: `query($slug: String!, $search: String, $min_price: Float, $max_price: Float, $page: Int, $limit: Int) {
+      storefrontProducts(web_store_slug: $slug, search: $search, min_price: $min_price, max_price: $max_price, page: $page, limit: $limit) {
+        id price_override image is_active is_in_stock
+        master_product { id sku name description price image }
+      }
+    }`,
+    variables: {
+      slug: hash,
+      search: q,
+      min_price: min ? Number(min) : null,
+      max_price: max ? Number(max) : null,
+      page: Number(page) || 1,
+      limit: 24,
+    },
+  });
+  const products = (data?.storefrontProducts ?? []).filter((p) => p.is_active);
+
+  return (
+    <section className="space-y-6">
+      <nav className="text-xs" style={{ color: 'var(--muted, #6f6a63)' }}>
+        <Link href={`/storefront/${hash}`} className="transition-colors hover:underline">
+          Beranda
+        </Link>
+        <span className="mx-1.5">/</span>
+        <span>Hasil pencarian</span>
+      </nav>
+
+      <header>
+        <p
+          className="text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: 'var(--muted, #6f6a63)' }}
+        >
+          Hasil pencarian
+        </p>
+        <h1
+          className="mt-1 text-2xl font-medium sm:text-3xl"
+          style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}
+        >
+          “{q}”
+        </h1>
+        {/* Jumlah hasil selalu disebut. Tanpa ini, "nol hasil" tidak bisa
+            dibedakan dari "halaman gagal memuat". */}
+        <p className="mt-2 text-sm" style={{ color: 'var(--muted, #6f6a63)' }}>
+          {products.length > 0
+            ? `${products.length} produk ditemukan`
+            : 'Tidak ada produk yang cocok'}
+        </p>
+      </header>
+
+      {products.length > 0 ? (
+        <ProductGrid hash={hash} products={products} />
+      ) : (
+        <div className="border border-current/10 px-6 py-16 text-center">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text, #161616)' }}>
+            Tidak ada produk yang cocok dengan “{q}”
+          </p>
+          <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed" style={{ color: 'var(--muted, #6f6a63)' }}>
+            Coba kata kunci lain, periksa ejaannya, atau gunakan kata yang lebih umum.
+          </p>
+          <Link
+            href={`/storefront/${hash}`}
+            className="mt-5 inline-block px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-80"
+            style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}
+          >
+            Lihat Semua Produk
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

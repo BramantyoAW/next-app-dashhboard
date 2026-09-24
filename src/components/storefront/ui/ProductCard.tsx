@@ -12,6 +12,13 @@ export type StorefrontProduct = {
   is_active?: boolean;
   /** Optional badge label (owner can set in dashboard: "New", "Sale", "Best Seller"). */
   badge?: string | null;
+  /**
+   * Ketersediaan stok lintas outlet & lintas tabel stok, dihitung backend.
+   * `false` = habis. Produk habis TETAP ditampilkan (pembeli jadi tahu tokonya
+   * menjual itu), hanya ditandai supaya tidak terkesan bisa dibeli.
+   * `null`/`undefined` = tidak dihitung pemanggil; jangan tampilkan tanda apa pun.
+   */
+  is_in_stock?: boolean | null;
   master_product?: {
     id?: string;
     sku?: string | null;
@@ -36,6 +43,11 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
   const badge = p.badge || null;
   const category = p.master_product?.category || null;
 
+  // Hanya anggap habis bila backend benar-benar bilang begitu (`false`).
+  // Nilai null/undefined berarti "tidak diketahui", dan menampilkan "Habis"
+  // pada data yang tidak diketahui akan menakuti pembeli tanpa alasan.
+  const habis = p.is_in_stock === false;
+
   return (
     <li className="group relative flex flex-col">
       {/* Gambar → link ke PDP */}
@@ -44,15 +56,22 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
           <StorefrontImage
             src={img}
             alt={name}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className={`h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 ${habis ? 'opacity-55' : ''}`}
           />
           {/* Badge overlay */}
-          {badge && (
+          {badge && !habis && (
             <span
               className="absolute left-3 top-3 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]"
               style={{ background: 'var(--text, #161616)', color: 'var(--bg, #faf9f6)' }}
             >
               {badge}
+            </span>
+          )}
+          {/* Habis menimpa badge owner: alasan utama pembeli tidak bisa membeli
+              lebih penting daripada label promosi. */}
+          {habis && (
+            <span className="absolute left-3 top-3 bg-[var(--bg,#faf9f6)]/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text,#161616)]">
+              Habis
             </span>
           )}
           {/* Tombol hati wishlist — pojok kanan atas */}
@@ -85,16 +104,30 @@ export function ProductCard({ hash, p }: { hash: string; p: StorefrontProduct })
         </span>
         {/* Tombol add-to-cart mandiri (bukan di dalam link) */}
         <div className="mt-auto pt-2">
-          <AddToCartButton
-            hash={hash}
-            item={{
-              store_product_id: p.id,
-              sku: p.master_product?.sku ?? '',
-              name,
-              price,
-              image: img,
-            }}
-          />
+          {habis ? (
+            // Tombol dinonaktifkan, bukan dihilangkan: pembeli tetap melihat
+            // bahwa produk ini normalnya bisa dibeli, hanya sedang kosong.
+            <button
+              type="button"
+              disabled
+              aria-disabled="true"
+              className="w-full cursor-not-allowed border border-[var(--text,#161616)]/15 py-2 text-[11px] font-bold uppercase tracking-[0.12em] opacity-50"
+              style={{ color: 'var(--text, #161616)' }}
+            >
+              Stok Habis
+            </button>
+          ) : (
+            <AddToCartButton
+              hash={hash}
+              item={{
+                store_product_id: p.id,
+                sku: p.master_product?.sku ?? '',
+                name,
+                price,
+                image: img,
+              }}
+            />
+          )}
         </div>
       </div>
     </li>

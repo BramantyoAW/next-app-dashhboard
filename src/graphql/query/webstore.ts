@@ -6,7 +6,7 @@ export const WEBSTORE_BY_HASH = `
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
       logo_url banner_url custom_domain storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
-      shipping_methods { id name cost per_km min_cost min_order enabled }
+      shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
       store { id name }
       pages { id slug title blocks is_published full_page }
@@ -20,7 +20,7 @@ export const WEBSTORE_BY_SLUG = `
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
       logo_url banner_url custom_domain storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
-      shipping_methods { id name cost per_km min_cost min_order enabled }
+      shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
       store { id name }
       pages { id slug title blocks is_published full_page }
@@ -34,7 +34,7 @@ export const WEBSTORE_BY_OWNER = `
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
       logo_url banner_url custom_domain storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
-      shipping_methods { id name cost per_km min_cost min_order enabled }
+      shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
       settings
       store { id name }
@@ -44,12 +44,32 @@ export const WEBSTORE_BY_OWNER = `
 `;
 
 export const ESTIMATE_SHIPPING = `
-  query EstimateShipping($web_store_slug: String!, $lat: Float, $lng: Float, $items: [WebOrderItemInput!]!, $subtotal: Float!) {
-    estimateShipping(web_store_slug: $web_store_slug, lat: $lat, lng: $lng, items: $items, subtotal: $subtotal) {
-      method { id name cost per_km min_cost min_order enabled }
+  query EstimateShipping($web_store_slug: String!, $lat: Float, $lng: Float, $destination_id: Int, $items: [WebOrderItemInput!]!, $subtotal: Float!) {
+    estimateShipping(web_store_slug: $web_store_slug, lat: $lat, lng: $lng, destination_id: $destination_id, items: $items, subtotal: $subtotal) {
+      method { id name type cost per_km min_cost min_order enabled }
       cost
       distance_km
       available
+      reason
+      options { id cost distance_km courier_code courier_name service etd method { id name type } }
+      weight_gram
+      weight_complete
+    }
+  }
+`;
+
+/**
+ * Pencarian kecamatan tujuan ekspedisi.
+ *
+ * RajaOngkir hanya menerima ID kecamatan untuk tarif ekspedisi, bukan nama kota
+ * maupun koordinat. Backend mengembalikan daftar KOSONG (bukan error) bila API
+ * key belum dipasang, jadi UI tidak boleh menganggap kosong sebagai kegagalan
+ * yang menghalangi checkout.
+ */
+export const SEARCH_DESTINATIONS = `
+  query SearchDestinations($keyword: String!, $limit: Int) {
+    searchDestinations(keyword: $keyword, limit: $limit) {
+      id label province city district subdistrict zip_code
     }
   }
 `;
@@ -193,8 +213,18 @@ export type PaymentMethodConfig = {
 
 /** One shipping (ongkir) method configured on the web store. */
 export type ShippingMethod = {
+  /**
+   * Identitas baris metode. Nilai lamanya bisa "ship_flat" / "ship_distance"
+   * (dari seeder versi lama) — pakai `shippingMethodKind()` untuk membaca
+   * JENISNYA, jangan membandingkan `id` langsung.
+   */
   id: string;
   name: string;
+  /**
+   * Jenis metode hasil resolusi backend:
+   * 'flat' | 'distance' | 'free' | 'expedition'.
+   */
+  type?: string | null;
   /** flat: fixed delivery cost */
   cost?: number | null;
   /** distance: per-km rate */
@@ -203,8 +233,41 @@ export type ShippingMethod = {
   min_cost?: number | null;
   /** free: subtotal threshold for free shipping */
   min_order?: number | null;
+  /**
+   * expedition: kode kurir yang dicoba (jne, jnt, sicepat, ...).
+   * Kosong = pakai daftar bawaan backend. Tiap kurir = satu panggilan API
+   * berbayar per perhitungan tarif, jadi jangan diisi berlebihan.
+   */
+  couriers?: string[] | null;
   enabled: boolean;
 };
+
+/**
+ * Jenis sebuah metode ongkir, tahan terhadap data lama.
+ *
+ * `id` dulu dipakai sebagai penanda jenis sekaligus identitas baris, sehingga
+ * data tersimpan bisa berbentuk "ship_flat" atau bahkan id ber-timestamp.
+ * Backend (`ShippingService::resolveType`) memakai urutan yang sama; fungsi ini
+ * menyamakannya di sisi klien supaya field yang ditampilkan tidak salah.
+ */
+export function shippingMethodKind(m: Pick<ShippingMethod, 'id' | 'type'>): string {
+  const dikenal = ['flat', 'distance', 'free', 'expedition'];
+  const type = String(m.type ?? '').toLowerCase().trim();
+  if (dikenal.includes(type)) return type;
+
+  const id = String(m.id ?? '').toLowerCase().trim();
+  if (dikenal.includes(id)) return id;
+
+  if (id.startsWith('ship_')) {
+    const tanpaPrefix = id.slice(5);
+    if (dikenal.includes(tanpaPrefix)) return tanpaPrefix;
+  }
+
+  // Tidak dikenali. Backend mengabaikan metode seperti ini (ongkir jadi Rp 0),
+  // jadi jangan tebak-tebak: kembalikan string kosong agar tidak ada field
+  // biaya yang salah tampil.
+  return '';
+}
 
 /** A shipping method's estimated cost for a given cart + destination. */
 export type ShippingEstimate = {
@@ -212,6 +275,62 @@ export type ShippingEstimate = {
   cost: number;
   distance_km: number;
   available: boolean;
+  /**
+   * Kenapa pengiriman tidak tersedia. Nilai yang dikenal:
+   *   'luar_jangkauan' — alamat di luar radius layanan outlet
+   *   'toko_tutup'     — tidak ada outlet yang buka untuk kirim instan
+   * `available: false` TIDAK selalu berarti pengiriman gagal total, tapi
+   * pemanggil tidak boleh menganggapnya gratis.
+   */
+  reason?: string | null;
+  /**
+   * Layanan yang bisa dipilih pembeli. Satu metode ekspedisi menghasilkan
+   * BANYAK baris (JNE Reguler, JNE YES, SiCepat, ...) karena itu yang
+   * dikembalikan API kurir. Metode flat/distance/free menghasilkan satu.
+   *
+   * `cost` di atas tetap berisi opsi termurah, jadi klien yang belum membaca
+   * daftar ini tetap menampilkan angka yang benar.
+   */
+  options?: ShippingOption[];
+  /** Berat paket yang dipakai menghitung tarif ekspedisi, dalam gram. */
+  weight_gram?: number | null;
+  /**
+   * false = ada produk yang beratnya belum diisi, sehingga tarif ekspedisi
+   * masih berbasis asumsi 1000 g. Ditampilkan sebagai catatan halus, bukan
+   * sebagai kesalahan pembeli — ini informasi untuk merchant.
+   */
+  weight_complete?: boolean;
+};
+
+/** Satu layanan pengiriman yang bisa dipilih pembeli. */
+export type ShippingOption = {
+  /**
+   * Penanda pilihan untuk dikirim balik saat checkout. Untuk ekspedisi
+   * berbentuk "<method_id>:<courier>:<service>"; satu metode ekspedisi
+   * menghasilkan beberapa id.
+   */
+  id: string;
+  method: ShippingMethod;
+  cost: number;
+  /** Selalu 0 untuk ekspedisi — tarifnya berbasis berat, bukan jarak. */
+  distance_km: number;
+  /** Kode kurir (jne, sicepat, ...). Null untuk metode non-ekspedisi. */
+  courier_code?: string | null;
+  courier_name?: string | null;
+  service?: string | null;
+  /** Perkiraan lama pengiriman dari kurir, mis. "2-3 hari". */
+  etd?: string | null;
+};
+
+/** Kecamatan hasil pencarian RajaOngkir. */
+export type Destination = {
+  id: number;
+  label: string;
+  province?: string | null;
+  city?: string | null;
+  district?: string | null;
+  subdistrict?: string | null;
+  zip_code?: string | null;
 };
 
 export function estimateShipping(

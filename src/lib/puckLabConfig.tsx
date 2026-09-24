@@ -490,6 +490,9 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
   const [hash, setHash] = useState('');
   const [items, setItems] = useState<StorefrontProduct[]>([]);
   const [state, setState] = useState<'loading' | 'done'>('loading');
+  // Disimpan supaya bisa membedakan "katalog kosong" dari "kata kunci tidak
+  // ketemu" — dua hal yang butuh pesan berbeda bagi pembeli.
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // Hash storefront: dari path /storefront/<hash> ATAU subdomain host
@@ -502,6 +505,7 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
       : '';
     const h = fromPath || fromHost || '';
     setHash(h);
+    setSearchQuery(q);
     if (!h) {
       // Editor / preview — tidak ada katalog storefront, diam.
       setState('done');
@@ -514,7 +518,7 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
         const res = await gqlFetch<{ storefrontProducts: StorefrontProduct[] | null }>(
           `query($slug: String!, $search: String, $limit: Int) {
             storefrontProducts(web_store_slug: $slug, search: $search, limit: $limit) {
-              id price_override image is_active
+              id price_override image is_active is_in_stock
               master_product { id sku name price image }
             }
           }`,
@@ -550,6 +554,37 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
 
   const show = items.length > 0 ? Math.min(items.length, total) : (state === 'loading' && hash ? 0 : total);
   const auto = mode === 'slider' && items.length > perView;
+
+  // Pencarian tanpa hasil HARUS mengatakannya. Sebelumnya blok ini jatuh ke
+  // `body(total)` yang merender kartu placeholder ("Produk 1…8 / Rp 25.000"),
+  // sehingga pembeli melihat 8 barang palsu yang tidak bisa dibeli dan tidak
+  // pernah tahu kata kuncinya tidak ketemu — lebih menyesatkan daripada kosong.
+  if (hash && state === 'done' && searchQuery && items.length === 0) {
+    return (
+      <div className="px-6 py-4" style={{ fontFamily: 'var(--font-body)' }}>
+        {heading && (
+          <h2 className="mb-3 text-2xl font-medium" style={{ fontFamily: 'var(--font-display, Georgia, serif)', color: 'var(--text, #161616)' }}>
+            {heading}
+          </h2>
+        )}
+        <div className="border border-current/10 px-6 py-14 text-center">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text, #161616)' }}>
+            Tidak ada produk yang cocok dengan “{searchQuery}”
+          </p>
+          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--muted, #6f6a63)' }}>
+            Coba kata kunci lain, atau periksa ejaannya. Anda juga bisa melihat seluruh katalog toko ini.
+          </p>
+          <a
+            href={`/storefront/${hash}`}
+            className="mt-5 inline-block px-6 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] transition-opacity hover:opacity-80"
+            style={{ background: 'var(--brand, #161616)', color: 'var(--brand-contrast, #faf9f6)' }}
+          >
+            Lihat Semua Produk
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   if (mode === 'slider' && show > perView) {
     const maxIdx = Math.max(show - perView, 0);
@@ -716,7 +751,7 @@ function CategorySlotView({ heading, limit }: CategorySlotProps) {
         const res = await gqlFetch<{ storefrontProductsByCategory: StorefrontProduct[] | null }>(
           `query($web_store_slug: String!, $category_slug: String!, $limit: Int) {
             storefrontProductsByCategory(web_store_slug: $web_store_slug, category_slug: $category_slug, limit: $limit) {
-              id price_override image is_active
+              id price_override image is_active is_in_stock
               master_product { id sku name price image }
             }
           }`,

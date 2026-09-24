@@ -55,7 +55,7 @@ export function BannerView(props: BannerProps) {
         const res = await gqlFetch<{ storefrontProducts: any[] | null }>(
           `query($slug: String!, $limit: Int) {
             storefrontProducts(web_store_slug: $slug, limit: $limit) {
-              id price_override image is_active
+              id price_override image is_active is_in_stock
               master_product { id sku name price image }
             }
           }`,

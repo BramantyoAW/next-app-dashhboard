@@ -6,7 +6,7 @@ export const UPSERT_WEB_STORE = `
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
       logo_url banner_url custom_domain storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
-      shipping_methods { id name cost per_km min_cost min_order enabled }
+      shipping_methods { id name type cost per_km min_cost min_order enabled }
       notify_whatsapp notify_telegram
       settings
     }

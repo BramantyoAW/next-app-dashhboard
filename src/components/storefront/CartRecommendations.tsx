@@ -20,7 +20,7 @@ export function CartRecommendations({ hash }: { hash: string }) {
         const res = await gqlFetch<{ storefrontProducts: StorefrontProduct[] | null }>(
           `query($web_store_slug: String!, $limit: Int) {
             storefrontProducts(web_store_slug: $web_store_slug, limit: $limit) {
-              id price_override image is_active
+              id price_override image is_active is_in_stock
               master_product { id sku name description price image }
             }
           }`,

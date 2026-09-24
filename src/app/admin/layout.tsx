@@ -17,7 +17,8 @@ import {
   Phone,
   ShieldCheck,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Truck
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -130,6 +131,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/whatsapp" icon={<Phone size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Whatsapp Config
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/rajaongkir" icon={<Truck size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Ongkir Ekspedisi
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/terms" icon={<ShieldCheck size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Syarat & Ketentuan

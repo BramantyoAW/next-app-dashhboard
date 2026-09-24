@@ -20,7 +20,7 @@ export default async function StorefrontProductsPage({
     gqlFetchServer<{ storefrontProducts: StorefrontProduct[] | null }>({
       query: `query($web_store_slug: String!, $page: Int, $limit: Int) {
         storefrontProducts(web_store_slug: $web_store_slug, page: $page, limit: $limit) {
-          id price_override image is_active
+          id price_override image is_active is_in_stock
           master_product { id sku name description price image }
         }
       }`,

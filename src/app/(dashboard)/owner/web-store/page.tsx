@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getWebStoreByOwner } from '@/graphql/query/webstore';
+import { getWebStoreByOwner, shippingMethodKind, SEARCH_DESTINATIONS, type Destination } from '@/graphql/query/webstore';
 import { upsertWebStore, upsertWebPage, uploadWebStoreMedia } from '@/graphql/mutation/webstore';
 import { myStoresService } from '@/graphql/query/myStores';
+import { gqlFetch } from '@/lib/graphqlClient';
+import { LocationPicker } from '@/components/map/LocationPicker';
 import type { WebStore, WebPage, ShippingMethod } from '@/graphql/query/webstore';
 import { decodeJwt } from '@/lib/jwt';
 import { normalizeBlock, serializeBlock, type StructuralBlock } from '@/lib/blockSchema';
@@ -22,6 +24,7 @@ import {
   Check,
   ShieldCheck,
   Truck,
+  MapPin,
   ImagePlus,
   Upload,
   Trash2,
@@ -37,7 +40,34 @@ import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPrevie
 import { WebStoreAiAssistant } from '@/components/web-store/WebStoreAiAssistant';
 import type { AiChangeSuggestion } from '@/graphql/mutation/aiAssistant';
 
-type StoreType = { id: string | number; name: string };
+/**
+ * Kurir yang bisa dipilih merchant untuk metode ekspedisi.
+ *
+ * Hanya kode yang memang didukung API RajaOngkir. Tiap kurir yang dicentang
+ * menambah satu panggilan API berbayar setiap kali tarif dihitung, jadi
+ * daftarnya sengaja tidak panjang.
+ */
+const KURIR_EKSPEDISI = [
+  { kode: 'jne', nama: 'JNE' },
+  { kode: 'jnt', nama: 'J&T' },
+  { kode: 'sicepat', nama: 'SiCepat' },
+  { kode: 'anteraja', nama: 'AnterAja' },
+  { kode: 'pos', nama: 'POS Indonesia' },
+];
+
+type StoreType = {
+  id: string | number;
+  name: string;
+  // Titik & jangkauan outlet untuk pengiriman instan. Null = belum dipetakan.
+  latitude?: number | null;
+  longitude?: number | null;
+  radius_km?: number | null;
+  is_open?: boolean | null;
+  // Kecamatan asal paket ekspedisi (RajaOngkir). Dipisah dari lat/lng karena
+  // ekspedisi hanya menerima ID kecamatan, sedangkan kurir instan memakai titik.
+  origin_destination_id?: number | null;
+  origin_destination_label?: string | null;
+};
 
 /** Incremental block operations proposed by the AI assistant (#7). */
 type BlockOp =
@@ -103,6 +133,18 @@ export default function OwnerWebStoreSetupPage() {
   const [active, setActive] = useState(true);
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+  // Pemetaan lokasi outlet: titik & radius layanan untuk pengiriman instan.
+  const [lokasiStoreId, setLokasiStoreId] = useState('');
+  const [lokasiCoords, setLokasiCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [lokasiRadius, setLokasiRadius] = useState('10');
+  // Kecamatan asal paket ekspedisi. Terpisah dari titik peta karena RajaOngkir
+  // hanya menerima ID kecamatan — titik saja tidak cukup untuk ekspedisi.
+  const [lokasiOrigin, setLokasiOrigin] = useState<{ id: number; label: string } | null>(null);
+  const [originKata, setOriginKata] = useState('');
+  const [originHasil, setOriginHasil] = useState<Destination[]>([]);
+  const [originPesan, setOriginPesan] = useState<string | null>(null);
+  const [lokasiSaving, setLokasiSaving] = useState(false);
+  const [lokasiMsg, setLokasiMsg] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
   const [customDomain, setCustomDomain] = useState('');
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
@@ -310,6 +352,169 @@ export default function OwnerWebStoreSetupPage() {
       setPagesDirty(true);
     }
     return used;
+  }
+
+  /**
+   * Pilih outlet → isi titik & radius yang tersimpan ke dalam form.
+   *
+   * Titik disimpan di tabel `stores` (bukan di settings web store), karena satu
+   * owner bisa punya beberapa outlet dengan jangkauan berbeda.
+   */
+  function pilihOutletUntukLokasi(storeId: string) {
+    setLokasiStoreId(storeId);
+    setLokasiMsg(null);
+    const s = stores.find((x) => String(x.id) === storeId);
+    if (!s) {
+      setLokasiCoords(null);
+      return;
+    }
+    setLokasiCoords(
+      typeof s.latitude === 'number' && typeof s.longitude === 'number'
+        ? { lat: s.latitude, lng: s.longitude }
+        : null,
+    );
+    setLokasiRadius(String(s.radius_km ?? 10));
+    // Kecamatan asal yang sudah tersimpan ikut dimuat. Tanpa ini, membuka
+    // panel lalu menekan simpan akan MENGHAPUS kecamatan asal yang sudah
+    // diatur — karena form mengira merchant belum memilih apa pun.
+    setLokasiOrigin(
+      s.origin_destination_id && s.origin_destination_label
+        ? { id: s.origin_destination_id, label: s.origin_destination_label }
+        : null,
+    );
+    setOriginKata('');
+    setOriginHasil([]);
+    setOriginPesan(null);
+  }
+
+  /**
+   * Pencarian kecamatan asal ekspedisi.
+   *
+   * Ditunda 400 ms dengan minimal 3 huruf: tiap ketikan memicu satu permintaan
+   * ke RajaOngkir, dan backend menolak kata kunci di bawah 3 huruf.
+   */
+  useEffect(() => {
+    const kata = originKata.trim();
+    if (kata.length < 3) {
+      setOriginHasil([]);
+      setOriginPesan(null);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      const token = typeof window === 'undefined' ? '' : localStorage.getItem('token') || '';
+      gqlFetch<{ searchDestinations: Destination[] }>(SEARCH_DESTINATIONS, { keyword: kata, limit: 8 }, token)
+        .then((d) => {
+          if (cancelled) return;
+          const hasil = d?.searchDestinations ?? [];
+          setOriginHasil(hasil);
+          setOriginPesan(hasil.length === 0 ? 'Kecamatan tidak ditemukan.' : null);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setOriginHasil([]);
+            // Daftar kosong bisa berarti API key kurir belum dipasang. Pesannya
+            // netral supaya merchant tidak menyangka outletnya yang salah.
+            setOriginPesan('Pencarian kecamatan sedang tidak tersedia.');
+          }
+        });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [originKata]);
+
+  async function simpanLokasiOutlet() {
+    setLokasiMsg(null);
+    const token = typeof window === 'undefined' ? '' : localStorage.getItem('token') || '';
+    if (!token) return setLokasiMsg({ kind: 'err', msg: 'Sesi berakhir, silakan login ulang.' });
+    if (!lokasiStoreId) return setLokasiMsg({ kind: 'err', msg: 'Pilih outlet dulu.' });
+    if (!lokasiCoords && !lokasiOrigin) {
+      return setLokasiMsg({ kind: 'err', msg: 'Tentukan titik outlet di peta, atau pilih kecamatan asal ekspedisi.' });
+    }
+
+    // Titik peta hanya wajib untuk kurir instan. Merchant yang hanya memakai
+    // ekspedisi tetap butuh menyimpan kecamatan asal, dan memaksa mereka
+    // menaruh pin lebih dulu akan memblokir pengaturan yang sah.
+    const butuhTitik = !lokasiOrigin;
+
+    const radius = Number(lokasiRadius);
+    if (butuhTitik && (!Number.isFinite(radius) || radius <= 0)) {
+      return setLokasiMsg({ kind: 'err', msg: 'Radius harus lebih besar dari 0 km.' });
+    }
+
+    setLokasiSaving(true);
+    try {
+      const res = await gqlFetch<{
+        updateStoreSettings: {
+          id: string;
+          latitude: number | null;
+          longitude: number | null;
+          radius_km: number | null;
+          origin_destination_id: number | null;
+          origin_destination_label: string | null;
+        };
+      }>(
+        `mutation($id: ID!, $input: UpdateStoreSettingsInput!) {
+          updateStoreSettings(store_id: $id, input: $input) {
+            id latitude longitude radius_km origin_destination_id origin_destination_label
+          }
+        }`,
+        {
+          id: lokasiStoreId,
+          input: {
+            // Titik & radius hanya dikirim bila ada: kurir instan memakainya,
+            // sedangkan toko ekspedisi-saja tidak perlu pin.
+            ...(lokasiCoords
+              ? { latitude: lokasiCoords.lat, longitude: lokasiCoords.lng, radius_km: radius }
+              : {}),
+            // Selalu dikirim (termasuk null) supaya merchant bisa MENGOSONGKAN
+            // kecamatan asal yang salah, bukan terjebak dengannya.
+            origin_destination_id: lokasiOrigin?.id ?? null,
+            origin_destination_label: lokasiOrigin?.label ?? null,
+          },
+        },
+        token,
+      );
+
+      const r = res?.updateStoreSettings;
+      // Konfirmasi dari server, bukan asumsi lokal: kalau backend mengabaikan
+      // nilai (mis. koordinat di luar rentang), merchant harus tahu.
+      const titikGagalDisimpan = lokasiCoords !== null && (!r || r.latitude === null || r.longitude === null);
+      const originGagalDisimpan = (lokasiOrigin?.id ?? null) !== (r?.origin_destination_id ?? null);
+
+      if (!r || titikGagalDisimpan || originGagalDisimpan) {
+        setLokasiMsg({
+          kind: 'err',
+          msg: titikGagalDisimpan
+            ? 'Server tidak menyimpan titik ini. Periksa koordinatnya.'
+            : 'Server tidak menyimpan kecamatan asal. Coba pilih ulang.',
+        });
+      } else {
+        setStores((prev) =>
+          prev.map((s) =>
+            String(s.id) === lokasiStoreId
+              ? {
+                  ...s,
+                  latitude: r.latitude,
+                  longitude: r.longitude,
+                  radius_km: r.radius_km,
+                  origin_destination_id: r.origin_destination_id,
+                  origin_destination_label: r.origin_destination_label,
+                }
+              : s,
+          ),
+        );
+        setLokasiMsg({ kind: 'ok', msg: 'Lokasi, radius & kecamatan asal tersimpan.' });
+      }
+    } catch (e: unknown) {
+      setLokasiMsg({ kind: 'err', msg: e instanceof Error ? e.message : 'Gagal menyimpan lokasi.' });
+    } finally {
+      setLokasiSaving(false);
+    }
   }
 
   async function save() {
@@ -758,6 +963,177 @@ export default function OwnerWebStoreSetupPage() {
             </>)}
 
             {activeTab === 'pengiriman' && (<>
+            <Field label="Lokasi & Jangkauan Outlet" icon={<MapPin size={16} className="text-slate-400" />}>
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">
+                  Titik outlet dipakai menghitung jarak &amp; ongkir kirim instan. Outlet yang belum
+                  dipetakan tidak bisa menolak pesanan di luar jangkauan — jadi ongkir jarak untuknya
+                  selalu jatuh ke biaya minimal.
+                </p>
+
+                <label className="block text-xs font-semibold text-slate-500">
+                  Outlet yang dipetakan
+                  <select
+                    className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                    value={lokasiStoreId}
+                    onChange={(e) => pilihOutletUntukLokasi(e.target.value)}
+                  >
+                    <option value="">— Pilih outlet —</option>
+                    {stores.map((s) => (
+                      <option key={s.id} value={String(s.id)}>
+                        {s.name}
+                        {typeof s.latitude === 'number' && typeof s.longitude === 'number'
+                          ? ' (sudah dipetakan)'
+                          : ' (belum dipetakan)'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {lokasiStoreId ? (
+                  <>
+                    <LocationPicker
+                      value={lokasiCoords}
+                      onChange={setLokasiCoords}
+                      outlets={[]}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block text-xs font-semibold text-slate-500">
+                        Latitude
+                        <input
+                          className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                          type="number"
+                          step="0.0000001"
+                          value={lokasiCoords?.lat ?? ''}
+                          onChange={(e) =>
+                            setLokasiCoords((c) => ({
+                              lat: e.target.value === '' ? 0 : Number(e.target.value),
+                              lng: c?.lng ?? 0,
+                            }))
+                          }
+                        />
+                      </label>
+                      <label className="block text-xs font-semibold text-slate-500">
+                        Longitude
+                        <input
+                          className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                          type="number"
+                          step="0.0000001"
+                          value={lokasiCoords?.lng ?? ''}
+                          onChange={(e) =>
+                            setLokasiCoords((c) => ({
+                              lat: c?.lat ?? 0,
+                              lng: e.target.value === '' ? 0 : Number(e.target.value),
+                            }))
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <label className="block text-xs font-semibold text-slate-500">
+                      Radius layanan (km)
+                      <input
+                        className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                        type="number"
+                        min={0.1}
+                        step="0.1"
+                        value={lokasiRadius}
+                        onChange={(e) => setLokasiRadius(e.target.value)}
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-400">
+                      Pembeli di luar radius ini tidak bisa memakai metode kirim instan (jenis
+                      &ldquo;Distance&rdquo;). Mereka masih bisa memakai metode lain seperti ekspedisi.
+                    </p>
+
+                    {/* Kecamatan asal ekspedisi. RajaOngkir hanya menerima ID
+                        kecamatan, jadi titik peta di atas tidak bisa dipakai
+                        untuk ekspedisi — dua jalur pengiriman ini butuh
+                        penanda wilayah yang berbeda. */}
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5">
+                      <p className="mb-1.5 text-xs font-semibold text-slate-600">
+                        Kecamatan asal ekspedisi
+                      </p>
+                      {lokasiOrigin ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-emerald-700">{lokasiOrigin.label}</span>
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-slate-500 underline"
+                            onClick={() => {
+                              setLokasiOrigin(null);
+                              setOriginKata('');
+                              setOriginHasil([]);
+                            }}
+                          >
+                            Kosongkan
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <input
+                            className="w-full rounded-lg border px-2 py-1.5 text-xs"
+                            placeholder="Cari kecamatan, mis. Kemayoran"
+                            value={originKata}
+                            onChange={(e) => setOriginKata(e.target.value)}
+                          />
+                          {originPesan && <p className="mt-1 text-xs text-slate-500">{originPesan}</p>}
+                          {originHasil.length > 0 && (
+                            <ul className="mt-1 max-h-40 divide-y divide-slate-100 overflow-auto rounded-lg border bg-white">
+                              {originHasil.map((k) => (
+                                <li key={k.id}>
+                                  <button
+                                    type="button"
+                                    className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50"
+                                    onClick={() => {
+                                      setLokasiOrigin({ id: k.id, label: k.label });
+                                      setOriginHasil([]);
+                                      setOriginPesan(null);
+                                    }}
+                                  >
+                                    {k.label}
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </>
+                      )}
+                      <p className="mt-1.5 text-[10px] leading-snug text-slate-400">
+                        Wajib untuk pengiriman ekspedisi. Kurir memakai kecamatan + berat paket,
+                        bukan titik peta.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={simpanLokasiOutlet}
+                        disabled={lokasiSaving || (!lokasiCoords && !lokasiOrigin)}
+                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+                      >
+                        {lokasiSaving ? 'Menyimpan…' : 'Simpan lokasi outlet'}
+                      </button>
+                      {lokasiMsg && (
+                        <span
+                          className={`text-xs font-medium ${
+                            lokasiMsg.kind === 'ok' ? 'text-emerald-600' : 'text-rose-600'
+                          }`}
+                        >
+                          {lokasiMsg.msg}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="rounded-lg border border-dashed p-3 text-center text-xs text-slate-400">
+                    Pilih outlet untuk memetakan lokasinya.
+                  </p>
+                )}
+              </div>
+            </Field>
+
             <Field label="Metode Ongkir" icon={<Truck size={16} className="text-slate-400" />}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -767,7 +1143,12 @@ export default function OwnerWebStoreSetupPage() {
                     onClick={() =>
                       setShippingMethods((prev) => [
                         ...prev,
-                        { id: `ship_${Date.now()}`, name: 'Ongkir Flat', cost: 15000, per_km: null, min_cost: null, min_order: null, enabled: true },
+                        // `id` WAJIB salah satu dari flat/distance/free — itulah
+                        // jenis metodenya. Sebelumnya di sini dipakai
+                        // `ship_${Date.now()}`, yang tidak dikenali backend:
+                        // metodenya diabaikan dan ongkir ditagih Rp 0 tanpa
+                        // peringatan, sehingga merchant menanggung biaya kirim.
+                        { id: 'flat', name: 'Ongkir Flat', type: 'flat', cost: 15000, per_km: null, min_cost: null, min_order: null, enabled: true },
                       ])
                     }
                     className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-700"
@@ -785,12 +1166,16 @@ export default function OwnerWebStoreSetupPage() {
                   <p className="text-[11px] text-slate-500 leading-relaxed">
                     Ongkir terendah yang memenuhi syarat akan dipakai. <span className="font-mono">flat</span> = tarif tetap,{' '}
                     <span className="font-mono">distance</span> = per km (minimal <span className="font-mono">min_cost</span>),{' '}
-                    <span className="font-mono">free</span> = gratis bila pesanan di atas <span className="font-mono">min_order</span>.
+                    <span className="font-mono">free</span> = gratis bila pesanan di atas <span className="font-mono">min_order</span>,{' '}
+                    <span className="font-mono">expedition</span> = tarif dari kurir (JNE, J&amp;T, ...) berbasis berat paket.
                   </p>
                 )}
 
                 {shippingMethods.map((sm, idx) => (
-                  <div key={sm.id ?? idx} className="rounded-xl border bg-slate-50/70 p-3 space-y-2">
+                  // key memakai idx, bukan sm.id: id kini berupa JENIS metode
+                  // (flat/distance/free), sehingga dua metode berjenis sama akan
+                  // menghasilkan key duplikat dan React salah mencocokkan baris.
+                  <div key={idx} className="rounded-xl border bg-slate-50/70 p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                         <span className="rounded bg-white border px-1.5 py-0.5">🚚</span>
@@ -818,16 +1203,28 @@ export default function OwnerWebStoreSetupPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         className="rounded-lg border px-2 py-1.5 text-xs"
-                        value={sm.id}
+                        // Pakai jenis hasil resolusi, bukan `sm.id` mentah:
+                        // data lama tersimpan sebagai "ship_flat", dan
+                        // membandingkannya langsung membuat pilihan ini tampak
+                        // kosong padahal metodenya berfungsi.
+                        value={shippingMethodKind(sm)}
                         onChange={(e) => {
                           const next = [...shippingMethods];
-                          next[idx] = { ...sm, id: e.target.value };
+                          // Set id DAN type sekaligus supaya data tersimpan
+                          // dalam bentuk yang dikenali backend.
+                          next[idx] = { ...sm, id: e.target.value, type: e.target.value };
                           setShippingMethods(next);
                         }}
                       >
+                        {shippingMethodKind(sm) === '' && (
+                          // Metode lama yang jenisnya tidak dikenali backend —
+                          // beri tahu merchant agar tidak diam-diam jadi Rp 0.
+                          <option value="">— Jenis tidak dikenali, pilih ulang —</option>
+                        )}
                         <option value="flat">Flat (tarif tetap)</option>
                         <option value="distance">Distance (per km)</option>
                         <option value="free">Free (gratis min order)</option>
+                        <option value="expedition">Ekspedisi (tarif kurir)</option>
                       </select>
                       <input
                         className="rounded-lg border px-2 py-1.5 text-xs"
@@ -839,7 +1236,7 @@ export default function OwnerWebStoreSetupPage() {
                           setShippingMethods(next);
                         }}
                       />
-                      {sm.id === 'flat' && (
+                      {shippingMethodKind(sm) === 'flat' && (
                         <input
                           className="rounded-lg border px-2 py-1.5 text-xs"
                           type="number"
@@ -853,7 +1250,7 @@ export default function OwnerWebStoreSetupPage() {
                           }}
                         />
                       )}
-                      {sm.id === 'distance' && (
+                      {shippingMethodKind(sm) === 'distance' && (
                         <>
                           <input
                             className="rounded-lg border px-2 py-1.5 text-xs"
@@ -881,7 +1278,7 @@ export default function OwnerWebStoreSetupPage() {
                           />
                         </>
                       )}
-                      {sm.id === 'free' && (
+                      {shippingMethodKind(sm) === 'free' && (
                         <input
                           className="rounded-lg border px-2 py-1.5 text-xs"
                           type="number"
@@ -896,6 +1293,47 @@ export default function OwnerWebStoreSetupPage() {
                         />
                       )}
                     </div>
+                    {/* Tarif ekspedisi berasal dari API kurir, bukan angka yang
+                        diisi merchant. Yang dipilih di sini hanya kurir mana
+                        yang dicoba — tiap kurir menambah satu panggilan API
+                        berbayar tiap kali tarif dihitung. */}
+                    {shippingMethodKind(sm) === 'expedition' && (
+                      <div className="rounded-lg border bg-white p-2">
+                        <p className="mb-1.5 text-[10px] font-semibold text-slate-500 uppercase">Kurir</p>
+                        <div className="flex flex-wrap gap-2">
+                          {KURIR_EKSPEDISI.map((k) => {
+                            const dipilih = (sm.couriers ?? []).includes(k.kode);
+                            return (
+                              <label key={k.kode} className="flex items-center gap-1 text-xs text-slate-600">
+                                <input
+                                  type="checkbox"
+                                  checked={dipilih}
+                                  onChange={(e) => {
+                                    const next = [...shippingMethods];
+                                    const lama = sm.couriers ?? [];
+                                    const baru = e.target.checked
+                                      ? [...lama, k.kode]
+                                      : lama.filter((c) => c !== k.kode);
+                                    next[idx] = { ...sm, couriers: baru };
+                                    setShippingMethods(next);
+                                  }}
+                                />
+                                {k.nama}
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {(sm.couriers ?? []).length === 0 && (
+                          <p className="mt-1.5 text-[10px] text-slate-400">
+                            Belum ada kurir dipilih — pakai daftar bawaan (JNE, J&amp;T, SiCepat).
+                          </p>
+                        )}
+                        <p className="mt-1.5 text-[10px] leading-snug text-slate-400">
+                          Tarif dihitung otomatis dari kurir saat checkout. Isi dulu berat produk
+                          dan kecamatan asal outlet agar tarifnya akurat.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
