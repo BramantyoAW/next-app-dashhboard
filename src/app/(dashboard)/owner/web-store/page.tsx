@@ -1381,13 +1381,16 @@ export default function OwnerWebStoreSetupPage() {
                       ? 'Domain aktif — SSL sudah terbit, pembeli bisa membuka domain ini.'
                       : customDomainStatus === 'failed'
                         ? 'Pendaftaran domain gagal. Periksa kembali penulisan domain, lalu simpan ulang.'
-                        : 'Menunggu verifikasi. Arahkan CNAME ke cname.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
+                        : 'Menunggu verifikasi. Arahkan CNAME domain ini ke proxy-fallback.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
                   </span>
                 </div>
               )}
 
               <p className="text-xs text-slate-500 mt-1.5">
-                Hubungkan domain sendiri. Arahkan CNAME ke <code className="text-slate-500">cname.om-bot.com</code>.
+                Hubungkan domain sendiri. Di pengaturan DNS domain kamu, buat CNAME{' '}
+                <code className="text-slate-500">@</code> →{' '}
+                <code className="text-slate-500">proxy-fallback.om-bot.com</code>. Jangan pakai A record —
+                SSL dan routing ditangani otomatis setelah domain tersimpan.
               </p>
             </Field>
             </>)}
