@@ -3,7 +3,28 @@ import type { NextRequest } from 'next/server';
 
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'om-bot.com';
 
-export function middleware(request: NextRequest) {
+/** Resolve domain merchant (custom domain) → subdomain_hash lewat backend. */
+async function resolveStoreHashByHost(host: string): Promise<string | null> {
+  const apiUrl = process.env.GRAPHQL_URL || 'http://laravel:8000/graphql';
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query($host: String!) { webStoreByHost(host: $host) { subdomain_hash } }`,
+        variables: { host },
+      }),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data?.webStoreByHost?.subdomain_hash ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const hostHeader = request.headers.get('host') || '';
   const hostname = hostHeader.split(':')[0];
   const pathname = request.nextUrl.pathname;
@@ -22,6 +43,11 @@ export function middleware(request: NextRequest) {
     storeHash = hostname.replace(`.${MAIN_DOMAIN}`, '');
   } else if (hostname.endsWith('.lvh.me')) {
     storeHash = hostname.replace('.lvh.me', '');
+  } else if (!isMain) {
+    // Host asing = custom domain merchant. Hanya dilayani kalau terdaftar di
+    // web_stores; selain itu 404 (cegah domain fronting lewat tunnel ini).
+    storeHash = await resolveStoreHashByHost(hostname);
+    if (!storeHash) return new NextResponse(null, { status: 404 });
   }
 
   if (storeHash) {

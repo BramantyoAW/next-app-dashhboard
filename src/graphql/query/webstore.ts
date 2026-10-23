@@ -4,7 +4,7 @@ export const WEBSTORE_BY_HASH = `
   query WebStoreByHash($hash: String!) {
     webStoreByHash(hash: $hash) {
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
-      logo_url banner_url custom_domain storefront_url
+      logo_url banner_url custom_domain custom_domain_status storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
       shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
@@ -18,7 +18,7 @@ export const WEBSTORE_BY_SLUG = `
   query WebStoreBySlug($slug: String!) {
     webStoreBySlug(slug: $slug) {
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
-      logo_url banner_url custom_domain storefront_url
+      logo_url banner_url custom_domain custom_domain_status storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
       shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
@@ -32,7 +32,7 @@ export const WEBSTORE_BY_OWNER = `
   query WebStoreByOwner($owner_id: ID!) {
     webStoreByOwner(owner_id: $owner_id) {
       id owner_id store_id slug subdomain_hash store_name theme_color tagline is_active
-      logo_url banner_url custom_domain storefront_url
+      logo_url banner_url custom_domain custom_domain_status storefront_url
       payment_methods { id type name bank_name account_number account_name instructions is_free enabled }
       shipping_methods { id name type cost per_km min_cost min_order couriers enabled }
       notify_whatsapp notify_telegram
@@ -152,6 +152,7 @@ export type WebStore = {
   logo_url?: string | null;
   banner_url?: string | null;
   custom_domain?: string | null;
+  custom_domain_status?: string | null;
   storefront_url?: string | null;
   payment_methods?: PaymentMethodConfig[];
   shipping_methods?: ShippingMethod[];

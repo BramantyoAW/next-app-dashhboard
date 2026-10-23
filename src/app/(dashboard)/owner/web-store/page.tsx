@@ -147,6 +147,7 @@ export default function OwnerWebStoreSetupPage() {
   const [lokasiMsg, setLokasiMsg] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
   const [customDomain, setCustomDomain] = useState('');
+  const [customDomainStatus, setCustomDomainStatus] = useState<string>('none');
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -190,6 +191,7 @@ export default function OwnerWebStoreSetupPage() {
           setTagline(w.tagline ?? '');
           setActive(!!w.is_active);
           setCustomDomain(w.custom_domain ?? '');
+          setCustomDomainStatus(w.custom_domain_status ?? 'none');
           setNotifyWhatsapp(w.notify_whatsapp ?? '');
           setNotifyTelegram(w.notify_telegram ?? '');
           setPaymentMethods(w.payment_methods ?? []);
@@ -550,6 +552,7 @@ export default function OwnerWebStoreSetupPage() {
         notify_telegram: notifyTelegram.trim() || null,
       });
       setWs(res.upsertWebStore);
+      setCustomDomainStatus(res.upsertWebStore.custom_domain_status ?? 'none');
       setSubdomainHash(res.upsertWebStore.subdomain_hash ?? '');
       if (pagesDirty && draftPages.length > 0) {
         await Promise.all(draftPages.map((p) => upsertWebPage(token, {
@@ -1361,6 +1364,28 @@ export default function OwnerWebStoreSetupPage() {
                 onChange={(e) => setCustomDomain(e.target.value)}
                 placeholder="toko-anda.com (opsional)"
               />
+
+              {customDomain.trim() && (
+                <div className="mt-2 flex items-start gap-2 text-xs">
+                  <span
+                    className={`mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 ${
+                      customDomainStatus === 'active'
+                        ? 'bg-emerald-500'
+                        : customDomainStatus === 'failed'
+                          ? 'bg-rose-500'
+                          : 'bg-amber-400'
+                    }`}
+                  />
+                  <span className="text-slate-600">
+                    {customDomainStatus === 'active'
+                      ? 'Domain aktif — SSL sudah terbit, pembeli bisa membuka domain ini.'
+                      : customDomainStatus === 'failed'
+                        ? 'Pendaftaran domain gagal. Periksa kembali penulisan domain, lalu simpan ulang.'
+                        : 'Menunggu verifikasi. Arahkan CNAME ke cname.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
+                  </span>
+                </div>
+              )}
+
               <p className="text-xs text-slate-500 mt-1.5">
                 Hubungkan domain sendiri. Arahkan CNAME ke <code className="text-slate-500">cname.om-bot.com</code>.
               </p>
