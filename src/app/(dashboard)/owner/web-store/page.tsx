@@ -148,6 +148,11 @@ export default function OwnerWebStoreSetupPage() {
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
   const [customDomain, setCustomDomain] = useState('');
   const [customDomainStatus, setCustomDomainStatus] = useState<string>('none');
+  // Instruksi record DNS dari backend: token TXT tidak bisa ditebak merchant,
+  // jadi harus ditampilkan apa adanya untuk disalin.
+  const [customDomainDns, setCustomDomainDns] = useState<
+    { type: string; name: string; value: string; note?: string }[]
+  >([]);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -192,6 +197,7 @@ export default function OwnerWebStoreSetupPage() {
           setActive(!!w.is_active);
           setCustomDomain(w.custom_domain ?? '');
           setCustomDomainStatus(w.custom_domain_status ?? 'none');
+          setCustomDomainDns((w as any).custom_domain_dns ?? []);
           setNotifyWhatsapp(w.notify_whatsapp ?? '');
           setNotifyTelegram(w.notify_telegram ?? '');
           setPaymentMethods(w.payment_methods ?? []);
@@ -1387,14 +1393,37 @@ export default function OwnerWebStoreSetupPage() {
               )}
 
               <p className="text-xs text-slate-500 mt-1.5">
-                Hubungkan domain sendiri. Di pengaturan DNS domain kamu, buat CNAME{' '}
-                <code className="text-slate-500">@</code> →{' '}
-                <code className="text-slate-500">proxy-fallback.om-bot.com</code>. Jangan pakai A record.
+                Hubungkan domain sendiri. Tambahkan record berikut di pengaturan DNS domain kamu.
+                Kolom nama diisi relatif terhadap domain — tulis <code>@</code> atau <code>www</code>,
+                jangan nama lengkap, karena banyak registrar menambahkan domain otomatis.
               </p>
+              {customDomainDns.length > 0 && (
+                <div className="mt-2 overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-slate-500">
+                      <tr>
+                        <th className="text-left font-medium px-3 py-2">Tipe</th>
+                        <th className="text-left font-medium px-3 py-2">Nama</th>
+                        <th className="text-left font-medium px-3 py-2">Nilai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customDomainDns.map((r, i) => (
+                        <tr key={i} className="border-t border-slate-100 align-top">
+                          <td className="px-3 py-2 font-mono text-slate-700">{r.type}</td>
+                          <td className="px-3 py-2 font-mono text-slate-700 break-all">{r.name}</td>
+                          <td className="px-3 py-2 font-mono text-slate-700 break-all">{r.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               <p className="text-xs text-amber-600 mt-1">
-                Domain tanpa <code>www</code> (root) tidak bisa memakai CNAME di banyak registrar.
-                Kalau ditolak, pindahkan nameserver domain ke Cloudflare (gratis) — di sana CNAME
-                di root otomatis di-flatten. Subdomain <code>www</code> selalu bisa tanpa langkah ini.
+                Record <code>@</code> (root domain) ditolak sebagian registrar karena bentrok dengan
+                SOA/NS yang selalu ada di sana. Kalau muncul pesan seperti "Conflicts with pre-existing
+                RRset", pakai record <code>www</code> saja, atau pindahkan nameserver domain ke
+                Cloudflare (gratis) yang bisa memakai CNAME di root.
               </p>
             </Field>
             </>)}
