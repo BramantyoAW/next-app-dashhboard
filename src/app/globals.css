@@ -30,8 +30,8 @@
   /* Custom landing page vars */
   --hero-gradient: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 40%, #eef2ff 100%);
   --card-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --accent-blue: #3b82f6;
-  --accent-indigo: #6366f1;
+  --accent-blue: #4f46e5;
+  --accent-indigo: #4338ca;
   --accent-cyan: #06b6d4;
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -109,7 +109,7 @@
     background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
   }
   .bg-gradient-brand-hover {
-    background-image: linear-gradient(135deg, #2563eb, #4f46e5);
+    background-image: linear-gradient(135deg, #4338ca, #3730a3);
   }
   .shadow-card {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04),
