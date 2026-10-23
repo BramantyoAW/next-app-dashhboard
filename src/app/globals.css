@@ -240,3 +240,68 @@ html {
   background-color: #dbeafe;
   color: #1e40af;
 }
+/* ═══════════════════════════════════════════════════════════════════
+   REMAP PALET — Design System C "Lembut Modern"
+   ───────────────────────────────────────────────────────────────────
+   Tailwind v4 menulis utility sebagai var(--color-<nama>-<n>). Dengan
+   mendefinisikan ulang variabelnya di sini, SELURUH halaman yang masih
+   memakai kelas lama (slate/blue/gray) langsung ikut tema baru tanpa
+   perlu menyentuh satu file pun.
+
+   Konsekuensi yang disengaja:
+     slate/gray  → netral murni (bukan kebiruan), teks #18181b
+     blue/indigo → satu aksen indigo #4f46e5
+   Warna status (emerald/rose/amber/red) TIDAK diubah: itu makna, bukan gaya.
+   ═══════════════════════════════════════════════════════════════════ */
+.ds-app {
+  /* netral — dipakai 1788x sebagai text/border/bg */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #ededf2;
+  --color-slate-300: #dcdce4;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
+
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #ededf2;
+  --color-gray-300: #dcdce4;
+  --color-gray-400: #a1a1aa;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #27272a;
+  --color-gray-900: #18181b;
+
+  /* aksen tunggal — dipakai 418x (blue) + 167x (indigo) */
+  --color-blue-50: #eef2ff;
+  --color-blue-100: #e0e7ff;
+  --color-blue-200: #c7d2fe;
+  --color-blue-300: #a5b4fc;
+  --color-blue-400: #818cf8;
+  --color-blue-500: #6366f1;
+  --color-blue-600: #4f46e5;
+  --color-blue-700: #4338ca;
+  --color-blue-800: #3730a3;
+  --color-blue-900: #312e81;
+
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+
+  /* radius lebih lapang (C), dipakai rounded-2xl/3xl di kartu */
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+}

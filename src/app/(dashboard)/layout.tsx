@@ -8,5 +8,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!token) redirect('/login');
   const payload = decodeJwt(token);
   if (!payload) redirect('/login');
-  return <>{children}</>;
+  // `.ds-app` memuat remap palet design system (slate/blue → netral+indigo).
+  // Sengaja di sini, BUKAN di :root, supaya storefront tenant tidak ikut berubah.
+  return <div className="ds-app">{children}</div>;
 }
