@@ -29,6 +29,13 @@ export async function middleware(request: NextRequest) {
   const hostname = hostHeader.split(':')[0];
   const pathname = request.nextUrl.pathname;
 
+  // HTTP DCV: Cloudflare bisa meminta token ACME langsung ke origin. Jangan
+  // di-rewrite ke storefront dan jangan kena 404 host-asing — token harus
+  // dilayani apa adanya, kalau tidak sertifikat tidak pernah terbit.
+  if (pathname.startsWith('/.well-known/')) {
+    return NextResponse.next();
+  }
+
   const isMain =
     hostname === MAIN_DOMAIN ||
     hostname === `www.${MAIN_DOMAIN}` ||
