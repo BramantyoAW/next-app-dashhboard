@@ -1389,8 +1389,12 @@ export default function OwnerWebStoreSetupPage() {
               <p className="text-xs text-slate-500 mt-1.5">
                 Hubungkan domain sendiri. Di pengaturan DNS domain kamu, buat CNAME{' '}
                 <code className="text-slate-500">@</code> →{' '}
-                <code className="text-slate-500">proxy-fallback.om-bot.com</code>. Jangan pakai A record —
-                SSL dan routing ditangani otomatis setelah domain tersimpan.
+                <code className="text-slate-500">proxy-fallback.om-bot.com</code>. Jangan pakai A record.
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                Domain tanpa <code>www</code> (root) tidak bisa memakai CNAME di banyak registrar.
+                Kalau ditolak, pindahkan nameserver domain ke Cloudflare (gratis) — di sana CNAME
+                di root otomatis di-flatten. Subdomain <code>www</code> selalu bisa tanpa langkah ini.
               </p>
             </Field>
             </>)}
