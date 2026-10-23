@@ -488,7 +488,8 @@ export default function OwnerWebStoreCategoriesPage() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                 {form.id ? 'Simpan Perubahan' : 'Buat Kategori'}

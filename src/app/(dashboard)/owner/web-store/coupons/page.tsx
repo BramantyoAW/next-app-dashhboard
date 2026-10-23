@@ -474,7 +474,8 @@ export default function OwnerWebStoreCouponsPage() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-50 text-slate-900 text-sm font-bold shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                 {editing.id ? 'Simpan Perubahan' : 'Buat Kupon'}

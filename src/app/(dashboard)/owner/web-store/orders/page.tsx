@@ -125,12 +125,12 @@ export default function WebOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="ds-page-head">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Package size={24} className="text-blue-600" /> Web Orders
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Package size={22} className="text-slate-400" /> Web Orders
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Pesanan dari toko online Anda.</p>
+          <p className="text-sm text-slate-500 mt-1">Pesanan dari toko online Anda.</p>
         </div>
         <div className="flex gap-3">
           <select
