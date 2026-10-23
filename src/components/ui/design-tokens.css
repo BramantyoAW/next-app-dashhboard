@@ -1,17 +1,10 @@
 /**
- * DESIGN TOKENS — Fase 0 (proposal).
+ * DESIGN TOKENS — dikunci 2026-10-23.
  *
- * Semua aturan di-scope ke `.ds` sehingga TIDAK menyentuh UI yang sudah ada.
- * Tujuannya: melihat hasil sebelum satu halaman pun diubah.
- *
- * Tiga arah warna. Pilih satu, lalu token pemenang dipindah ke :root
- * di globals.css pada Fase 1.
- *
- * Aturan yang dipegang di ketiga arah (biar tidak "usang"):
- *  - 1 aksen saja, sisanya netral.
- *  - radius & spacing konsisten, tanpa pengecualian.
- *  - border tipis; pemisah utama pakai whitespace, bukan garis.
- *  - bayangan nyaris tak terlihat. Kedalaman dari border + latar, bukan blur.
+ * Arah C "Lembut Modern" dipilih owner. Token pemenang ada di :root
+ * globals.css agar semua halaman memakainya. Blok [data-theme] di bawah
+ * HANYA untuk halaman /design (membandingkan tiga arah) dan boleh dihapus
+ * tanpa mempengaruhi aplikasi.
  */
 
 /* ───────────────────────── A. NETRAL HANGAT ─────────────────────────
@@ -257,12 +250,17 @@
 .ds-textarea[aria-invalid='true'] {
   border-color: var(--ds-danger);
 }
+.ds-input-sm {
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
 .ds-hint {
   font-size: 12px;
   color: var(--ds-fg-muted);
   margin: 6px 0 0;
-}
-.ds-error {
+}.ds-error {
   font-size: 12px;
   color: var(--ds-danger);
   margin: 6px 0 0;
@@ -388,6 +386,259 @@
   flex-wrap: wrap;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--ds-border);
+}
+
+/* ───────────────────────── TOMBOL KECIL (baris padat) ─────────────────────────
+   Dipakai di dalam daftar/grid yang tidak muat tombol 36px. */
+.ds-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--ds-primary);
+  color: var(--ds-primary-fg);
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.ds-btn-sm:hover:not(:disabled) {
+  background: var(--ds-primary-hover);
+}
+.ds-btn-sm[data-tone='neutral'] {
+  background: var(--ds-surface);
+  color: var(--ds-fg);
+  border-color: var(--ds-border-strong);
+}
+.ds-btn-sm[data-tone='neutral']:hover:not(:disabled) {
+  background: var(--ds-surface-2);
+}
+.ds-btn-sm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ───────────────────────── ALERT ───────────────────────── */
+.ds-alert {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: var(--ds-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--ds-border);
+  background: var(--ds-surface-2);
+  color: var(--ds-fg);
+}
+.ds-alert[data-tone='ok'] {
+  color: #15803d;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.ds-alert[data-tone='bad'] {
+  color: var(--ds-danger);
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+/* ───────────────────────── UTIL KECIL ───────────────────────── */
+.ds-icon-muted {
+  color: var(--ds-fg-muted);
+  opacity: 0.75;
+}
+.ds-accent-text {
+  color: var(--ds-primary);
+}
+/* Catatan kosong di dalam panel (bukan empty-state halaman). */
+.ds-note {
+  padding: 11px 13px;
+  border: 1px dashed var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  text-align: center;
+  font-size: 12px;
+  color: var(--ds-fg-muted);
+  background: transparent;
+  margin: 0;
+}
+
+/* Kartu bersarang di dalam kartu (satu metode pembayaran / ongkir). */
+.ds-subcard {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  padding: 12px;
+}
+
+.ds-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ds-fg-muted);
+}
+
+.ds-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ds-fg-muted);
+  cursor: pointer;
+}
+
+.ds-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.ds-link-danger {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--ds-danger);
+  cursor: pointer;
+  text-decoration: none;
+}
+.ds-link-danger:hover {
+  text-decoration: underline;
+}
+
+.ds-link {
+  color: var(--ds-primary);
+  font-weight: 550;
+  text-decoration: none;
+}
+.ds-link:hover {
+  text-decoration: underline;
+}
+
+.ds-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ds-fg);
+  font-size: 12px;
+}
+
+/* Panel abu di dalam kartu: blok informasi, bukan bidang isian. */
+.ds-well {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  padding: 13px;
+  font-size: 12.5px;
+  color: var(--ds-fg-muted);
+}
+.ds-well[data-tone='accent'] {
+  border-color: color-mix(in srgb, var(--ds-primary) 22%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-primary) 5%, var(--ds-surface));
+}
+
+.ds-subcard-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-fg);
+}
+
+/* Daftar hasil pencarian / pilihan */
+.ds-list {
+  margin-top: 4px;
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  padding: 0;
+  list-style: none;
+}
+.ds-list > li + li {
+  border-top: 1px solid var(--ds-border);
+}
+.ds-list-row {
+  display: block;
+  width: 100%;
+  padding: 7px 9px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--ds-fg);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.ds-list-row:hover {
+  background: var(--ds-surface-2);
+}
+
+/* Baris toggle di dalam kartu (mis. Status Akses Publik). */
+.ds-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px;
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-surface-2);
+  cursor: pointer;
+}
+
+.ds-switch {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ds-primary);
+  cursor: pointer;
+  flex: none;
+}
+
+/* Akhiran domain (.om-bot.com) */
+.ds-suffix {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-border);
+  background: var(--ds-surface-2);
+  color: var(--ds-fg-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ds-table-wrap {
+  margin-top: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+}
+.ds-thead {
+  background: var(--ds-surface-2);
+  color: var(--ds-fg-muted);
+}
+
+.ds-divider-top {
+  padding-top: 14px;
+  border-top: 1px solid var(--ds-border);
 }
 
 /* ───────────────────────── STYLEGUIDE ONLY ───────────────────────── */
