@@ -290,7 +290,7 @@ export default function AdminAiPointsPage() {
                       {l.feature === 'design'
                         ? 'Design with OmBot AI'
                         : l.feature === 'assistance'
-                          ? 'OmBot AI Assistance'
+                          ? 'Manage OmBot AI'
                           : 'Saldo manual'}
                     </td>
                     <td>

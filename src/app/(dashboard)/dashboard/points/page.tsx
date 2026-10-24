@@ -225,7 +225,7 @@ export default function PointsPage() {
             </div>
             <div className="pt-4 flex items-center gap-2 text-sm italic" style={{ opacity: 0.8 }}>
               <Info size={16} />
-              <span>1 AI Point dipakai untuk setiap permintaan AI (Design with OmBot AI &amp; OmBot AI Assistance).</span>
+              <span>1 AI Point dipakai untuk setiap permintaan AI (Design with OmBot AI &amp; Manage OmBot AI).</span>
             </div>
           </div>
         </div>
@@ -369,7 +369,7 @@ export default function PointsPage() {
                         )}
                         <span style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>
                           {h.feature === 'design' ? 'Design with OmBot AI'
-                            : h.feature === 'assistance' ? 'OmBot AI Assistance'
+                            : h.feature === 'assistance' ? 'Manage OmBot AI'
                             : 'Penambahan saldo'}
                         </span>
                       </div>

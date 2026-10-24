@@ -5,6 +5,7 @@ import { Bot, Check, Clock, ImagePlus, Loader2, Maximize2, Minimize2, Send, Spar
 import { type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
+import { useAiSplitView } from '@/lib/aiSplitView';
 import { AiChangePreview, changedBlocksOf } from '@/components/web-store/AiChangePreview';
 import type { Data } from '@puckeditor/core';
 
@@ -128,6 +129,7 @@ export function PuckAiAssistant({
   onClose?: () => void;
 }) {
   const [open, setOpen] = useState(true);
+  useAiSplitView(open);
   const [maximized, setMaximized] = useState(false);
   const [message, setMessage] = useState('');
   const [images, setImages] = useState<{ preview: string; data: string }[]>([]);
@@ -271,7 +273,7 @@ export function PuckAiAssistant({
           className={`fixed right-0 z-[70] flex flex-col overflow-hidden border border-slate-200 bg-white shadow-2xl transition-all ${
             maximized
               ? 'inset-2 bottom-2 left-2 top-2 h-auto w-auto rounded-2xl sm:inset-3'
-              : 'bottom-0 h-[min(640px,86vh)] w-full max-w-sm rounded-t-2xl sm:bottom-5 sm:right-5 sm:rounded-2xl'
+              : 'top-0 h-dvh w-full lg:w-[var(--ai-split-w)]'
           }`}
         >
           <header className="flex items-center justify-between bg-slate-900 px-4 py-3 text-white">

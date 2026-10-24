@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Check, ChevronDown, Loader2, Send, Sparkles, Store, Trash2, X } from 'lucide-react';
 import { myStoresService, type MyStore } from '@/graphql/query/myStores';
+import { useAiSplitView } from '@/lib/aiSplitView';
 
 /**
- * "OmBot AI Assistance" — panel melayang untuk owner di halaman /dashboard/*.
+ * "Manage OmBot AI" — panel samping untuk owner di halaman /dashboard/*.
  *
  * Terpisah dari "Design with OmBot AI" (yang mengurus halaman/tema web store).
  * Panel ini menjawab pertanyaan DATA TOKO lewat tool calling di BE
@@ -74,6 +75,7 @@ export default function OmBotAiAssistance() {
   const [isPointHabis, setIsPointHabis] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
+  useAiSplitView(open);
 
   // Muat daftar toko (untuk pemilih toko aktif) sekali saat panel dibuka.
   useEffect(() => {
@@ -293,22 +295,22 @@ export default function OmBotAiAssistance() {
         <button
           onClick={() => setOpen(true)}
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:scale-105"
-          aria-label="Buka OmBot AI Assistance"
+          aria-label="Buka Manage OmBot AI"
         >
           <Sparkles size={18} />
-          <span className="hidden sm:inline">OmBot AI</span>
+          <span className="hidden sm:inline">Manage OmBot AI</span>
         </button>
       )}
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-0 right-0 z-40 flex h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-5 sm:right-5 sm:h-[620px] sm:w-[420px] sm:rounded-2xl">
+        <div className="fixed right-0 top-0 z-40 flex h-dvh w-full flex-col overflow-hidden border-l border-slate-200 bg-white lg:w-[var(--ai-split-w)]">
           {/* Header */}
           <header className="flex items-center justify-between gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white">
             <div className="flex min-w-0 items-center gap-2">
               <Bot size={20} />
               <div className="min-w-0">
-                <div className="truncate text-sm font-bold">OmBot AI Assistance</div>
+                <div className="truncate text-sm font-bold">Manage OmBot AI</div>
                 {/* Pemilih toko aktif — pengganti "ganti toko" */}
                 <button
                   onClick={() => setStoreOpen((v) => !v)}

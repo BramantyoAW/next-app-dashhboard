@@ -6,7 +6,7 @@ import { CheckCircle2, HelpCircle, Loader2, Pencil, Plus, Trash2, XCircle } from
 import { deleteFaqService, getFaqsService, upsertFaqService, type Faq } from '@/graphql/faq';
 
 /**
- * FAQ global untuk OmBot AI Assistance — diatur administrator.
+ * FAQ global untuk Manage OmBot AI — diatur administrator.
  * Jawaban di sini dipakai AI saat owner bertanya hal umum (bukan data toko).
  */
 export default function FaqSettingsPage() {
@@ -122,7 +122,7 @@ export default function FaqSettingsPage() {
         <div>
           <h1 className="ds-h1">FAQ OmBot AI</h1>
           <p className="ds-small">
-            Jawaban di sini dipakai <b>OmBot AI Assistance</b> saat owner bertanya hal umum
+            Jawaban di sini dipakai <b>Manage OmBot AI</b> saat owner bertanya hal umum
             (di luar data toko seperti stok/harga/order). Hanya FAQ <b>aktif</b> yang dipakai.
           </p>
         </div>

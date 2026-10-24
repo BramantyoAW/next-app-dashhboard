@@ -459,8 +459,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         )}
       </div>
 
-      {/* OmBot AI Assistance — panel melayang, tampil di semua halaman /dashboard/*.
-          Staff tidak melihatnya (staff diarahkan ke /chat). */}
+      {/* Manage OmBot AI — panel samping (split view), tampil di semua halaman
+          /dashboard/*. Staff tidak melihatnya (staff diarahkan ke /chat). */}
       {!isStaff && <OmBotAiAssistance />}
     </div>
   )

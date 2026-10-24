@@ -346,3 +346,19 @@ html {
     --tw-shadow: 0 0 #0000;
   }
 }
+
+/* ══ Split view panel AI ══════════════════════════════════════════════
+   Panel AI (Design / Manage) menempel di kanan dan konten digeser, bukan
+   ditutupi overlay. Lebar panel dan padding body memakai satu variabel
+   supaya tidak pernah selisih. Di bawah 1024px panel tetap full-screen
+   karena layar sempit tidak cukup untuk dua kolom. */
+:root {
+  --ai-split-w: 420px;
+}
+
+@media (min-width: 1024px) {
+  html.ai-split-on body {
+    padding-right: var(--ai-split-w);
+    transition: padding-right 0.18s ease;
+  }
+}
