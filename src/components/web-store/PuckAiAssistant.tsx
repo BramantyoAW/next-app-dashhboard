@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, Clock, ImagePlus, Loader2, Maximize2, Minimize2, Send, Sparkles, Trash2, X } from 'lucide-react';
-import { persistAiMessage, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
 import { AiChangePreview, changedBlocksOf } from '@/components/web-store/AiChangePreview';
@@ -243,12 +243,10 @@ export function PuckAiAssistant({
         },
       );
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
-      // Simpan ke riwayat toko (memory lintas sesi) — senyap bila gagal.
-      // reply_meta membawa `changes` supaya kartu preview bisa direkonstruksi
-      // saat riwayat dimuat ulang di sesi berikutnya.
-      if (webStoreId && result.reply) {
-        persistAiMessage(token, webStoreId, text, result.reply, { changes: result.changes }).catch(() => {});
-      }
+      // Riwayat TIDAK ditulis di sini: RunAiAssistantJob::persistHistory sudah
+      // menyimpan pasangan user+assistant (termasuk `changes`) setelah job
+      // selesai. Menulis lagi lewat aiSendMessage membuat tiap percakapan
+      // tercatat dua kali.
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI belum dapat dihubungi. Cek konfigurasi AI.' }]);
     } finally {

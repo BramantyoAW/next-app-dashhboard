@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bot, Check, ImagePlus, Loader2, Send, Sparkles, X, Trash2 } from 'lucide-react';
-import { persistAiMessage, clearAiHistory, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
+import { clearAiHistory, type AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 import { streamAskAi } from '@/lib/streamAskAi';
 import { getAiChatHistory } from '@/graphql/query/aiAssistant';
 
@@ -38,7 +38,8 @@ export function WebStoreAiAssistant({ context, webStoreId, scope = 'setup', onAp
         setBusyLabel(msg || (stage === 'thinking' ? 'AI membaca toko & menyusun saran…' : 'AI mengetik…'));
       });
       setMessages((m) => [...m, { role: 'assistant', text: result.reply, result }]);
-      if (webStoreId) await persistAiMessage(token, webStoreId, text, result.reply, { changes: result.changes });
+      // Riwayat sudah ditulis backend (RunAiAssistantJob::persistHistory)
+      // setelah job selesai — jangan ulangi lewat aiSendMessage.
     } catch (e: any) {
       setMessages((m) => [...m, { role: 'assistant', text: e?.message || 'AI assistant belum dapat dihubungi.' }]);
     } finally { setLoading(false); }
