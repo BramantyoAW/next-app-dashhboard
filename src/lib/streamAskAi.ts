@@ -1,10 +1,17 @@
 import type { AiAssistantResult } from '@/graphql/mutation/aiAssistant';
 
 /**
- * Panggil AI assistant via SSE (Opsi C):
- *  1. event `status` — instan, FE tampilkan "AI mengetik…" (tanpa freeze)
- *  2. event `result` — JSON penuh (reply + changes) setelah model selesai
- *  3. event `error` — pesan kegagalan
+ * Panggil AI assistant lewat jalur queue (bukan SSE).
+ *
+ * Backend `POST /api/ai/stream` sekarang hanya men-dispatch job dan langsung
+ * membalas `202 { job_id, status: "queued" }` — AI berjalan di queue supaya
+ * satu request tidak menahan worker HTTP 10–180 detik. Hasilnya diambil dengan
+ * polling `GET /api/ai/job/{jobId}` sampai `done` / `failed`.
+ *
+ * Sebelumnya fungsi ini mem-parse SSE dan menunggu event `result`; karena
+ * backend tidak lagi mengirim SSE, hasil tidak pernah datang dan pemanggil
+ * selalu mendapat "AI tidak mengembalikan hasil" padahal AI sudah selesai
+ * (dan poin sudah terpotong).
  *
  * Input sama persis dengan mutation GraphQL `askWebStoreAssistant`.
  * Mengembalikan hasil final; menolak bila error / tidak ada result.
@@ -26,71 +33,63 @@ export async function streamAskAi(
     (typeof window !== 'undefined' ? (window as any).NEXT_PUBLIC_BACKEND_BASE : '') ||
     'http://localhost:8000';
 
-  const ctrl = new AbortController();
-  const res = await fetch(`${backend}/api/ai/stream`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ input }),
-    signal: ctrl.signal,
-    cache: 'no-store',
-  });
+  const auth = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
-  if (!res.ok || !res.body) {
+  const failFromBody = async (res: Response, fallback: string) => {
     const txt = await res.text().catch(() => '');
     // Backend membalas JSON { message, code } — tampilkan pesannya apa adanya,
     // terutama saat saldo AI Point habis (HTTP 402), bukan dump JSON mentah.
     let pesan = '';
     try {
-      pesan = String(JSON.parse(txt)?.message ?? '');
+      const j = JSON.parse(txt);
+      pesan = String(j?.message ?? j?.errors?.web_store_id?.[0] ?? '');
     } catch {
       pesan = txt.slice(0, 200);
     }
-    throw new Error(pesan || `AI stream HTTP ${res.status}`);
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buf = '';
-  let done = false;
-  let result: AiAssistantResult | null = null;
-  let errorMsg = '';
-
-  const parsePayload = (payload: string) => {
-    try {
-      return JSON.parse(payload);
-    } catch {
-      return null;
-    }
+    throw new Error(pesan || fallback);
   };
 
-  while (!done) {
-    const { value, done: d } = await reader.read();
-    done = d;
-    if (value) buf += decoder.decode(value, { stream: !done });
+  onStatus?.('thinking', 'AI membaca toko & menyusun saran…');
 
-    let idx;
-    while ((idx = buf.indexOf('\n\n')) !== -1) {
-      const block = buf.slice(0, idx);
-      buf = buf.slice(idx + 2);
-      let event = 'message';
-      const dataLines: string[] = [];
-      for (const line of block.split('\n')) {
-        if (line.startsWith('event: ')) event = line.slice(7).trim();
-        else if (line.startsWith('data: ')) dataLines.push(line.slice(6));
-      }
-      const data = dataLines.map(parsePayload).find((x) => x !== null) ?? null;
+  const res = await fetch(`${backend}/api/ai/stream`, {
+    method: 'POST',
+    headers: auth,
+    body: JSON.stringify({ input }),
+    cache: 'no-store',
+  });
 
-      if (event === 'status' && data && onStatus) {
-        onStatus(String(data.stage ?? ''), String(data.message ?? ''));
-      } else if (event === 'result' && data) {
-        result = data as AiAssistantResult;
-      } else if (event === 'error' && data) {
-        errorMsg = String(data.message ?? 'AI gagal merespons.');
-      }
+  if (!res.ok) await failFromBody(res, `AI stream HTTP ${res.status}`);
+
+  const queued = await res.json().catch(() => null);
+  const jobId = String(queued?.job_id ?? '');
+  if (!jobId) await failFromBody(res, 'AI tidak mengembalikan job. Coba lagi.');
+
+  // Job timeout backend 200s (RunAiAssistantJob::$timeout). Beri margin lalu
+  // berhenti, supaya UI tidak menggantung selamanya bila worker mati.
+  const deadline = Date.now() + 210_000;
+
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+
+    const poll = await fetch(`${backend}/api/ai/job/${encodeURIComponent(jobId)}`, {
+      headers: auth,
+      cache: 'no-store',
+    });
+    if (!poll.ok) await failFromBody(poll, `AI job HTTP ${poll.status}`);
+
+    const data = await poll.json().catch(() => null);
+    const status = String(data?.status ?? '');
+
+    if (status === 'done') {
+      const result = data?.result as AiAssistantResult | undefined;
+      if (!result) throw new Error('AI tidak mengembalikan hasil. Coba lagi.');
+      return result;
     }
+    if (status === 'failed') {
+      throw new Error(String(data?.error ?? 'AI gagal merespons.'));
+    }
+    onStatus?.('thinking', 'AI mengetik…');
   }
 
-  if (errorMsg) throw new Error(errorMsg);
-  if (!result) throw new Error('AI tidak mengembalikan hasil. Coba lagi.');
-  return result;
+  throw new Error('AI belum selesai setelah 3 menit. Coba lagi.');
 }
