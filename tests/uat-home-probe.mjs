@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch({ args:['--no-sandbox','--disable-dev-shm-usage'] });
+const c = await b.newContext({ ignoreHTTPSErrors:true, viewport:{width:1366,height:900} });
+const p = await c.newPage();
+const r = await p.goto('https://demostore.om-bot.com/', { waitUntil:'networkidle', timeout:60000 });
+console.log('status', r.status());
+await p.waitForTimeout(4000);
+const t = await p.locator('body').innerText();
+console.log('innerText len', t.length);
+console.log('--- text ---'); console.log(t.slice(0,700));
+console.log('--- html len ---', (await p.content()).length);
+console.log('--- headings ---', JSON.stringify(await p.locator('h1,h2,h3').evaluateAll(e=>e.map(x=>x.innerText.trim()).filter(Boolean).slice(0,10))));
+console.log('--- imgs ---', await p.locator('img').count());
+await p.screenshot({ path:'/app/tests/home.png' });
+await b.close();
