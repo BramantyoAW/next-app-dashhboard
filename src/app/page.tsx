@@ -31,7 +31,7 @@ export default function Home() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex h-10 items-center justify-center rounded-full bg-gradient-brand px-5 py-2 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--ds-primary)] px-5 py-2 text-sm font-bold text-[var(--ds-primary-fg)] shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 disabled:pointer-events-none disabled:opacity-50"
             >
               Mulai
             </Link>
@@ -69,7 +69,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-3 pt-2 animate-fade-up animation-delay-200">
                 <Link
                   href="/login"
-                  className="inline-flex h-12 md:h-14 items-center justify-center rounded-full bg-gradient-brand px-8 md:px-10 py-3 text-base md:text-lg font-bold text-white shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 group"
+                  className="inline-flex h-12 md:h-14 items-center justify-center rounded-full bg-[var(--ds-primary)] px-8 md:px-10 py-3 text-base md:text-lg font-bold text-[var(--ds-primary-fg)] shadow-xl transition-all hover:shadow-2xl hover:-translate-y-1 group"
                 >
                   Mulai Sekarang
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -181,7 +181,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/login"
-                  className="inline-flex h-11 items-center justify-center rounded-full bg-gradient-brand px-8 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 group"
+                  className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--ds-primary)] px-8 py-2.5 text-sm font-bold text-[var(--ds-primary-fg)] shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 group"
                 >
                   Mulai Gratis
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -267,7 +267,7 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="w-full py-16 md:py-24 bg-gradient-brand relative overflow-hidden">
+        <section className="w-full py-16 md:py-24 bg-[var(--ds-primary)] relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_50%,_white,transparent_60%)]"></div>
           </div>

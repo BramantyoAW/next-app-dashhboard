@@ -57,7 +57,7 @@ export default function ChatBubble({
           className={`relative max-w-[75%] px-4 py-2.5 shadow-sm transition-all ${
             isOwn
               // CHANGED: Bubble kanan pakai gradient biru dan border radius diubah sedikit
-              ? 'bg-gradient-brand text-white rounded-2xl rounded-br-sm'
+              ? 'bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] rounded-2xl rounded-br-sm'
               // CHANGED: Bubble kiri background putih bersih dengan subtle shadow
               : 'bg-white border border-slate-100 text-slate-800 rounded-2xl rounded-bl-sm'
           }`}

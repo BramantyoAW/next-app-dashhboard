@@ -51,7 +51,7 @@ function ResetPasswordForm() {
   const invalid = !token || !email;
 
   return (
-    <div className="relative z-10 w-full max-w-md space-y-6 rounded-3xl bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
+    <div className="relative z-10 w-full max-w-md space-y-6 rounded-[var(--ds-radius)] bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
 
       {error && (
         <div className="ds-alert" data-tone="bad">

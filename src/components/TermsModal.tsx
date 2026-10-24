@@ -35,7 +35,7 @@ export default function TermsModal({
     >
       <div
         ref={panelRef}
-        className="w-full max-w-4xl max-h-[90vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
+        className="w-full max-w-4xl max-h-[90vh] rounded-[var(--ds-radius)] bg-white shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}

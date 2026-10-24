@@ -160,9 +160,9 @@ export default function LoginPage() {
 
       {/* Right Column - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-white overflow-y-auto">
-        <div className="relative z-10 w-full max-w-md my-8 space-y-6 rounded-3xl bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
+        <div className="relative z-10 w-full max-w-md my-8 space-y-6 rounded-[var(--ds-radius)] bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
           {loading && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50">
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-[var(--ds-radius)] flex items-center justify-center z-50">
               <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" />
             </div>
           )}

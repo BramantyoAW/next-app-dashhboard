@@ -83,7 +83,7 @@ export default function PaymentHistoryPage() {
               <X size={20} />
             </button>
             <div className="absolute -bottom-10 left-8">
-              <div className="w-24 h-24 rounded-3xl p-2" style={{ background: 'var(--ds-surface)', border: '1px solid var(--ds-border)', boxShadow: 'var(--ds-shadow-lg)' }}>
+              <div className="w-24 h-24 rounded-[var(--ds-radius)] p-2" style={{ background: 'var(--ds-surface)', border: '1px solid var(--ds-border)', boxShadow: 'var(--ds-shadow-lg)' }}>
                 <div className="w-full h-full rounded-2xl flex items-center justify-center overflow-hidden" style={{ background: 'var(--ds-surface-2)' }}>
                    {store.image ? (
                      <img src={resolveImageUrl(store.image)} alt="Logo" className="w-full h-full object-cover" />

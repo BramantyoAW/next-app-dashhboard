@@ -299,7 +299,7 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl flex items-center justify-center border border-blue-100/50">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[var(--ds-radius)] flex items-center justify-center border border-blue-100/50">
               <MessageCircle size={36} className="text-blue-400" />
             </div>
             <div className="text-center space-y-1">
@@ -349,7 +349,7 @@ export default function ChatPage({ params }: { params: { merchantId: string } })
             {/* Typing indicator placeholder */}
             {sending && (
               <div className="flex justify-end mb-2">
-                <div className="bg-gradient-brand border border-blue-500 rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
+                <div className="bg-[var(--ds-primary)] border border-[var(--ds-primary)] rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

@@ -176,7 +176,7 @@ export default function ChatInput({
           // CHANGED: animasi scale muncul saat ada konten (active:scale-95)
           className={`p-2.5 rounded-2xl flex-shrink-0 transition-all shadow-sm ${
             hasContent && !disabled
-              ? 'bg-gradient-brand text-white hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
+              ? 'bg-[var(--ds-primary)] text-[var(--ds-primary-fg)] hover:shadow-md hover:-translate-y-0.5 active:scale-95 cursor-pointer'
               : 'bg-slate-100 text-slate-300 cursor-not-allowed opacity-70'
           }`}
         >

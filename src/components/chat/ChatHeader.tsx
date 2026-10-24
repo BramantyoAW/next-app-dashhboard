@@ -57,7 +57,7 @@ export default function ChatHeader({
             // CHANGED: Avatar lebih besar (44px, w-11 h-11) dan rounded-xl
             <img src={merchantImage} alt={merchantName} className="w-11 h-11 rounded-xl object-cover shadow-sm" />
           ) : (
-            <div className="w-11 h-11 rounded-xl bg-gradient-brand flex items-center justify-center text-white font-bold shadow-sm text-lg">
+            <div className="w-11 h-11 rounded-xl bg-[var(--ds-primary)] flex items-center justify-center text-[var(--ds-primary-fg)] font-bold shadow-sm text-lg">
               {merchantName[0]?.toUpperCase() ?? 'M'}
             </div>
           )}
