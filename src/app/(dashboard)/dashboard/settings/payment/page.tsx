@@ -104,24 +104,24 @@ export default function OwnerPaymentSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="animate-spin text-slate-400" size={32} />
+        <Loader2 className="animate-spin ds-icon-muted" size={32} />
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900">Pengaturan Pembayaran</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Atur metode pembayaran di level owner. Semua web store dan POS akan menggunakan pengaturan ini.
-        </p>
+      <div className="ds-page-head">
+        <div>
+          <h1 className="ds-display">Pengaturan Pembayaran</h1>
+          <p className="ds-hint">
+            Atur metode pembayaran di level owner. Semua web store dan POS akan menggunakan pengaturan ini.
+          </p>
+        </div>
       </div>
 
       {status && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border ${
-          status.kind === 'ok' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
+        <div className="ds-alert" data-tone={status.kind === 'ok' ? 'ok' : 'bad'}>
           {status.kind === 'ok' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
           {status.msg}
         </div>
@@ -129,19 +129,20 @@ export default function OwnerPaymentSettingsPage() {
 
       <div className="space-y-4">
         {settings.map((s, idx) => (
-          <div key={s.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+          <div key={s.id} className="ds-card ds-card-pad space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <CreditCard size={16} className="text-slate-400" />
+              <div className="flex items-center gap-2" style={{ fontSize: 14, fontWeight: 600 }}>
+                <CreditCard size={16} className="ds-icon-muted" />
                 Metode #{idx + 1}
-                <label className="ml-2 flex items-center gap-1 text-xs text-slate-500">
+                <label className="ml-2 flex items-center gap-1 ds-caption">
                   <input type="checkbox" checked={s.enabled} onChange={e => updateField(idx, 'enabled', e.target.checked)} />
                   Aktif
                 </label>
               </div>
               <button
                 onClick={() => deleteSetting(s.id)}
-                className="text-xs text-rose-500 hover:underline"
+                className="ds-link-danger"
+                style={{ fontSize: 12 }}
               >
                 Hapus
               </button>
@@ -149,13 +150,13 @@ export default function OwnerPaymentSettingsPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <input
-                className="rounded-lg border px-3 py-2 text-sm"
+                className="ds-input"
                 placeholder="Nama (cth: Bank BCA)"
                 value={s.name}
                 onChange={e => updateField(idx, 'name', e.target.value)}
               />
               <select
-                className="rounded-lg border px-3 py-2 text-sm"
+                className="ds-select"
                 value={s.type}
                 onChange={e => updateField(idx, 'type', e.target.value)}
               >
@@ -168,19 +169,19 @@ export default function OwnerPaymentSettingsPage() {
               {s.type !== 'cod' && (
                 <>
                   <input
-                    className="rounded-lg border px-3 py-2 text-sm"
+                    className="ds-input"
                     placeholder="Bank / Provider"
                     value={s.bank_name ?? ''}
                     onChange={e => updateField(idx, 'bank_name', e.target.value)}
                   />
                   <input
-                    className="rounded-lg border px-3 py-2 text-sm"
+                    className="ds-input"
                     placeholder="Nomor rekening / ID"
                     value={s.account_number ?? ''}
                     onChange={e => updateField(idx, 'account_number', e.target.value)}
                   />
                   <input
-                    className="col-span-2 rounded-lg border px-3 py-2 text-sm"
+                    className="ds-input col-span-2"
                     placeholder="Atas nama (opsional)"
                     value={s.account_name ?? ''}
                     onChange={e => updateField(idx, 'account_name', e.target.value)}
@@ -189,7 +190,7 @@ export default function OwnerPaymentSettingsPage() {
               )}
 
               <input
-                className="col-span-2 rounded-lg border px-3 py-2 text-sm"
+                className="ds-input col-span-2"
                 placeholder="Instruksi tambahan (opsional)"
                 value={s.instructions ?? ''}
                 onChange={e => updateField(idx, 'instructions', e.target.value)}
@@ -200,7 +201,9 @@ export default function OwnerPaymentSettingsPage() {
 
         <button
           onClick={addNew}
-          className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-sm font-semibold text-slate-500 hover:border-slate-400 hover:text-slate-700 transition-colors"
+          className="ds-btn w-full"
+          data-variant="ghost"
+          style={{ borderStyle: 'dashed', borderColor: 'var(--ds-border-strong)', height: 42 }}
         >
           + Tambah Metode Pembayaran
         </button>
@@ -210,9 +213,10 @@ export default function OwnerPaymentSettingsPage() {
         <button
           onClick={() => settings.forEach(s => saveSetting(s))}
           disabled={saving}
-          className="px-6 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-700 disabled:opacity-50"
+          className="ds-btn"
+          data-variant="primary"
         >
-          {saving ? <Loader2 className="animate-spin inline mr-2" size={16} /> : null}
+          {saving ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
           Simpan Semua
         </button>
       </div>

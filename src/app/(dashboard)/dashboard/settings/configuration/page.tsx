@@ -69,59 +69,56 @@ export default function ConfigurationPage() {
 
   if (loading) {
     return (
-      <div className="p-6 animate-pulse text-gray-500">Loading settings...</div>
+      <div className="ds-caption">Loading settings...</div>
     );
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6">
 
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">
-        Store Configuration
-      </h1>
+      <div className="ds-page-head">
+        <div>
+          <h1 className="ds-display">Store Configuration</h1>
+          <p className="ds-hint">Pengaturan default untuk toko aktif.</p>
+        </div>
+      </div>
 
       {/* Minimum Stock Threshold */}
-      <div className="bg-white p-4 shadow-sm rounded border">
-        <h2 className="font-semibold mb-2">Stock Settings</h2>
+      <div className="ds-card ds-card-pad">
+        <h2 className="ds-h2">Stock Settings</h2>
 
-        <label className="block text-sm text-gray-600 mb-1">
-          Minimum Stock Notification
-        </label>
+        <label className="ds-label">Minimum Stock Notification</label>
         <input
           type="number"
-          className="input input-bordered w-full"
+          className="ds-input"
           value={settings.minimum_stock ?? ""}
           onChange={(e) => updateField("minimum_stock", Number(e.target.value))}
         />
       </div>
 
       {/* Order Prefix */}
-      <div className="bg-white p-4 shadow-sm rounded border">
-        <h2 className="font-semibold mb-2">Order Settings</h2>
+      <div className="ds-card ds-card-pad">
+        <h2 className="ds-h2">Order Settings</h2>
 
-        <label className="block text-sm text-gray-600 mb-1">
-          Default Order Prefix
-        </label>
+        <label className="ds-label">Default Order Prefix</label>
         <input
           type="text"
-          className="input input-bordered w-full"
+          className="ds-input"
           value={settings.order_prefix ?? ""}
           onChange={(e) => updateField("order_prefix", e.target.value)}
         />
       </div>
 
       {/* Report Schedule */}
-      <div className="bg-white p-4 shadow-sm rounded border">
-        <h2 className="font-semibold mb-2">Report Schedule</h2>
-        <div className="text-xs text-gray-500 mb-2">
+      <div className="ds-card ds-card-pad">
+        <h2 className="ds-h2">Report Schedule</h2>
+        <p className="ds-hint">
           Note: Report will be sent 10 PM - 12 PM every selected schedule.
-        </div>
-        
-        <label className="block text-sm text-gray-600 mb-1">
-          Send Report Every
-        </label>
+        </p>
+
+        <label className="ds-label mt-3">Send Report Every</label>
         <select
-          className="select select-bordered w-full"
+          className="ds-select"
           value={settings.report_schedule ?? ""}
           onChange={(e) => updateField("report_schedule", e.target.value)}
         >
@@ -135,7 +132,8 @@ export default function ConfigurationPage() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className="ds-btn"
+        data-variant="primary"
       >
         {saving ? "Saving..." : "Save Settings"}
       </button>
