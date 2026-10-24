@@ -140,16 +140,30 @@ function SidebarLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 md:px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-        isActive
-          ? 'bg-gradient-brand text-white shadow-md font-semibold'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-      }`}
+      aria-current={isActive ? 'page' : undefined}
+      data-active={isActive ? 'true' : undefined}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '9px 11px',
+        borderRadius: 10,
+        fontSize: 13.5,
+        fontWeight: isActive ? 600 : 500,
+        textDecoration: 'none',
+        background: isActive ? 'var(--ds-surface-2)' : 'transparent',
+        color: isActive ? 'var(--ds-fg)' : 'var(--ds-fg-muted)',
+        transition: 'background-color .12s ease, color .12s ease',
+      }}
     >
-      <span className={`${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-200`}>
+      <span
+        style={{ flex: 'none', display: 'inline-flex', color: isActive ? 'var(--ds-primary)' : 'inherit' }}
+      >
         {icon}
       </span>
-      <span className="text-sm">{children}</span>
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {children}
+      </span>
     </Link>
   )
 }
@@ -205,12 +219,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div className="min-h-screen flex" style={{ background: 'var(--ds-bg)' }}>
 
       {/* Sidebar Overlay */}
       {!isStaff && isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          style={{ background: 'rgba(24,24,27,.32)' }}
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -218,32 +233,51 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       {!isStaff && (
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 md:w-72 bg-white border-r border-slate-200 p-4 md:p-6 flex flex-col
-        transition-transform duration-300 ease-in-out shadow-lg lg:shadow-none
+        fixed inset-y-0 left-0 z-50 w-64 md:w-72 flex flex-col p-4 md:p-6
+        transition-transform duration-300 ease-in-out lg:shadow-none
         lg:translate-x-0 lg:static lg:inset-auto lg:z-auto
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      `}
+      style={{
+        background: 'var(--ds-surface)',
+        borderRight: '1px solid var(--ds-border)',
+        boxShadow: 'var(--ds-shadow-lg)',
+      }}>
         {/* Logo */}
         <div className="flex items-center justify-between mb-8 md:mb-10">
           <Link href="/dashboard" className="flex flex-col items-center gap-3 group w-full pt-2">
-            <div className="relative">
-              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
-              <img
-                src="/ombotico.png"
-                alt="OmBot"
-                className="relative w-16 md:w-24 h-16 md:h-24 object-contain transition-all duration-500 group-hover:scale-105 drop-shadow-xl"
-              />
-            </div>
+            <img
+              src="/ombotico.png"
+              alt="OmBot"
+              className="w-16 md:w-24 h-16 md:h-24 object-contain"
+            />
             <div className="flex flex-col items-center">
-              <span className="font-black text-2xl md:text-3xl tracking-tighter text-slate-900 leading-none">omBot</span>
-              <span className="text-[9px] md:text-[10px] text-blue-600 uppercase tracking-widest font-bold mt-1.5 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100/50">Order Management Bot</span>
+              <span
+                className="text-2xl md:text-3xl leading-none"
+                style={{ fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ds-fg)' }}
+              >
+                omBot
+              </span>
+              <span
+                className="mt-1.5 rounded-full px-2.5 py-0.5 text-[9px] md:text-[10px] uppercase"
+                style={{
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  color: 'var(--ds-primary)',
+                  background: 'var(--ds-surface-2)',
+                  border: '1px solid var(--ds-border)',
+                }}
+              >
+                Order Management Bot
+              </span>
             </div>
           </Link>
           <button
-            className="lg:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="lg:hidden p-2 rounded-lg transition-colors"
             onClick={() => setIsSidebarOpen(false)}
+            aria-label="Tutup menu"
           >
-            <X size={20} className="text-slate-600" />
+            <X size={20} style={{ color: 'var(--ds-fg-muted)' }} />
           </button>
         </div>
 
@@ -260,7 +294,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
 
           <div className="pt-5 pb-1.5 px-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Catalog</span>
+            <span className="ds-section-label">Catalog</span>
           </div>
           <SidebarLink href="/dashboard/catalog/product" icon={<Package size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Products
@@ -270,7 +304,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
 
           <div className="pt-5 pb-1.5 px-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Web Store</span>
+            <span className="ds-section-label">Web Store</span>
           </div>
           <SidebarLink href="/owner/web-store" icon={<Globe size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Web Store Setup
@@ -280,7 +314,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
 
           <div className="pt-5 pb-1.5 px-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User & Store</span>
+            <span className="ds-section-label">User &amp; Store</span>
           </div>
           <SidebarLink href="/dashboard/merchant" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Merchant
@@ -293,7 +327,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           </SidebarLink>
 
           <div className="pt-5 pb-1.5 px-3">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settings</span>
+            <span className="ds-section-label">Settings</span>
           </div>
           <SidebarLink href="/dashboard/settings/store" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Store Profile
@@ -310,14 +344,20 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User Profile Footer */}
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <div className="p-3 bg-slate-50 rounded-xl flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-brand flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--ds-border)' }}>
+          <div
+            className="p-3 rounded-xl flex items-center gap-3"
+            style={{ background: 'var(--ds-surface-2)' }}
+          >
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm flex-shrink-0"
+              style={{ background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)', fontWeight: 600 }}
+            >
               {profile?.me?.user?.full_name?.[0] ?? 'U'}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-semibold text-slate-800 truncate">{profile?.me?.user?.full_name}</span>
-              <span className="text-[11px] text-slate-500 truncate">{profile?.me?.user?.store_name}</span>
+              <span className="text-sm truncate" style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>{profile?.me?.user?.full_name}</span>
+              <span className="text-[11px] truncate" style={{ color: 'var(--ds-fg-muted)' }}>{profile?.me?.user?.store_name}</span>
             </div>
           </div>
         </div>
@@ -328,17 +368,24 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <header
+          className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 backdrop-blur-md"
+          style={{
+            background: 'var(--ds-surface)',
+            borderBottom: '1px solid var(--ds-border)',
+          }}
+        >
           <div className="flex items-center gap-3 md:gap-4">
             {!isStaff && (
             <button
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              className="lg:hidden p-2 rounded-xl transition-colors"
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Buka menu"
             >
-              <Menu size={22} className="text-slate-700" />
+              <Menu size={22} style={{ color: 'var(--ds-fg)' }} />
             </button>
             )}
-            <h2 className="text-base md:text-lg font-bold tracking-tight text-slate-800">{getPageTitle(pathname)}</h2>
+            <h2 className="text-base md:text-lg" style={{ fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--ds-fg)' }}>{getPageTitle(pathname)}</h2>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
@@ -348,12 +395,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               <Link
                 href="/dashboard/points"
                 title="Point Order — 1 poin per order masuk"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-xl text-amber-700 hover:bg-amber-100 transition-all shadow-sm group flex-shrink-0"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all flex-shrink-0"
+                style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)' }}
               >
-                <Coins size={15} className="text-amber-500" />
+                <Coins size={15} style={{ color: 'var(--ds-fg-muted)' }} />
                 <div className="flex flex-col items-start leading-none">
-                  <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">Budget</span>
-                  <span className="text-sm font-black tracking-tight">{profile?.me?.user?.user_points?.toLocaleString() ?? profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
+                  <span className="text-[9px] uppercase opacity-60" style={{ fontWeight: 600, letterSpacing: '0.04em' }}>Budget</span>
+                  <span className="text-sm" style={{ fontWeight: 700 }}>{profile?.me?.user?.user_points?.toLocaleString() ?? profile?.me?.user?.store_points?.toLocaleString() ?? 0}</span>
                 </div>
               </Link>
 
@@ -361,12 +409,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               <Link
                 href="/dashboard/points"
                 title="AI Point — 1 poin per permintaan AI"
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-violet-50 border border-violet-100 rounded-xl text-violet-700 hover:bg-violet-100 transition-all shadow-sm group flex-shrink-0"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all flex-shrink-0"
+                style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)' }}
               >
-                <Sparkles size={15} className="text-violet-500" />
+                <Sparkles size={15} style={{ color: 'var(--ds-primary)' }} />
                 <div className="flex flex-col items-start leading-none">
-                  <span className="text-[9px] font-bold uppercase tracking-tight opacity-60">AI Point</span>
-                  <span className="text-sm font-black tracking-tight">{aiPoints.toLocaleString()}</span>
+                  <span className="text-[9px] uppercase opacity-60" style={{ fontWeight: 600, letterSpacing: '0.04em' }}>AI Point</span>
+                  <span className="text-sm" style={{ fontWeight: 700 }}>{aiPoints.toLocaleString()}</span>
                 </div>
               </Link>
             </>
@@ -390,16 +439,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         {!pathname.startsWith('/chat') && (
-        <footer className="py-4 md:py-6 px-6 md:px-8 bg-white border-t border-slate-100 text-center lg:text-left">
+        <footer
+          className="py-4 md:py-6 px-6 md:px-8 text-center lg:text-left"
+          style={{ background: 'var(--ds-surface)', borderTop: '1px solid var(--ds-border)' }}
+        >
           <div className="flex flex-col md:flex-row md:justify-between items-center gap-2 md:gap-4">
-            <p className="text-xs text-slate-400">
-              &copy; {new Date().getFullYear()} <span className="font-bold text-slate-600">OmBot</span>. Built with care for Indonesia.
+            <p className="text-xs" style={{ color: 'var(--ds-fg-muted)' }}>
+              &copy; {new Date().getFullYear()} <span style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>OmBot</span>. Built with care for Indonesia.
             </p>
-            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-300">
+            <div className="flex items-center gap-3 text-[10px] uppercase" style={{ fontWeight: 600, letterSpacing: '0.08em', color: 'var(--ds-fg-muted)', opacity: 0.7 }}>
               <span>Efficiency</span>
-              <span className="w-0.5 h-0.5 bg-slate-300 rounded-full" />
+              <span className="w-0.5 h-0.5 rounded-full" style={{ background: 'currentColor' }} />
               <span>Reliability</span>
-              <span className="w-0.5 h-0.5 bg-slate-300 rounded-full" />
+              <span className="w-0.5 h-0.5 rounded-full" style={{ background: 'currentColor' }} />
               <span>Growth</span>
             </div>
           </div>
