@@ -141,25 +141,27 @@ export default function MerchantPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-8 min-h-screen">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="ds-page-head mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Merchant / Outlet</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="ds-display">Merchant / Outlet</h1>
+            <p className="ds-hint">
               Semua outlet milik Anda. Produk & stok dikelola dari satu dashboard; pilih outlet saat membuat produk.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={fetchStores}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              className="ds-btn"
+              data-variant="secondary"
             >
               <RefreshCw size={16} /> Refresh
             </button>
             <button
               onClick={openModal}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-sm font-bold shadow-md transition-all"
+              className="ds-btn"
+              data-variant="primary"
             >
               <Plus size={16} /> Tambah Outlet
             </button>
@@ -168,20 +170,21 @@ export default function MerchantPage() {
 
         {loading ? (
           <div className="py-20 text-center">
-            <Loader2 className="animate-spin text-indigo-600 mx-auto mb-3" size={32} />
-            <p className="text-slate-400 font-bold">Memuat daftar outlet...</p>
+            <Loader2 className="animate-spin ds-accent-text mx-auto mb-3" size={32} />
+            <p className="ds-small">Memuat daftar outlet...</p>
           </div>
         ) : error ? (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-600 font-semibold text-center">
+          <div className="ds-alert justify-center" data-tone="bad">
             {error}
           </div>
         ) : stores.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-16 text-center">
-            <Store className="mx-auto text-slate-300 mb-4" size={56} />
-            <p className="text-slate-400 font-semibold">Belum ada outlet.</p>
+          <div className="ds-card ds-empty">
+            <Store className="ds-icon-muted mb-4" size={56} />
+            <p className="ds-small">Belum ada outlet.</p>
             <button
               onClick={openModal}
-              className="inline-flex items-center gap-2 px-5 py-2.5 mt-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-bold shadow-md"
+              className="ds-btn mt-4"
+              data-variant="primary"
             >
               <Plus size={16} /> Buat Outlet Pertama
             </button>
@@ -191,38 +194,40 @@ export default function MerchantPage() {
             {stores.map((store) => (
               <div
                 key={store.id}
-                className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all"
+                className="ds-card overflow-hidden"
               >
                 <div className="p-6 flex items-start gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={resolveImageUrl(store.image || "")}
                     alt={store.name}
-                    className="h-16 w-16 rounded-2xl object-cover bg-slate-100 shrink-0"
+                    className="h-16 w-16 rounded-2xl object-cover shrink-0"
+                    style={{ background: "var(--ds-surface-2)" }}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-slate-900 truncate">{store.name}</h3>
+                      <h3 className="ds-h2 truncate">{store.name}</h3>
                       <button
                         onClick={() => openEditModal(store)}
-                        className="ml-auto px-2 py-1 rounded-lg text-[10px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                        className="ml-auto ds-btn-sm"
+                        data-tone="neutral"
                       >
                         Edit
                       </button>
                       {store.role && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wide">
+                        <span className="ds-badge" data-tone="ok">
                           <BadgeCheck size={10} /> {store.role}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    <p className="ds-caption mt-0.5 truncate">
                       {store.address || store.phone || "—"}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[11px] font-bold">
+                      <span className="ds-badge" data-tone="ok">
                         <Package size={12} /> {store.product_count ?? 0} Produk
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-600 text-[11px] font-bold">
+                      <span className="ds-badge" data-tone="info">
                         <Boxes size={12} /> {store.stock_total ?? 0} Stok
                       </span>
                     </div>
@@ -235,75 +240,75 @@ export default function MerchantPage() {
 
         {/* Modal Tambah Outlet */}
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="ds-card ds-card-pad w-full max-w-md max-h-[88vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Plus size={18} className="text-indigo-600" /> Tambah Outlet Baru
+                <h2 className="ds-h1 flex items-center gap-2">
+                  <Plus size={18} className="ds-accent-text" /> Tambah Outlet Baru
                 </h2>
-                <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Tutup">
+                <button onClick={() => setShowModal(false)} className="ds-btn" data-variant="ghost" data-size="sm" aria-label="Tutup">
                   <X size={18} />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nama Outlet *</label>
+                  <label className="ds-label">Nama Outlet *</label>
                   <input
                     type="text"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Contoh: Toko Cabang Malioboro"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="ds-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Alamat Outlet *</label>
+                  <label className="ds-label">Alamat Outlet *</label>
                   <textarea
                     rows={3}
                     value={newAddress}
                     onChange={(e) => setNewAddress(e.target.value)}
                     placeholder="Jl. Malioboro No. 1, Yogyakarta 55213"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    className="ds-textarea"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
+                  <p className="ds-hint">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Telepon (opsional)</label>
+                  <label className="ds-label">Telepon (opsional)</label>
                   <input
                     type="text"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     placeholder="08123456789"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="ds-input"
                   />
                 </div>
 
                 {stores.length > 0 && (
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-1">
+                    <label className="ds-label flex items-center gap-1.5">
                       <Copy size={12} /> Duplicate Produk dari Outlet?
                     </label>
                     <select
                       value={duplicateFrom}
                       onChange={(e) => setDuplicateFrom(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="ds-select"
                     >
                       <option value="">— Tidak duplicate —</option>
                       {stores.map((s) => (
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
-                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                    <p className="ds-hint">
                       Produk & varian akan disalin ke outlet baru dengan stok 0. {stores.length === 1 && "Karena hanya ada 1 outlet, otomatis terpilih sebagai sumber."}
                     </p>
                   </div>
                 )}
 
                 {modalMsg && (
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${modalMsg.kind === "ok" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                  <div className="ds-alert" data-tone={modalMsg.kind === "ok" ? "ok" : "bad"}>
                     {modalMsg.kind === "ok" ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />} {modalMsg.msg}
                   </div>
                 )}
@@ -311,14 +316,16 @@ export default function MerchantPage() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                    className="ds-btn flex-1"
+                    data-variant="secondary"
                   >
                     Batal
                   </button>
                   <button
                     onClick={createStore}
                     disabled={saving}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-bold shadow-md disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    className="ds-btn flex-1"
+                    data-variant="primary"
                   >
                     {saving ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
                     Buat Outlet
@@ -331,52 +338,52 @@ export default function MerchantPage() {
 
         {/* Modal Edit Outlet */}
         {editStore && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto p-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="ds-card ds-card-pad w-full max-w-md max-h-[88vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <Store size={18} className="text-indigo-600" /> Edit Outlet
+                <h2 className="ds-h1 flex items-center gap-2">
+                  <Store size={18} className="ds-accent-text" /> Edit Outlet
                 </h2>
-                <button onClick={() => setEditStore(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Tutup">
+                <button onClick={() => setEditStore(null)} className="ds-btn" data-variant="ghost" data-size="sm" aria-label="Tutup">
                   <X size={18} />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Nama Outlet *</label>
+                  <label className="ds-label">Nama Outlet *</label>
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="ds-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Alamat Outlet *</label>
+                  <label className="ds-label">Alamat Outlet *</label>
                   <textarea
                     rows={3}
                     value={editAddress}
                     onChange={(e) => setEditAddress(e.target.value)}
                     placeholder="Jl. Malioboro No. 1, Yogyakarta 55213"
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                    className="ds-textarea"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
+                  <p className="ds-hint">Alamat ditampilkan saat customer memilih "Ambil di Outlet".</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Telepon</label>
+                  <label className="ds-label">Telepon</label>
                   <input
                     type="text"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="ds-input"
                   />
                 </div>
 
                 {editMsg && (
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${editMsg.kind === "ok" ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
+                  <div className="ds-alert" data-tone={editMsg.kind === "ok" ? "ok" : "bad"}>
                     {editMsg.kind === "ok" ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />} {editMsg.msg}
                   </div>
                 )}
@@ -384,14 +391,16 @@ export default function MerchantPage() {
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={() => setEditStore(null)}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                    className="ds-btn flex-1"
+                    data-variant="secondary"
                   >
                     Batal
                   </button>
                   <button
                     onClick={updateStore}
                     disabled={editSaving}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-bold shadow-md disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                    className="ds-btn flex-1"
+                    data-variant="primary"
                   >
                     {editSaving ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
                     Simpan

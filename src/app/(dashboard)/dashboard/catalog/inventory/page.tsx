@@ -116,27 +116,31 @@ export default function InventoryPage() {
   }, [search])
 
   return (
-    <div className="p-8 bg-slate-50/50 min-h-screen">
+    <div className="p-8 min-h-screen">
       <div className="max-w-[1400px] mx-auto space-y-8">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="ds-page-head">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
-              <Package className="text-indigo-600" size={28} />
-              Inventory & Stock Audit
+            <h1 className="ds-display flex items-center gap-2.5">
+              <Package className="ds-accent-text" size={28} />
+              Inventory &amp; Stock Audit
             </h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Manage your product stock levels and track adjustments</p>
+            <p className="ds-hint">Manage your product stock levels and track adjustments</p>
           </div>
           
           <div className="flex items-center gap-3">
             {/* Semua outlet (pooled view) */}
-            <div className="flex items-center gap-2 px-4 h-11 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600">
-              <Store size={15} className="text-slate-400" />
+            <div
+              className="flex items-center gap-2 px-4 h-11 rounded-xl"
+              style={{ background: 'var(--ds-surface)', border: '1px solid var(--ds-border)', fontSize: 13, fontWeight: 600 }}
+            >
+              <Store size={15} className="ds-icon-muted" />
               {outlets.length} Outlet
             </div>
             <button
               onClick={() => setSelectedProduct({ mode: 'import' })}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-200 active:scale-95"
+              className="ds-btn"
+              data-variant="primary"
             >
               <Upload size={16} />
               Bulk Import
@@ -145,21 +149,24 @@ export default function InventoryPage() {
         </div>
 
         {/* Search & Stats Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/60">
+        <div className="ds-card ds-card-pad">
           <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="relative flex-1 group w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 ds-icon-muted" size={18} />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by SKU or Product Name..."
-                className="w-full h-12 bg-slate-50/50 border border-slate-200 rounded-2xl pl-12 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                className="ds-input"
+                style={{ paddingLeft: 44, height: 40 }}
               />
             </div>
             <button
               onClick={() => fetchInventory()}
-              className="h-12 px-8 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-95 shrink-0"
+              className="ds-btn shrink-0"
+              data-variant="secondary"
+              style={{ height: 40, padding: '0 22px' }}
             >
               Refresh Data
             </button>
@@ -167,56 +174,56 @@ export default function InventoryPage() {
         </div>
 
         {/* Main Table Card */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px]">Product Information</th>
-                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">SKU Code</th>
+        <div className="ds-card overflow-hidden">
+          <div className="ds-table-wrap" style={{ marginTop: 0, border: 0, borderRadius: 0 }}>
+            <table className="ds-table text-left">
+              <thead className="ds-thead">
+                <tr>
+                  <th className="ds-section-label">Product Information</th>
+                  <th className="ds-section-label text-center">SKU Code</th>
                   {outlets.map(o => (
-                    <th key={o.id} className="px-4 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-center">
+                    <th key={o.id} className="ds-section-label text-center">
                       {o.name.length > 12 ? o.name.slice(0, 12) + '…' : o.name}
                     </th>
                   ))}
-                  <th className="px-6 py-5 font-bold text-indigo-600 uppercase tracking-widest text-[10px] text-center">Total</th>
-                  <th className="px-6 py-5 font-bold text-slate-500 uppercase tracking-widest text-[10px] text-right">Riwayat</th>
+                  <th className="ds-section-label text-center ds-accent-text">Total</th>
+                  <th className="ds-section-label text-right">Riwayat</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
                     <td colSpan={3 + outlets.length} className="py-20 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Loader2 className="animate-spin text-indigo-600" size={32} />
-                        <p className="text-slate-400 font-bold tracking-tight">Fetching inventory data...</p>
+                      <div className="ds-empty">
+                        <Loader2 className="animate-spin ds-accent-text" size={32} />
+                        <p className="ds-caption">Fetching inventory data...</p>
                       </div>
                     </td>
                   </tr>
                 ) : inventory.length === 0 ? (
                   <tr>
                     <td colSpan={3 + outlets.length} className="py-20 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <Package className="text-slate-200" size={48} />
-                        <p className="text-slate-400 font-bold tracking-tight text-lg">No inventory data found</p>
+                      <div className="ds-empty">
+                        <Package className="ds-icon-muted" size={48} />
+                        <p className="ds-body">No inventory data found</p>
                       </div>
                     </td>
                   </tr>
                 ) : (
                   inventory.map((item) => {
                     return (
-                      <tr key={item.master_product_id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-5">
-                          <div className="font-bold text-slate-900">{item.name}</div>
-                          <div className="text-xs text-slate-400 font-medium lowercase">Item ID: {item.master_product_id}</div>
+                      <tr key={item.master_product_id}>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>{item.name}</div>
+                          <div className="ds-caption" style={{ textTransform: 'lowercase' }}>Item ID: {item.master_product_id}</div>
                           {item.has_variant && (
-                            <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-black tracking-wide">
+                            <span className="ds-badge" data-tone="info" style={{ marginTop: 4 }}>
                               Varian
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-5 text-center">
-                          <span className="px-3 py-1.5 bg-slate-100 rounded-lg font-mono text-xs text-slate-600 font-bold">
+                        <td className="text-center">
+                          <span className="ds-mono" style={{ background: 'var(--ds-surface-2)', padding: '4px 9px', borderRadius: 6 }}>
                             {item.sku || 'N/A'}
                           </span>
                         </td>
@@ -224,41 +231,51 @@ export default function InventoryPage() {
                           const cell = item.per_store?.find((p: any) => Number(p.store_id) === Number(o.id))
                           const qty = cell?.qty ?? 0
                           return (
-                            <td key={o.id} className="px-4 py-5 text-center">
+                            <td key={o.id} className="text-center">
                               <button
                                 onClick={() => {
                                   setAdjustStoreId(o.id)
                                   setSelectedProduct({ ...item, mode: 'update' })
                                 }}
-                                className={`group/stock inline-flex items-center justify-center min-w-[2.5rem] px-2 py-1.5 rounded-lg text-sm font-black transition-all cursor-pointer border border-dashed hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-sm active:scale-95 ${
-                                  qty <= 0
-                                    ? 'text-slate-400 bg-slate-50 border-slate-200'
-                                    : qty <= 10
-                                      ? 'text-rose-600 bg-rose-50 border-rose-200'
-                                      : 'text-slate-900 bg-slate-50 border-slate-200'
-                                }`}
+                                className="inline-flex items-center justify-center transition-all"
+                                style={{
+                                  minWidth: '2.5rem',
+                                  padding: '5px 8px',
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                  fontWeight: 650,
+                                  cursor: 'pointer',
+                                  border: '1px dashed var(--ds-border-strong)',
+                                  background: qty <= 10 && qty > 0 ? '#fef2f2' : 'var(--ds-surface-2)',
+                                  color: qty <= 0 ? 'var(--ds-fg-muted)' : qty <= 10 ? 'var(--ds-danger)' : 'var(--ds-fg)',
+                                }}
                                 title={`Klik angka untuk adjust stok di ${o.name}`}
                               >
-                                <span className="underline decoration-dotted underline-offset-2 group-hover/stock:no-underline">
+                                <span className="underline decoration-dotted underline-offset-2 hover:no-underline">
                                   {qty}
                                 </span>
                               </button>
                             </td>
                           )
                         })}
-                        <td className="px-6 py-5 text-center">
-                          <span className={`text-base font-black ${item.total_qty <= 0 ? 'text-rose-600' : 'text-indigo-600'}`}>
+                        <td className="text-center">
+                          <span
+                            className="ds-num"
+                            style={{ fontSize: 15, fontWeight: 650, color: item.total_qty <= 0 ? 'var(--ds-danger)' : 'var(--ds-primary)' }}
+                          >
                             {item.total_qty ?? 0}
                           </span>
                         </td>
-                        <td className="px-6 py-5">
+                        <td>
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => {
                                 setSelectedProduct({ ...item, mode: 'logs' })
                                 fetchLogs(item.master_product_id)
                               }}
-                              className="p-2 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-xl transition-all title-tooltip"
+                              className="ds-btn"
+                              data-variant="ghost"
+                              style={{ padding: '0 8px' }}
                               title="Lihat Riwayat Stok"
                             >
                               <History size={18} />
@@ -290,19 +307,27 @@ export default function InventoryPage() {
 
       {/* 📋 Log Detail Slide-over Drawer */}
       {selectedProduct?.mode === 'logs' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex justify-end z-[100] transition-all">
-          <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="px-6 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="fixed inset-0 backdrop-blur-sm flex justify-end z-[100] transition-all" style={{ background: 'rgba(24,24,27,0.4)' }}>
+          <div
+            className="w-full max-w-md h-full flex flex-col"
+            style={{ background: 'var(--ds-surface)', boxShadow: 'var(--ds-shadow-lg)' }}
+          >
+            <div
+              className="px-6 py-8 flex justify-between items-center"
+              style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+            >
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <History className="text-indigo-600" size={24} />
+                <h2 className="ds-h1 flex items-center gap-2">
+                  <History className="ds-accent-text" size={24} />
                   Stock Audit Trail
                 </h2>
-                <p className="text-xs text-slate-500 font-bold mt-1 uppercase tracking-wider">{selectedProduct.product?.name}</p>
+                <p className="ds-section-label mt-1">{selectedProduct.product?.name}</p>
               </div>
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-rose-500 hover:border-rose-100 transition-all shadow-sm"
+                className="ds-btn"
+                data-variant="ghost"
+                aria-label="Tutup"
               >
                 <X size={20} />
               </button>
@@ -310,31 +335,41 @@ export default function InventoryPage() {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {logs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center">
-                    <History className="text-slate-200" size={32} />
+                <div className="ds-empty">
+                  <div className="ds-empty-icon">
+                    <History size={20} />
                   </div>
-                  <p className="text-slate-400 font-bold text-sm tracking-tight">No stock adjustments recorded yet.</p>
+                  <p className="ds-caption">No stock adjustments recorded yet.</p>
                 </div>
               ) : (
                 logs.map((log: any) => (
-                  <div key={log.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-start gap-4">
-                    <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border ${
-                      log.change >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
-                    }`}>
+                  <div
+                    key={log.id}
+                    className="p-4 flex items-start gap-4"
+                    style={{ background: 'var(--ds-surface-2)', borderRadius: 'var(--ds-radius-sm)', border: '1px solid var(--ds-border)' }}
+                  >
+                    <div
+                      className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm"
+                      style={{
+                        fontWeight: 650,
+                        background: log.change >= 0 ? '#f0fdf4' : '#fef2f2',
+                        color: log.change >= 0 ? '#15803d' : 'var(--ds-danger)',
+                        border: `1px solid ${log.change >= 0 ? '#bbf7d0' : '#fecaca'}`,
+                      }}
+                    >
                       {log.change > 0 ? `+${log.change}` : log.change}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">{log.source || 'Manual Edit'}</span>
-                        <span className="text-[10px] text-slate-400 font-bold">{new Date(log.created_at).toLocaleDateString()}</span>
+                        <span className="ds-section-label ds-accent-text">{log.source || 'Manual Edit'}</span>
+                        <span className="ds-caption">{new Date(log.created_at).toLocaleDateString()}</span>
                       </div>
                       {log.variant_key && (
-                        <span className="inline-block mt-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                        <span className="ds-badge" data-tone="info" style={{ marginTop: 4 }}>
                           {formatVariantKey(log.variant_key)}
                         </span>
                       )}
-                      <p className="text-sm text-slate-700 font-medium mt-1 truncate">{log.note || 'No description provided'}</p>
+                      <p className="ds-small mt-1 truncate">{log.note || 'No description provided'}</p>
                     </div>
                   </div>
                 ))
@@ -346,30 +381,38 @@ export default function InventoryPage() {
 
       {/* Popup Update Modal */}
       {selectedProduct?.mode === 'update' && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-[100] p-4" style={{ background: 'rgba(24,24,27,0.6)' }}>
+          <div
+            className="ds-card w-full max-w-lg max-h-[88vh] overflow-y-auto"
+            style={{ boxShadow: 'var(--ds-shadow-lg)' }}
+          >
+            <div
+              className="px-8 py-6 flex justify-between items-center"
+              style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+            >
               <div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Stock Correction</h2>
-                <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mt-0.5">{selectedProduct.name}</p>
+                <h2 className="ds-h1">Stock Correction</h2>
+                <p className="ds-section-label ds-accent-text mt-0.5">{selectedProduct.name}</p>
                 {adjustStoreId && (
-                  <p className="text-xs font-bold text-emerald-600 mt-1">
+                  <p className="ds-caption mt-1" style={{ color: '#15803d' }}>
                     Outlet: {outlets.find(o => Number(o.id) === Number(adjustStoreId))?.name ?? `#${adjustStoreId}`}
                   </p>
                 )}
               </div>
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                className="ds-btn"
+                data-variant="ghost"
+                aria-label="Tutup"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
             <div className="p-8">
               {selectedProduct.has_variant ? (
                 <>
-                  <p className="text-xs text-slate-500 font-bold mb-4">
+                  <p className="ds-caption mb-4">
                     Produk ini punya varian — stok dikelola per varian (bukan parent).
                   </p>
                   <VariantStockManager productId={Number(selectedProduct.master_product_id)} attributes={[]} storeId={adjustStoreId ?? undefined} />
@@ -385,18 +428,27 @@ export default function InventoryPage() {
 
       {/* 📤 Bulk Import Modal */}
       {selectedProduct?.mode === 'import' && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md max-h-[88vh] overflow-y-auto animate-in zoom-in-95 duration-200 border border-slate-200">
-            <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Bulk Quantity Update</h2>
-              <button onClick={() => setSelectedProduct(null)} className="text-slate-400 hover:text-rose-500"><X size={24} /></button>
+        <div className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-[100] p-4" style={{ background: 'rgba(24,24,27,0.6)' }}>
+          <div
+            className="ds-card w-full max-w-md max-h-[88vh] overflow-y-auto"
+            style={{ boxShadow: 'var(--ds-shadow-lg)' }}
+          >
+            <div
+              className="px-8 py-6 flex justify-between items-center"
+              style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+            >
+              <h2 className="ds-h1">Bulk Quantity Update</h2>
+              <button onClick={() => setSelectedProduct(null)} className="ds-btn" data-variant="ghost" aria-label="Tutup"><X size={20} /></button>
             </div>
             
             <div className="p-8 space-y-6">
-              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex gap-3">
-                <AlertCircle className="text-indigo-600 shrink-0 mt-0.5" size={18} />
-                <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                  Upload an Excel file with columns: <span className="font-bold text-slate-900 underline decoration-indigo-200">SKU</span> and <span className="font-bold text-slate-900 underline decoration-indigo-200">Quantity</span>. 
+              <div
+                className="p-4 flex gap-3"
+                style={{ background: 'var(--ds-surface-2)', borderRadius: 'var(--ds-radius-sm)', border: '1px solid var(--ds-border)' }}
+              >
+                <AlertCircle className="ds-accent-text shrink-0 mt-0.5" size={18} />
+                <p className="ds-hint mt-0">
+                  Upload an Excel file with columns: <span style={{ fontWeight: 650, color: 'var(--ds-fg)' }}>SKU</span> and <span style={{ fontWeight: 650, color: 'var(--ds-fg)' }}>Quantity</span>. 
                   Existing stock will be adjusted based on your file.
                 </p>
               </div>
@@ -413,15 +465,20 @@ export default function InventoryPage() {
                       toast.error('Failed to download template');
                     }
                   }}
-                  className="w-full h-14 bg-white border-2 border-slate-100 hover:border-indigo-600 rounded-2xl flex items-center justify-between px-6 transition-all group active:scale-95"
+                  className="ds-btn w-full flex items-center justify-between"
+                  data-variant="secondary"
+                  style={{ height: 52, padding: '0 20px', justifyContent: 'space-between' }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ background: 'var(--ds-surface-2)', color: 'var(--ds-fg-muted)' }}
+                    >
                       <FileDown size={18} />
                     </div>
-                    <span className="text-sm font-black text-slate-700">Download Template</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Download Template</span>
                   </div>
-                  <ChevronRight size={16} className="text-slate-300 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight size={16} className="ds-icon-muted" />
                 </button>
 
                 <label className="block">
@@ -451,20 +508,25 @@ export default function InventoryPage() {
                     />
                     <label 
                       htmlFor="bulk-upload"
-                      className="w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all"
+                      className="w-full h-24 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all"
+                      style={{ border: '2px dashed var(--ds-border-strong)', borderRadius: 'var(--ds-radius-sm)' }}
                     >
-                      <Upload className="text-slate-300 group-hover:text-indigo-500" size={24} />
-                      <span className="text-xs font-bold text-slate-400 group-hover:text-indigo-600">Click to upload spreadsheet</span>
+                      <Upload className="ds-icon-muted" size={24} />
+                      <span className="ds-caption">Click to upload spreadsheet</span>
                     </label>
                   </div>
                 </label>
               </div>
             </div>
 
-            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex justify-end">
+            <div
+              className="px-8 py-5 flex justify-end"
+              style={{ background: 'var(--ds-surface-2)', borderTop: '1px solid var(--ds-border)' }}
+            >
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                className="ds-btn"
+                data-variant="secondary"
               >
                 Close
               </button>

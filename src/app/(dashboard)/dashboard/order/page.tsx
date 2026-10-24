@@ -309,37 +309,39 @@ export default function OrdersPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-current ds-accent-text"></div>
     </div>
   )
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto space-y-8 bg-slate-50/50 min-h-screen">
+    <div className="p-8 max-w-[1600px] mx-auto space-y-8 min-h-screen">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="ds-page-head">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Order Management</h1>
-          <p className="text-slate-500 mt-1">Manage and track all store transactions and exports.</p>
+          <h1 className="ds-display">Order Management</h1>
+          <p className="ds-hint">Manage and track all store transactions and exports.</p>
         </div>
         
         <div className="flex items-center gap-3">
           {/* Pilih Outlet */}
           <div className="relative">
-            <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 ds-icon-muted" size={16} />
             <select
               value={selectedStoreId ?? ''}
               onChange={(e) => setSelectedStoreId(Number(e.target.value))}
-              className="h-10 pl-10 pr-9 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 appearance-none cursor-pointer focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+              className="ds-select appearance-none cursor-pointer"
+              style={{ paddingLeft: 36, paddingRight: 34 }}
             >
               {outlets.map(o => (
                 <option key={o.id} value={o.id}>{o.name}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 ds-icon-muted pointer-events-none" size={15} />
           </div>
           <button
             onClick={handleExportExcel}
-            className="inline-flex items-center px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all gap-2 group active:scale-95 text-xs uppercase tracking-wider"
+            className="ds-btn group"
+            data-variant="secondary"
           >
             <Download size={16} className="text-emerald-600 group-hover:scale-110 transition-transform" />
             Excel
@@ -347,7 +349,8 @@ export default function OrdersPage() {
 
           <button
             onClick={handleExportPDF}
-            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all gap-2 group active:scale-95 text-xs uppercase tracking-wider"
+            className="ds-btn group"
+            data-variant="primary"
           >
             <FileText size={16} className="group-hover:scale-110 transition-transform" />
             PDF Report
@@ -356,11 +359,14 @@ export default function OrdersPage() {
       </div>
 
       {/* Advanced Filter Card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-slate-800 font-bold">
-            <Filter size={18} className="text-indigo-600" />
-            <h2 className="text-base tracking-tight leading-none">Advance Filters</h2>
+      <div className="ds-card overflow-hidden">
+        <div
+          className="px-6 py-4 flex items-center justify-between border-b"
+          style={{ background: 'var(--ds-surface-2)', borderColor: 'var(--ds-border)' }}
+        >
+          <div className="flex items-center gap-2.5 ds-h2">
+            <Filter size={18} className="ds-accent-text" />
+            <h2 className="ds-h2">Advance Filters</h2>
           </div>
           <button
             onClick={() => {
@@ -370,9 +376,10 @@ export default function OrdersPage() {
               setDateRange({ from: "", to: "" })
               setFilteredOrders(orders)
             }}
-            className="flex items-center gap-1.5 text-rose-500 hover:text-rose-600 font-bold text-[11px] px-3 py-1.5 rounded-lg hover:bg-rose-50 transition-all active:scale-95 leading-none"
+            className="ds-btn"
+            data-variant="ghost"
           >
-            <XCircle size={14} />
+            <XCircle size={14} className="text-rose-500" />
             <span>Reset Filters</span>
           </button>
         </div>
@@ -381,17 +388,18 @@ export default function OrdersPage() {
             {/* Filter: Order Number */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-0.5">
-                <FileText size={13} className="text-slate-400" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Order ID</label>
+                <FileText size={13} className="ds-icon-muted" />
+                <label className="ds-label mb-0">Order ID</label>
               </div>
               <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 ds-icon-muted group-focus-within:text-[var(--ds-primary)] transition-colors" size={16} />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="e.g. OMBOT-..."
-                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                  className="ds-input"
+                  style={{ paddingLeft: 44, paddingRight: 16 }}
                 />
               </div>
             </div>
@@ -399,17 +407,18 @@ export default function OrdersPage() {
             {/* Filter: Input By */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-0.5">
-                <User size={13} className="text-slate-400" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Input By</label>
+                <User size={13} className="ds-icon-muted" />
+                <label className="ds-label mb-0">Input By</label>
               </div>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 ds-icon-muted group-focus-within:text-[var(--ds-primary)] transition-colors" size={16} />
                 <input
                   type="text"
                   value={inputBy}
                   onChange={(e) => setInputBy(e.target.value)}
                   placeholder="Staff name..."
-                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                  className="ds-input"
+                  style={{ paddingLeft: 44, paddingRight: 16 }}
                 />
               </div>
             </div>
@@ -417,17 +426,18 @@ export default function OrdersPage() {
             {/* Filter: Product Items */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-0.5">
-                <Package size={13} className="text-slate-400" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Contains Product</label>
+                <Package size={13} className="ds-icon-muted" />
+                <label className="ds-label mb-0">Contains Product</label>
               </div>
               <div className="relative group">
-                <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <Package className="absolute left-4 top-1/2 -translate-y-1/2 ds-icon-muted group-focus-within:text-[var(--ds-primary)] transition-colors" size={16} />
                 <input
                   type="text"
                   value={itemSearch}
                   onChange={(e) => setItemSearch(e.target.value)}
                   placeholder="Product name..."
-                  className="w-full h-11 bg-slate-50/50 border border-slate-200 rounded-xl pl-11 pr-4 text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white outline-none transition-all placeholder:text-slate-400 font-medium"
+                  className="ds-input"
+                  style={{ paddingLeft: 44, paddingRight: 16 }}
                 />
               </div>
             </div>
@@ -435,24 +445,27 @@ export default function OrdersPage() {
             {/* Filter: Period Selection (Redesigned) */}
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-0.5">
-                <Calendar size={13} className="text-slate-400" />
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] leading-none">Transactions Period</label>
+                <Calendar size={13} className="ds-icon-muted" />
+                <label className="ds-label mb-0">Transactions Period</label>
               </div>
-              <div className="flex items-center bg-slate-50/50 border border-slate-200 rounded-xl h-11 px-3 gap-2 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:border-indigo-500 focus-within:bg-white transition-all group w-full">
-                <Calendar size={15} className="text-slate-400 group-focus-within:text-indigo-600 transition-colors shrink-0" />
+              <div
+                className="flex items-center ds-input gap-2 group w-full focus-within:ring-2 focus-within:ring-[var(--ds-ring)]"
+                style={{ paddingLeft: 12, paddingRight: 12 }}
+              >
+                <Calendar size={15} className="ds-icon-muted group-focus-within:text-[var(--ds-primary)] transition-colors shrink-0" />
                 <div className="flex items-center flex-1 gap-1">
                   <input
                     type="date"
                     value={dateRange.from}
                     onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
-                    className="bg-transparent border-none p-0 text-[11px] font-bold text-slate-700 outline-none tabular-nums w-full min-w-[90px]"
+                    className="bg-transparent border-none p-0 ds-caption ds-num w-full min-w-[90px]"
                   />
-                  <span className="text-slate-300 font-bold shrink-0">—</span>
+                  <span className="ds-icon-muted shrink-0">—</span>
                   <input
                     type="date"
                     value={dateRange.to}
                     onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
-                    className="bg-transparent border-none p-0 text-[11px] font-bold text-slate-700 outline-none tabular-nums w-full min-w-[90px]"
+                    className="bg-transparent border-none p-0 ds-caption ds-num w-full min-w-[90px]"
                   />
                 </div>
               </div>
@@ -475,80 +488,81 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders Table Container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="ds-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-200">
-                <th className="px-6 py-4 font-bold text-slate-800">Order Information</th>
-                <th className="px-6 py-4 font-bold text-slate-800">Assignee</th>
-                <th className="px-6 py-4 font-bold text-slate-800">Transaction Details</th>
-                <th className="px-6 py-4 font-bold text-slate-800">Order Items</th>
-                <th className="px-6 py-4 font-bold text-slate-800 text-center">Action</th>
+          <table className="ds-table text-left">
+            <thead className="ds-thead">
+              <tr>
+                <th>Order Information</th>
+                <th>Assignee</th>
+                <th>Transaction Details</th>
+                <th>Order Items</th>
+                <th style={{ textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/30 transition-colors group">
-                    <td className="px-6 py-5">
+                  <tr key={order.id} className="transition-colors group">
+                    <td>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 mb-0.5 group-hover:text-indigo-600 transition-colors tabular-nums">
+                        <span className="ds-h2 ds-num mb-0.5 group-hover:text-[var(--ds-primary)] transition-colors">
                           {order.order_number}
                         </span>
-                        <span className="text-xs text-slate-400 font-medium">
+                        <span className="ds-caption">
                           {new Date(order.created_at).toLocaleString('id-ID', { 
                             day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                           })}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td>
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                        <div className="h-8 w-8 rounded-full ds-accent-text flex items-center justify-center ds-caption" style={{ background: 'var(--ds-surface-2)' }}>
                           {(order.user?.full_name || "??")[0].toUpperCase()}
                         </div>
-                        <span className="text-slate-700 font-medium underline decoration-slate-200 underline-offset-4 decoration-2">
+                        <span className="ds-body">
                           {order.user?.full_name || "-"}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td>
                       <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center text-slate-600">
-                          <span className="text-xs font-medium uppercase tracking-wider opacity-60">Total</span>
-                          <span className="font-bold text-slate-900 tabular-nums">
+                        <div className="flex justify-between items-center">
+                          <span className="ds-caption">Total</span>
+                          <span className="ds-body ds-num" style={{ fontWeight: 600 }}>
                             Rp {order.total_amount.toLocaleString()}
                           </span>
                         </div>
                         {order.discount > 0 && (
                           <div className="flex justify-between items-center text-rose-500">
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Discount</span>
-                            <span className="text-xs font-semibold tabular-nums">
+                            <span className="ds-caption">Discount</span>
+                            <span className="ds-caption ds-num">
                               - Rp {order.discount.toLocaleString()}
                             </span>
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-5 max-w-[300px]">
+                    <td style={{ maxWidth: 300 }}>
                       <div className="flex flex-wrap gap-1.5">
                         {order.items.slice(0, 3).map((item: any, idx: number) => (
-                          <div key={idx} className="inline-flex items-center bg-slate-100 text-slate-700 px-2 py-1 rounded-md text-[11px] font-medium border border-slate-200">
-                            {item.name} <span className="text-indigo-600 ml-1 font-bold">x{item.qty}</span>
+                          <div key={idx} className="ds-chip">
+                            {item.name} <span className="ds-accent-text ml-1">x{item.qty}</span>
                           </div>
                         ))}
                         {order.items.length > 3 && (
-                          <span className="text-slate-400 text-[10px] font-bold self-center">
+                          <span className="ds-caption self-center">
                             +{order.items.length - 3} more
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-center">
+                    <td style={{ textAlign: 'center' }}>
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="inline-flex items-center justify-center px-4 py-1.5 border border-indigo-200 text-indigo-600 font-bold text-xs rounded-lg hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-95"
+                        className="ds-btn-sm"
+                        data-tone="neutral"
                       >
                         Details
                       </button>
@@ -557,11 +571,11 @@ export default function OrdersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className="text-4xl mb-4">📭</span>
-                      <h3 className="text-slate-800 font-bold mb-1">No orders found</h3>
-                      <p className="text-slate-400 text-sm">Try adjusting your filters or search terms.</p>
+                  <td colSpan={5}>
+                    <div className="ds-empty">
+                      <span className="ds-empty-icon text-2xl">📭</span>
+                      <h3 className="ds-h2">No orders found</h3>
+                      <p className="ds-caption">Try adjusting your filters or search terms.</p>
                     </div>
                   </td>
                 </tr>
@@ -573,15 +587,21 @@ export default function OrdersPage() {
 
       {/* Modern Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div
+          className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          style={{ background: 'rgba(24, 24, 27, 0.6)' }}
+        >
+          <div className="ds-card w-full max-w-xl max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in duration-200" style={{ boxShadow: 'var(--ds-shadow-lg)' }}>
+            <div
+              className="p-6 border-b flex justify-between items-center"
+              style={{ background: 'var(--ds-surface-2)', borderColor: 'var(--ds-border)' }}
+            >
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Order Metadata</h2>
-                <p className="text-xs text-slate-400 font-medium uppercase mt-0.5 tracking-widest">{selectedOrder.order_number}</p>
+                <h2 className="ds-h1">Order Metadata</h2>
+                <p className="ds-section-label mt-2">{selectedOrder.order_number}</p>
               </div>
               <button
-                className="h-10 w-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
+                className="h-10 w-10 flex items-center justify-center rounded-full ds-icon-muted transition-colors"
                 onClick={() => setSelectedOrder(null)}
               >
                 ✕
@@ -593,14 +613,14 @@ export default function OrdersPage() {
                 typeof selectedOrder.additional_data === "object" ? (
                   <div className="grid grid-cols-1 gap-6">
                     {Object.entries(selectedOrder.additional_data).map(([key, value]) => (
-                      <div key={key} className="flex flex-col border-b border-slate-50 pb-4">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{key.replace(/_/g, ' ')}</span>
+                      <div key={key} className="flex flex-col border-b pb-4" style={{ borderColor: 'var(--ds-border)' }}>
+                        <span className="ds-section-label mb-1">{key.replace(/_/g, ' ')}</span>
                         {value !== null && typeof value === "object" ? (
-                          <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 space-y-1.5 mt-1">
+                          <div className="ds-well space-y-1.5 mt-1">
                             {Object.entries(value).map(([k, v]) => (
-                              <div key={k} className="flex text-sm">
-                                <span className="text-slate-400 font-medium w-32 shrink-0">{k.replace(/_/g, ' ')}</span>
-                                <span className="text-slate-800 font-semibold">
+                              <div key={k} className="flex ds-body">
+                                <span className="ds-caption w-32 shrink-0">{k.replace(/_/g, ' ')}</span>
+                                <span className="ds-body" style={{ fontWeight: 600 }}>
                                   {v !== null && typeof v === "object"
                                     ? JSON.stringify(v)
                                     : String(v ?? '-')}
@@ -609,7 +629,7 @@ export default function OrdersPage() {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-800 font-semibold">
+                          <span className="ds-body" style={{ fontWeight: 600 }}>
                             {value === null || value === undefined ? '-' : String(value)}
                           </span>
                         )}
@@ -617,23 +637,33 @@ export default function OrdersPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="bg-indigo-900 rounded-xl p-5 shadow-inner">
-                    <pre className="text-indigo-100 text-xs overflow-auto max-h-[400px] leading-relaxed custom-scrollbar font-mono">
+                  <div
+                    className="ds-well"
+                    style={{ background: 'var(--color-indigo-900)', borderColor: 'var(--color-indigo-800)' }}
+                  >
+                    <pre
+                      className="overflow-auto max-h-[400px] leading-relaxed custom-scrollbar ds-mono"
+                      style={{ color: 'var(--color-indigo-100)' }}
+                    >
                       {JSON.stringify(JSON.parse(selectedOrder.additional_data), null, 4)}
                     </pre>
                   </div>
                 )
               ) : (
-                <div className="text-center py-10">
-                  <span className="text-5xl block mb-4">🏜️</span>
-                  <p className="text-slate-400 font-medium">No additional data captured for this order.</p>
+                <div className="ds-empty">
+                  <span className="ds-empty-icon text-2xl">🏜️</span>
+                  <p className="ds-caption">No additional data captured for this order.</p>
                 </div>
               )}
             </div>
             
-            <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+            <div
+              className="p-6 border-t flex justify-end"
+              style={{ background: 'var(--ds-surface-2)', borderColor: 'var(--ds-border)' }}
+            >
               <button
-                className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
                 onClick={() => setSelectedOrder(null)}
               >
                 Close View

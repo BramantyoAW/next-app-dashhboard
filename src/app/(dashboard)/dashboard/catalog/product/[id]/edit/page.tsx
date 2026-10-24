@@ -248,81 +248,79 @@ export default function EditProductPage() {
   if (!product) return <p>Product not found</p>
 
   return (
-    <div className="flex p-8 gap-8 bg-gray-50 min-h-screen">
+    <div className="flex p-8 gap-8 min-h-screen">
       {/* LEFT: FORM */}
-      <div className="flex-1 bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-6">Edit Product</h1>
+      <div className="ds-card ds-card-pad flex-1">
+        <h1 className="ds-h1 mb-6">Edit Product</h1>
 
         <form id="product-edit-form" onSubmit={handleSubmit} className="space-y-6 max-w-lg">
           {formError && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="ds-alert" data-tone="bad">
               {formError}
             </div>
           )}
 
           <div>
-            <label className="font-medium mb-1 block">SKU</label>
+            <label className="ds-label">SKU</label>
             <input
               type="text"
               value={formData.sku}
               onChange={e => handleChange('sku', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Name</label>
+            <label className="ds-label">Name</label>
             <input
               type="text"
               value={formData.name}
               onChange={e => handleChange('name', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Description</label>
+            <label className="ds-label">Description</label>
             <textarea
               value={formData.description}
               onChange={e => handleChange('description', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Price</label>
+            <label className="ds-label">Price</label>
             <input
               type="number"
               value={formData.price}
               onChange={e => handleChange('price', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           {/* IMAGE */}
           <div>
-            <label className="font-medium mb-1 block">Product Image</label>
+            <label className="ds-label">Product Image</label>
 
             <div className="flex gap-3 mb-3">
               <button
                 type="button"
                 onClick={() => { setImageMode('upload'); setLocalPreview(null) }}
-                className={`px-3 py-1 border rounded ${
-                  imageMode === 'upload' ? 'bg-blue-600 text-white' : ''
-                }`}
+                className="ds-btn"
+                data-variant={imageMode === 'upload' ? 'primary' : 'secondary'}
               >
                 Upload
               </button>
               <button
                 type="button"
                 onClick={() => { setImageMode('url'); setLocalPreview(null) }}
-                className={`px-3 py-1 border rounded ${
-                  imageMode === 'url' ? 'bg-blue-600 text-white' : ''
-                }`}
+                className="ds-btn"
+                data-variant={imageMode === 'url' ? 'primary' : 'secondary'}
               >
                 URL
               </button>
@@ -338,7 +336,7 @@ export default function EditProductPage() {
                 );
                 return isBackendUrl ? (
                   <div>
-                    <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded p-2">
+                    <p className="ds-alert" data-tone="ok">
                       ✅ Gambar sudah tersimpan via upload. Masukkan URL baru jika ingin mengganti.
                     </p>
                     <input
@@ -347,7 +345,7 @@ export default function EditProductPage() {
                       placeholder="https://example.com/image-baru.jpg"
                       value=""
                       onChange={e => handleChange('image', e.target.value)}
-                      className="border rounded p-2 w-full mt-2"
+                      className="ds-input mt-2"
                     />
                   </div>
                 ) : (
@@ -357,7 +355,7 @@ export default function EditProductPage() {
                     placeholder="https://example.com/image.jpg"
                     value={formData.image ?? ''}
                     onChange={e => handleChange('image', e.target.value)}
-                    className="border rounded p-2 w-full"
+                    className="ds-input"
                   />
                 );
               })()
@@ -371,38 +369,39 @@ export default function EditProductPage() {
                     const file = e.target.files?.[0]
                     if (file) handleFileUpload(file)
                   }}
-                  className="border rounded p-2 w-full"
+                  className="ds-input"
                 />
                 {uploading && (
-                  <p className="text-sm text-blue-600 mt-1 animate-pulse">Uploading...</p>
+                  <p className="ds-hint animate-pulse">Uploading...</p>
                 )}
                 {formData.image && !localPreview && (
-                  <p className="text-xs text-gray-400 mt-1">Gambar tersimpan. Upload file baru untuk mengganti.</p>
+                  <p className="ds-hint">Gambar tersimpan. Upload file baru untuk mengganti.</p>
                 )}
               </div>
             )}
           </div>
 
           {/* MULTI-OUTLET (feedback #1): daftar merchant/outlet + updatable */}
-          <div className="border-t pt-4 mt-4">
-            <label className="font-medium mb-1 block">
+          <div className="ds-divider-top mt-4">
+            <label className="ds-label">
               Merchant / Outlet <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-500 mb-2">
+            <p className="ds-hint mb-2">
               Produk ini dijual di outlet mana? Uncheck outlet → produk tidak lagi dijual di outlet itu (tetap tersimpan datanya).
             </p>
             {outlets.length === 0 ? (
-              <p className="text-xs text-gray-400">Memuat outlet...</p>
+              <p className="ds-hint">Memuat outlet...</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {outlets.map(o => (
                   <label
                     key={o.id}
-                    className={`flex items-center gap-2 border rounded-lg px-3 py-2 cursor-pointer transition-colors ${
+                    className="ds-subcard flex items-center gap-2 cursor-pointer"
+                    style={
                       selectedOutlets.includes(Number(o.id))
-                        ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
+                        ? { borderColor: 'var(--ds-primary)', background: 'color-mix(in srgb, var(--ds-primary) 8%, var(--ds-surface))', color: 'var(--ds-primary)' }
+                        : undefined
+                    }
                   >
                     <input
                       type="checkbox"
@@ -418,8 +417,8 @@ export default function EditProductPage() {
           </div>
 
           {/* VARIAN */}
-          <h2 className="text-lg font-semibold mt-6">Varian</h2>
-          <p className="text-xs text-gray-500 mb-2">
+          <h2 className="ds-h2 mt-6">Varian</h2>
+          <p className="ds-hint mb-2">
             Tambah pilihan varian (mis. baris "Ukuran / 250g" dan "Ukuran / 500g" = dua opsi ukuran). Baris kosong diabaikan saat simpan.
           </p>
           {formData.attributes.map((attr: any, idx: number) => (
@@ -429,19 +428,22 @@ export default function EditProductPage() {
                 placeholder="Nama (mis. Ukuran)"
                 value={attr.name ?? ''}
                 onChange={e => handleAttributeChange(idx, 'name', e.target.value)}
-                className="border rounded p-2 w-1/2"
+                className="ds-input"
+                style={{ flex: '1 1 0', width: 'auto' }}
               />
               <input
                 type="text"
                 placeholder="Nilai (mis. 250g)"
                 value={attr.value ?? ''}
                 onChange={e => handleAttributeChange(idx, 'value', e.target.value)}
-                className="border rounded p-2 w-1/2"
+                className="ds-input"
+                style={{ flex: '1 1 0', width: 'auto' }}
               />
               <button
                 type="button"
                 onClick={() => removeAttribute(idx)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded"
+                className="ds-btn"
+                data-variant="ghost"
                 title="Hapus varian"
               >
                 ✕
@@ -451,7 +453,7 @@ export default function EditProductPage() {
           <button
             type="button"
             onClick={addAttribute}
-            className="flex items-center gap-1 text-blue-600 text-sm hover:underline"
+            className="ds-link flex items-center gap-1"
           >
             + Tambah variasi
           </button>
@@ -493,11 +495,12 @@ export default function EditProductPage() {
         <StockHistory key={historyVersion} productId={Number(id)} />
 
         {/* TOMBOL SAVE DI PALING BAWAH */}
-        <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end">
+        <div className="ds-divider-top mt-10 pt-6 flex justify-end">
           <button
             type="submit"
             form="product-edit-form"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 shadow transition font-semibold"
+            className="ds-btn"
+            data-variant="primary"
             disabled={uploading}
           >
             {uploading ? 'Uploading…' : 'Save Changes'}
@@ -508,8 +511,11 @@ export default function EditProductPage() {
       {/* RIGHT: IMAGE PREVIEW */}
       <div className="w-1/3 flex flex-col items-center justify-start">
         <div className="sticky top-16 w-full flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-4">Preview</h2>
-          <div className="w-72 h-72 border-2 border-dashed rounded-xl flex items-center justify-center bg-white overflow-hidden shadow">
+          <h2 className="ds-h2 mb-4">Preview</h2>
+          <div
+            className="w-72 h-72 border-2 border-dashed rounded-xl flex items-center justify-center overflow-hidden"
+            style={{ background: 'var(--ds-surface)', borderColor: 'var(--ds-border-strong)', boxShadow: 'var(--ds-shadow)' }}
+          >
             <img
               src={getPreviewSrc()}
               alt={formData.name}

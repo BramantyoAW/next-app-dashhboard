@@ -176,23 +176,24 @@ const pieData = Object.entries(amountBuckets)
   // -------------------- Return UI --------------------
   if (loading) {
     // ✅ di bawah semua hooks
-    return <div className="p-6 text-gray-500">Loading dashboard...</div>
+    return <div className="p-6 ds-small">Loading dashboard...</div>
   }
 
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="ds-page-head">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 mt-1">{getRangeLabel(range)}</p>
+          <h1 className="ds-display">Dashboard</h1>
+          <p className="ds-hint">{getRangeLabel(range)}</p>
         </div>
 
         <div className="flex items-center gap-4">
           <select
             value={range}
             onChange={(e) => setRange(e.target.value)}
-            className="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="ds-select"
+            style={{ width: 160 }}
           >
             <option value="all">Keseluruhan</option>
             <option value="1w">1 Minggu</option>
@@ -210,33 +211,33 @@ const pieData = Object.entries(amountBuckets)
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <p className="text-gray-500 text-sm">Total Sales</p>
-          <h2 className="text-2xl font-bold text-gray-800 mt-1">
+        <div className="ds-card ds-card-pad">
+          <p className="ds-caption">Total Sales</p>
+          <h2 className="ds-h1 ds-num mt-1">
             Rp {totalSales.toLocaleString('id-ID')}
           </h2>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <p className="text-gray-500 text-sm">Total Orders</p>
-          <h2 className="text-2xl font-bold text-gray-800 mt-1">{totalOrders}</h2>
+        <div className="ds-card ds-card-pad">
+          <p className="ds-caption">Total Orders</p>
+          <h2 className="ds-h1 ds-num mt-1">{totalOrders}</h2>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <p className="text-gray-500 text-sm">Avg. Order Value</p>
-          <h2 className="text-2xl font-bold text-gray-800 mt-1">
+        <div className="ds-card ds-card-pad">
+          <p className="ds-caption">Avg. Order Value</p>
+          <h2 className="ds-h1 ds-num mt-1">
             Rp {avgOrderValue.toLocaleString('id-ID')}
           </h2>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <p className="text-gray-500 text-sm">Top Product</p>
-          <h2 className="text-2xl font-bold text-gray-800 mt-1">{topProductName}</h2>
+        <div className="ds-card ds-card-pad">
+          <p className="ds-caption">Top Product</p>
+          <h2 className="ds-h1 mt-1">{topProductName}</h2>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Line */}
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">
+        <div className="ds-card ds-card-pad">
+          <h3 className="ds-h2 mb-3">
             {getRangeLabel(range)} — Menampilkan {chartData.length} periode
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -258,8 +259,8 @@ const pieData = Object.entries(amountBuckets)
         </div>
 
         {/* Pie */}
-        <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">Distribusi Status Order</h3>
+        <div className="ds-card ds-card-pad">
+          <h3 className="ds-h2 mb-3">Distribusi Status Order</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
@@ -275,36 +276,39 @@ const pieData = Object.entries(amountBuckets)
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+      <div className="ds-card ds-card-pad">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Recent Orders</h3>
+          <h3 className="ds-h2">Recent Orders</h3>
           <button
             onClick={() => router.push('/dashboard/order')}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="ds-btn"
+            data-variant="ghost"
           >
             View All →
           </button>
         </div>
-        <table className="min-w-full text-sm text-gray-700">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left px-4 py-2">Order #</th>
-              <th className="text-left px-4 py-2">Total</th>
-              <th className="text-left px-4 py-2">Items</th>
-              <th className="text-left px-4 py-2">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.slice(0, 5).map((o) => (
-              <tr key={o.id} className="border-t hover:bg-gray-50">
-                <td className="px-4 py-2 font-medium">{o.order_number}</td>
-                <td className="px-4 py-2">Rp {o.total_amount.toLocaleString('id-ID')}</td>
-                <td className="px-4 py-2">{o.items.length}</td>
-                <td className="px-4 py-2 text-gray-500">{o.created_at}</td>
+        <div className="ds-table-wrap">
+          <table className="ds-table">
+            <thead className="ds-thead">
+              <tr>
+                <th>Order #</th>
+                <th>Total</th>
+                <th>Items</th>
+                <th>Created</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredOrders.slice(0, 5).map((o) => (
+                <tr key={o.id}>
+                  <td className="font-medium">{o.order_number}</td>
+                  <td className="ds-num">Rp {o.total_amount.toLocaleString('id-ID')}</td>
+                  <td className="ds-num">{o.items.length}</td>
+                  <td className="ds-caption">{o.created_at}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

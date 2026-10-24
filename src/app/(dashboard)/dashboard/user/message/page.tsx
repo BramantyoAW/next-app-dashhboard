@@ -22,10 +22,10 @@ type Conversation = {
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
-const CHANNEL_META: Record<string, { label: string; color: string }> = {
-  whatsapp: { label: 'WA',     color: 'bg-emerald-100 text-emerald-700' },
-  telegram: { label: 'Telegram', color: 'bg-blue-100 text-blue-700' },
-  browser:  { label: 'Web',    color: 'bg-amber-100 text-amber-700' },
+const CHANNEL_META: Record<string, { label: string; tone: string }> = {
+  whatsapp: { label: 'WA',     tone: 'ok' },
+  telegram: { label: 'Telegram', tone: 'info' },
+  browser:  { label: 'Web',    tone: 'warn' },
 }
 
 function formatTime(date: string | null) {
@@ -77,24 +77,25 @@ export default function MessagesPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="ds-page-head">
         <div>
-          <h2 className="text-base font-black text-slate-900">Messages</h2>
-          <p className="text-xs text-slate-400 font-medium">Log percakapan pelanggan</p>
+          <h2 className="ds-h1">Messages</h2>
+          <p className="ds-hint">Log percakapan pelanggan</p>
         </div>
-        <span className="text-xs font-bold text-slate-400">{filtered.length} percakapan</span>
+        <span className="ds-caption">{filtered.length} percakapan</span>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 ds-icon-muted" />
           <input
             type="text"
             placeholder="Cari nama atau nomor..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 outline-none transition-all"
+            className="ds-input"
+            style={{ paddingLeft: 34 }}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -102,11 +103,8 @@ export default function MessagesPage() {
             <button
               key={ch}
               onClick={() => setFilterChannel(ch)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                filterChannel === ch
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-              }`}
+              className="ds-btn"
+              data-variant={filterChannel === ch ? 'primary' : 'secondary'}
             >
               {ch === 'all' ? 'Semua' : CHANNEL_META[ch]?.label}
             </button>
@@ -115,60 +113,60 @@ export default function MessagesPage() {
       </div>
 
       {/* Grid Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="ds-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Nama</th>
-                <th className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Channel</th>
-                <th className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Terakhir Pesan</th>
-                <th className="text-left px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Waktu</th>
-                <th className="text-center px-4 py-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">Aksi</th>
+          <table className="ds-table">
+            <thead className="ds-thead">
+              <tr>
+                <th>Nama</th>
+                <th>Channel</th>
+                <th>Terakhir Pesan</th>
+                <th>Waktu</th>
+                <th style={{ textAlign: 'center' }}>Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-10 text-center">
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+                    <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: 'var(--ds-primary)', borderTopColor: 'transparent' }} />
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-xs font-semibold text-slate-400">
+                  <td colSpan={5} className="px-4 py-10 text-center ds-caption">
                     Tidak ada percakapan
                   </td>
                 </tr>
               ) : filtered.map((conv) => {
-                const meta = CHANNEL_META[conv.channel] ?? { label: conv.channel, color: 'bg-gray-100 text-gray-600' }
+                const meta = CHANNEL_META[conv.channel] ?? { label: conv.channel, tone: 'neutral' }
                 return (
-                  <tr key={`${conv.sender_id}-${conv.channel}`} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3.5">
+                  <tr key={`${conv.sender_id}-${conv.channel}`}>
+                    <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)', fontSize: 12, fontWeight: 600 }}>
                           {(conv.username || conv.sender_id)[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-800">{conv.username || conv.sender_id}</p>
-                          <p className="text-[10px] text-slate-400">{conv.sender_id}</p>
+                          <p className="ds-body" style={{ fontWeight: 600 }}>{conv.username || conv.sender_id}</p>
+                          <p className="ds-caption">{conv.sender_id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded ${meta.color}`}>
+                    <td>
+                      <span className="ds-badge" data-tone={meta.tone}>
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <p className="text-xs text-slate-600 max-w-xs truncate">{conv.last_message || '—'}</p>
+                    <td>
+                      <p className="ds-small max-w-xs truncate">{conv.last_message || '—'}</p>
                     </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-xs text-slate-400 font-medium">{formatTime(conv.last_message_at)}</span>
+                    <td>
+                      <span className="ds-caption">{formatTime(conv.last_message_at)}</span>
                     </td>
-                    <td className="px-4 py-3.5 text-center">
-                      <button className="p-2 rounded-lg hover:bg-blue-50 transition-colors group" title="Lihat">
-                        <Eye size={14} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
+                    <td className="text-center">
+                      <button className="p-2 rounded-lg transition-colors group" title="Lihat">
+                        <Eye size={14} className="ds-icon-muted transition-colors" />
                       </button>
                     </td>
                   </tr>

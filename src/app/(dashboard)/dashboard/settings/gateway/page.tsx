@@ -169,30 +169,30 @@ export default function GatewaySettingsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Pengaturan Gateway</h1>
-          <p className="text-slate-500 font-medium mt-1">Kelola koneksi WhatsApp, Telegram, dan Browser Chat</p>
+          <h1 className="ds-display">Pengaturan Gateway</h1>
+          <p className="ds-hint">Kelola koneksi WhatsApp, Telegram, dan Browser Chat</p>
         </div>
       </div>
 
       {/* Merchant ID info */}
       {merchantId && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl text-sm font-medium text-blue-700">
-          <Zap size={14} className="text-blue-500" />
-          <span>Merchant ID: <strong className="font-bold">{merchantId}</strong></span>
+        <div className="ds-well flex items-center gap-2" data-tone="accent">
+          <Zap size={14} className="ds-accent-text" />
+          <span>Merchant ID: <strong>{merchantId}</strong></span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Section A: WhatsApp ─────────────────────── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
+        <div className="ds-card overflow-hidden">
+          <div className="px-6 py-5 flex items-center gap-3" style={{ background: 'var(--ds-surface-2)', borderBottom: '1px solid var(--ds-border)' }}>
             <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
               <MessageCircle size={20} strokeWidth={2} />
             </div>
             <div>
-              <h2 className="font-black text-slate-900 tracking-tight">WhatsApp (Baileys)</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Koneksi via aplikasi WhatsApp</p>
+              <h2 className="ds-h2">WhatsApp (Baileys)</h2>
+              <p className="ds-caption">Koneksi via aplikasi WhatsApp</p>
             </div>
             <div className="ml-auto flex-shrink-0">
               <StatusBadge status={waStatus} />
@@ -201,7 +201,7 @@ export default function GatewaySettingsPage() {
 
           <div className="p-6 space-y-5">
             {waError && (
-              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600">
+              <div className="ds-alert" data-tone="bad">
                 <XCircle size={14} />
                 {waError}
               </div>
@@ -219,7 +219,8 @@ export default function GatewaySettingsPage() {
                 <button
                   onClick={handleWadisconnect}
                   disabled={waLoading}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white border border-red-200 text-red-600 rounded-2xl font-bold text-sm hover:bg-red-50 transition-all disabled:opacity-50 shadow-sm"
+                  className="ds-btn w-full"
+                  data-variant="danger"
                 >
                   {waLoading ? <Loader2 className="animate-spin" size={16} /> : <Unlink size={16} />}
                   Putuskan Koneksi
@@ -228,11 +229,11 @@ export default function GatewaySettingsPage() {
             ) : waStatus === 'connecting' && waQR ? (
               <div className="space-y-4">
                 <div className="text-center space-y-3">
-                  <p className="text-sm font-bold text-slate-600">Pindai QR Code dengan aplikasi WhatsApp</p>
-                  <div className="inline-block p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                  <p className="ds-body">Pindai QR Code dengan aplikasi WhatsApp</p>
+                  <div className="ds-card inline-block p-3">
                     <img src={waQR} alt="WhatsApp QR" className="w-48 h-48 object-contain" />
                   </div>
-                  <div className="flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+                  <div className="flex items-center justify-center gap-2 ds-caption">
                     <Loader2 size={12} className="animate-spin" />
                     Menunggu verifikasi...
                   </div>
@@ -240,16 +241,17 @@ export default function GatewaySettingsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <MessageCircle size={20} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-slate-500 font-medium leading-relaxed">
+                <div className="ds-well flex items-start gap-3">
+                  <MessageCircle size={20} className="ds-icon-muted mt-0.5 flex-shrink-0" />
+                  <div>
                     Mulai koneksi dengan akun WhatsApp Anda. QR code akan muncul dan dapat dipindai dalam 60 detik.
                   </div>
                 </div>
                 <button
                   onClick={handleWaconnect}
                   disabled={waLoading || !merchantId}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-gradient-brand text-white rounded-2xl font-bold text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 shadow-md"
+                  className="ds-btn w-full"
+                  data-variant="primary"
                 >
                   {waLoading ? <Loader2 className="animate-spin" size={16} /> : <Link2 size={16} />}
                   Mulai Koneksi
@@ -260,14 +262,17 @@ export default function GatewaySettingsPage() {
         </div>
 
         {/* ── Section B: Telegram ─────────────────────── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
-            <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600">
+        <div className="ds-card overflow-hidden">
+          <div className="px-6 py-5 flex items-center gap-3" style={{ background: 'var(--ds-surface-2)', borderBottom: '1px solid var(--ds-border)' }}>
+            <div
+              className="p-2.5 rounded-xl"
+              style={{ background: 'color-mix(in srgb, var(--ds-primary) 8%, var(--ds-surface))', color: 'var(--ds-primary)' }}
+            >
               <Bot size={20} strokeWidth={2} />
             </div>
             <div>
-              <h2 className="font-black text-slate-900 tracking-tight">Telegram</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Koneksi via Telegram Bot</p>
+              <h2 className="ds-h2">Telegram</h2>
+              <p className="ds-caption">Koneksi via Telegram Bot</p>
             </div>
             <div className="ml-auto flex-shrink-0">
               <StatusBadge status={tgStatus === 'connected' ? 'connected' : tgStatus === 'connecting' ? 'connecting' : 'not_initialized'} />
@@ -276,7 +281,7 @@ export default function GatewaySettingsPage() {
 
           <div className="p-6 space-y-5">
             {tgError && (
-              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600">
+              <div className="ds-alert" data-tone="bad">
                 <AlertCircle size={14} />
                 {tgError}
               </div>
@@ -291,13 +296,14 @@ export default function GatewaySettingsPage() {
                     <p className="text-xs text-emerald-600 font-medium">Bot Telegram aktif dan siap menerima pesan</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs font-mono text-slate-500 break-all">
+                <div className="ds-well ds-mono break-all">
                   {tgToken.slice(0, 20)}...{tgToken.slice(-10)}
                 </div>
                 <button
                   onClick={handleTGdisconnect}
                   disabled={tgLoading}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white border border-red-200 text-red-600 rounded-2xl font-bold text-sm hover:bg-red-50 transition-all disabled:opacity-50 shadow-sm"
+                  className="ds-btn w-full"
+                  data-variant="danger"
                 >
                   {tgLoading ? <Loader2 className="animate-spin" size={16} /> : <Unlink size={16} />}
                   Putuskan Koneksi
@@ -306,7 +312,7 @@ export default function GatewaySettingsPage() {
             ) : (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
+                  <label className="ds-label">
                     Bot Token (dari @BotFather)
                   </label>
                   <input
@@ -314,20 +320,21 @@ export default function GatewaySettingsPage() {
                     placeholder="Contoh: 123456789:ABCDefGhi..."
                     value={tgToken}
                     onChange={(e) => setTgToken(e.target.value)}
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all font-mono text-sm text-slate-800 placeholder:text-slate-400"
+                    className="ds-input ds-mono"
                     disabled={tgLoading}
                   />
                 </div>
-                <div className="flex items-start gap-3 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                  <Bot size={20} className="text-slate-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-slate-500 font-medium leading-relaxed">
+                <div className="ds-well flex items-start gap-3">
+                  <Bot size={20} className="ds-icon-muted mt-0.5 flex-shrink-0" />
+                  <div>
                     Masukkan token bot Telegram dari @BotFather untuk menghubungkan akun Telegram Anda dengan omBot.
                   </div>
                 </div>
                 <button
                   onClick={handleTGconnect}
                   disabled={tgLoading || !merchantId || !tgToken.trim()}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 shadow-md"
+                  className="ds-btn w-full"
+                  data-variant="primary"
                 >
                   {tgLoading ? <Loader2 className="animate-spin" size={16} /> : <Link2 size={16} />}
                   Hubungkan
@@ -338,17 +345,17 @@ export default function GatewaySettingsPage() {
         </div>
 
         {/* ── Section C: Browser Chat ──────────────────── */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden lg:col-span-2">
-          <div className="px-6 py-5 border-b border-slate-50 bg-slate-50/50 flex items-center gap-3">
+        <div className="ds-card overflow-hidden lg:col-span-2">
+          <div className="px-6 py-5 flex items-center gap-3" style={{ background: 'var(--ds-surface-2)', borderBottom: '1px solid var(--ds-border)' }}>
             <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600">
               <Monitor size={20} strokeWidth={2} />
             </div>
             <div>
-              <h2 className="font-black text-slate-900 tracking-tight">Browser Chat</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Chat langsung dari browser / website</p>
+              <h2 className="ds-h2">Browser Chat</h2>
+              <p className="ds-caption">Chat langsung dari browser / website</p>
             </div>
             <div className="ml-auto flex-shrink-0">
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 border border-amber-100 rounded-full text-[10px] font-black text-amber-600 uppercase tracking-widest">
+              <span className="ds-badge" data-tone="warn">
                 Segera Hadir
               </span>
             </div>
@@ -356,17 +363,17 @@ export default function GatewaySettingsPage() {
 
           <div className="p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-              <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 flex-shrink-0">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--ds-surface-2)', color: 'var(--ds-fg-muted)' }}>
                 <Monitor size={32} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-black text-slate-700">Fitur dalam pengembangan</h3>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-lg">
+                <h3 className="ds-h2">Fitur dalam pengembangan</h3>
+                <p className="ds-body max-w-lg">
                   User yang login ke dashboard OmBot akan langsung masuk ke chat gateway ini. Tidak perlu instal aplikasi — cukup buka browser dan mulai percakapan. Fitur ini akan segera hadir di versi berikutnya.
                 </p>
                 <div className="flex items-center gap-2 pt-1">
-                  <Shield size={13} className="text-slate-400" />
-                  <span className="text-xs text-slate-400 font-medium">Keamanan end-to-end • Real-time WebSocket • No install</span>
+                  <Shield size={13} className="ds-icon-muted" />
+                  <span className="ds-caption">Keamanan end-to-end • Real-time WebSocket • No install</span>
                 </div>
               </div>
             </div>
@@ -404,7 +411,7 @@ function StatusBadge({ status }: { status: string }) {
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest">
+    <span className="ds-badge" data-tone="neutral">
       Belum Terhubung
     </span>
   )

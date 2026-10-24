@@ -142,83 +142,106 @@ export default function PointsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="ds-page-head">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Credit & Points</h1>
-          <p className="text-slate-500 mt-1">Kelola saldo poin Anda untuk operasional toko</p>
+          <h1 className="ds-display">Credit &amp; Points</h1>
+          <p className="ds-hint">Kelola saldo poin Anda untuk operasional toko</p>
         </div>
         <button 
           onClick={() => setShowTopupModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-blue-200 transition-all flex items-center gap-2 active:scale-95"
+          className="ds-btn"
+          data-variant="primary"
         >
-          <Plus size={20} /> Top-up Points
+          <Plus size={18} /> Top-up Points
         </button>
       </div>
 
       {/* Balance Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
+        <div
+          className="col-span-1 md:col-span-2 p-8 relative overflow-hidden group"
+          style={{
+            background: 'linear-gradient(135deg, var(--ds-primary), var(--ds-primary-hover))',
+            borderRadius: 'var(--ds-radius)',
+            boxShadow: 'var(--ds-shadow-lg)',
+            color: 'var(--ds-primary-fg)',
+          }}
+        >
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <Coins size={120} />
           </div>
           <div className="relative z-10 space-y-6">
-            <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-1.5 rounded-full backdrop-blur-sm">
-              <Coins size={18} className="text-blue-200" />
-              <span className="text-sm font-bold tracking-wide uppercase">Available Balance</span>
+            <div className="flex items-center gap-3 w-fit px-4 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,.14)' }}>
+              <Coins size={18} />
+              <span className="ds-section-label" style={{ color: 'inherit', opacity: 0.85 }}>Available Balance</span>
             </div>
             <div>
-              <div className="text-6xl font-black">{points.toLocaleString()}</div>
-              <div className="text-blue-100 mt-2 font-medium">Credits remaining</div>
+              <div className="ds-num" style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.05 }}>{points.toLocaleString()}</div>
+              <div className="mt-2" style={{ opacity: 0.8 }}>Credits remaining</div>
             </div>
-            <div className="pt-4 flex items-center gap-2 text-blue-100 text-sm italic">
+            <div className="pt-4 flex items-center gap-2 text-sm italic" style={{ opacity: 0.8 }}>
                 <Info size={16} />
                 <span>1 poin akan dikurangi untuk setiap order yang berhasil diselesaikan.</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col justify-center items-center text-center space-y-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+        <div className="ds-card ds-card-pad flex flex-col justify-center items-center text-center space-y-4" style={{ padding: 32 }}>
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{ background: 'var(--ds-surface-2)', color: 'var(--ds-primary)' }}
+          >
             <Plus size={32} />
           </div>
           <div className="space-y-1">
-            <h3 className="font-bold text-slate-900 text-xl text-center">Rp 10.000 / 100 Pts</h3>
-            <p className="text-sm text-slate-500 mt-1 text-center">Harga terbaik untuk pertumbuhan bisnis Anda</p>
+            <h3 className="ds-h1">Rp 10.000 / 100 Pts</h3>
+            <p className="ds-small mt-1">Harga terbaik untuk pertumbuhan bisnis Anda</p>
           </div>
         </div>
       </div>
 
       {/* AI Point — saldo khusus fitur AI, terpisah dari poin order */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
+        <div
+          className="col-span-1 md:col-span-2 p-8 relative overflow-hidden group"
+          style={{
+            background: 'linear-gradient(135deg, #7c3aed, #a21caf)',
+            borderRadius: 'var(--ds-radius)',
+            boxShadow: 'var(--ds-shadow-lg)',
+            color: '#fff',
+          }}
+        >
           <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-500">
             <Sparkles size={120} />
           </div>
           <div className="relative z-10 space-y-6">
-            <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-1.5 rounded-full backdrop-blur-sm">
-              <Sparkles size={18} className="text-violet-200" />
-              <span className="text-sm font-bold tracking-wide uppercase">AI Point</span>
+            <div className="flex items-center gap-3 w-fit px-4 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,.14)' }}>
+              <Sparkles size={18} />
+              <span className="ds-section-label" style={{ color: 'inherit', opacity: 0.85 }}>AI Point</span>
             </div>
             <div>
-              <div className="text-6xl font-black">{aiPoints.toLocaleString()}</div>
-              <div className="text-violet-100 mt-2 font-medium">Untuk fitur AI</div>
+              <div className="ds-num" style={{ fontSize: 56, fontWeight: 700, lineHeight: 1.05 }}>{aiPoints.toLocaleString()}</div>
+              <div className="mt-2" style={{ opacity: 0.8 }}>Untuk fitur AI</div>
             </div>
-            <div className="pt-4 flex items-center gap-2 text-violet-100 text-sm italic">
+            <div className="pt-4 flex items-center gap-2 text-sm italic" style={{ opacity: 0.8 }}>
               <Info size={16} />
               <span>1 AI Point dipakai untuk setiap permintaan AI (Design with OmBot AI &amp; OmBot AI Assistance).</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 flex flex-col justify-center items-center text-center space-y-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-16 h-16 bg-violet-50 text-violet-600 rounded-2xl flex items-center justify-center">
+        <div className="ds-card ds-card-pad flex flex-col justify-center items-center text-center space-y-4" style={{ padding: 32 }}>
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{ background: '#faf5ff', color: '#7c3aed' }}
+          >
             <Sparkles size={32} />
           </div>
           <div className="space-y-1">
-            <h3 className="font-bold text-slate-900 text-lg text-center">
+            <h3 className="ds-h1">
               {aiPoints <= 0 ? 'AI Point habis' : 'AI Point aktif'}
             </h3>
-            <p className="text-sm text-slate-500 mt-1 text-center">
+            <p className="ds-small mt-1">
               {aiPoints <= 0
                 ? 'Top-up AI Point untuk memakai fitur AI.'
                 : 'Fitur AI bisa dipakai selama saldo tersedia.'}
@@ -227,7 +250,8 @@ export default function PointsPage() {
           {aiPoints <= 0 && (
             <button
               onClick={() => { setTopupPurpose('ai'); setShowTopupModal(true); }}
-              className="bg-violet-600 hover:bg-violet-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95"
+              className="ds-btn"
+              data-variant="primary"
             >
               Top-up AI Point
             </button>
@@ -236,54 +260,62 @@ export default function PointsPage() {
       </div>
 
       {/* History */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-          <History size={20} className="text-slate-400" />
-          <h2 className="font-bold text-slate-900">Point History</h2>
+      <div className="ds-card overflow-hidden">
+        <div
+          className="p-6 flex items-center gap-2"
+          style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+        >
+          <History size={20} className="ds-icon-muted" />
+          <h2 className="ds-h2">Point History</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/30">
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Type</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Note</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Date</th>
+        <div className="ds-table-wrap" style={{ marginTop: 0, border: 0, borderRadius: 0 }}>
+          <table className="ds-table text-left">
+            <thead className="ds-thead">
+              <tr>
+                <th className="ds-section-label">Type</th>
+                <th className="ds-section-label">Amount</th>
+                <th className="ds-section-label">Note</th>
+                <th className="ds-section-label text-right">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {loading ? (
                 Array(3).fill(0).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={4} className="px-8 py-6"><div className="h-4 bg-slate-100 rounded"></div></td>
+                    <td colSpan={4}><div className="h-4 rounded" style={{ background: 'var(--ds-surface-2)' }}></div></td>
                   </tr>
                 ))
               ) : histories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-8 py-12 text-center text-slate-400 italic">Belum ada riwayat transaksi poin</td>
+                  <td colSpan={4} className="text-center">
+                    <span className="ds-caption">Belum ada riwayat transaksi poin</span>
+                  </td>
                 </tr>
               ) : (
                 histories.map((h: PointLog) => (
-                  <tr key={h.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-6">
+                  <tr key={h.id}>
+                    <td>
                       <div className="flex items-center gap-3">
                         {h.amount > 0 ? (
-                          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><ArrowUpRight size={18}/></div>
+                          <div className="p-2 rounded-lg" style={{ background: '#f0fdf4', color: '#15803d' }}><ArrowUpRight size={18}/></div>
                         ) : (
-                          <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><ArrowDownLeft size={18}/></div>
+                          <div className="p-2 rounded-lg" style={{ background: '#fef2f2', color: 'var(--ds-danger)' }}><ArrowDownLeft size={18}/></div>
                         )}
-                        <span className="font-bold text-slate-900 capitalize">{h.type.replace('_', ' ')}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--ds-fg)', textTransform: 'capitalize' }}>{h.type.replace('_', ' ')}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className={`text-lg font-black ${h.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <td>
+                      <span
+                        className="ds-num"
+                        style={{ fontSize: 16, fontWeight: 650, color: h.amount > 0 ? '#15803d' : 'var(--ds-danger)' }}
+                      >
                         {h.amount > 0 ? '+' : ''}{h.amount}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-sm text-slate-600">{h.note}</td>
-                    <td className="px-8 py-6 text-right whitespace-nowrap">
-                      <div className="text-sm font-bold text-slate-900">{new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(h.created_at))}</div>
-                      <div className="text-xs text-slate-400">{new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(h.created_at))}</div>
+                    <td className="ds-small">{h.note}</td>
+                    <td className="text-right whitespace-nowrap">
+                      <div className="ds-num" style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>{new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(h.created_at))}</div>
+                      <div className="ds-caption">{new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(h.created_at))}</div>
                     </td>
                   </tr>
                 ))
@@ -294,58 +326,66 @@ export default function PointsPage() {
       </div>
 
       {/* Riwayat AI Point */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-          <Sparkles size={20} className="text-violet-500" />
-          <h2 className="font-bold text-slate-900">AI Point History</h2>
+      <div className="ds-card overflow-hidden">
+        <div
+          className="p-6 flex items-center gap-2"
+          style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+        >
+          <Sparkles size={20} style={{ color: '#7c3aed' }} />
+          <h2 className="ds-h2">AI Point History</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/30">
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Fitur</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Tanggal</th>
+        <div className="ds-table-wrap" style={{ marginTop: 0, border: 0, borderRadius: 0 }}>
+          <table className="ds-table text-left">
+            <thead className="ds-thead">
+              <tr>
+                <th className="ds-section-label">Fitur</th>
+                <th className="ds-section-label">Amount</th>
+                <th className="ds-section-label">Keterangan</th>
+                <th className="ds-section-label text-right">Tanggal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {loading ? (
                 Array(3).fill(0).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={4} className="px-8 py-6"><div className="h-4 bg-slate-100 rounded"></div></td>
+                    <td colSpan={4}><div className="h-4 rounded" style={{ background: 'var(--ds-surface-2)' }}></div></td>
                   </tr>
                 ))
               ) : aiHistories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-8 py-12 text-center text-slate-400 italic">Belum ada pemakaian AI Point</td>
+                  <td colSpan={4} className="text-center">
+                    <span className="ds-caption">Belum ada pemakaian AI Point</span>
+                  </td>
                 </tr>
               ) : (
                 aiHistories.map((h: AiPointLog) => (
-                  <tr key={h.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-6">
+                  <tr key={h.id}>
+                    <td>
                       <div className="flex items-center gap-3">
                         {h.amount > 0 ? (
-                          <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><ArrowUpRight size={18} /></div>
+                          <div className="p-2 rounded-lg" style={{ background: '#f0fdf4', color: '#15803d' }}><ArrowUpRight size={18} /></div>
                         ) : (
-                          <div className="p-2 bg-violet-50 text-violet-600 rounded-lg"><ArrowDownLeft size={18} /></div>
+                          <div className="p-2 rounded-lg" style={{ background: '#faf5ff', color: '#7c3aed' }}><ArrowDownLeft size={18} /></div>
                         )}
-                        <span className="font-bold text-slate-900">
+                        <span style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>
                           {h.feature === 'design' ? 'Design with OmBot AI'
                             : h.feature === 'assistance' ? 'OmBot AI Assistance'
                             : 'Penambahan saldo'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className={`text-lg font-black ${h.amount > 0 ? 'text-emerald-600' : 'text-violet-600'}`}>
+                    <td>
+                      <span
+                        className="ds-num"
+                        style={{ fontSize: 16, fontWeight: 650, color: h.amount > 0 ? '#15803d' : '#7c3aed' }}
+                      >
                         {h.amount > 0 ? '+' : ''}{h.amount}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-sm text-slate-600">{h.note}</td>
-                    <td className="px-8 py-6 text-right whitespace-nowrap">
-                      <div className="text-sm font-bold text-slate-900">{new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(h.created_at))}</div>
-                      <div className="text-xs text-slate-400">{new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(h.created_at))}</div>
+                    <td className="ds-small">{h.note}</td>
+                    <td className="text-right whitespace-nowrap">
+                      <div className="ds-num" style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>{new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(h.created_at))}</div>
+                      <div className="ds-caption">{new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(h.created_at))}</div>
                     </td>
                   </tr>
                 ))
@@ -358,71 +398,102 @@ export default function PointsPage() {
       {/* Topup Modal */}
       {showTopupModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowTopupModal(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-[32px] shadow-2xl max-h-[88vh] overflow-y-auto p-6 sm:p-10 animate-in fade-in zoom-in duration-300">
+          <div
+            className="absolute inset-0 backdrop-blur-sm transition-opacity"
+            style={{ background: 'rgba(24,24,27,0.6)' }}
+            onClick={() => setShowTopupModal(false)}
+          />
+          <div
+            className="relative ds-card w-full max-w-md max-h-[88vh] overflow-y-auto p-6 sm:p-10 animate-in fade-in zoom-in duration-300"
+            style={{ boxShadow: 'var(--ds-shadow-lg)' }}
+          >
             <div className="text-center space-y-4">
-              <div className="mx-auto w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center">
+              <div
+                className="mx-auto w-20 h-20 rounded-2xl flex items-center justify-center"
+                style={{ background: 'var(--ds-surface-2)', color: 'var(--ds-primary)' }}
+              >
                 <Plus size={40} />
               </div>
-              <h2 className="text-2xl font-black text-slate-900">Top-up Points</h2>
-              <p className="text-slate-500">Pilih jenis saldo dan jumlah yang ingin Anda beli</p>
+              <h2 className="ds-h1">Top-up Points</h2>
+              <p className="ds-hint mt-0">Pilih jenis saldo dan jumlah yang ingin Anda beli</p>
             </div>
 
             {/* Pilih jenis saldo: poin order atau AI Point */}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 onClick={() => setTopupPurpose('order')}
-                className={`p-4 rounded-2xl border-2 transition-all text-center ${topupPurpose === 'order' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                className="p-4 text-center transition-all"
+                style={{
+                  borderRadius: 'var(--ds-radius-sm)',
+                  border: `2px solid ${topupPurpose === 'order' ? 'var(--ds-primary)' : 'var(--ds-border)'}`,
+                  background: topupPurpose === 'order' ? 'var(--ds-surface-2)' : 'transparent',
+                  color: topupPurpose === 'order' ? 'var(--ds-primary)' : 'var(--ds-fg-muted)',
+                }}
               >
                 <Coins size={20} className="mx-auto mb-1" />
-                <div className="font-bold text-sm">Point Order</div>
-                <div className="text-[11px] opacity-70">Untuk order masuk</div>
+                <div style={{ fontWeight: 650, fontSize: 13 }}>Point Order</div>
+                <div className="ds-caption" style={{ textTransform: 'none' }}>Untuk order masuk</div>
               </button>
               <button
                 onClick={() => setTopupPurpose('ai')}
-                className={`p-4 rounded-2xl border-2 transition-all text-center ${topupPurpose === 'ai' ? 'border-violet-600 bg-violet-50 text-violet-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                className="p-4 text-center transition-all"
+                style={{
+                  borderRadius: 'var(--ds-radius-sm)',
+                  border: `2px solid ${topupPurpose === 'ai' ? '#7c3aed' : 'var(--ds-border)'}`,
+                  background: topupPurpose === 'ai' ? '#faf5ff' : 'transparent',
+                  color: topupPurpose === 'ai' ? '#7c3aed' : 'var(--ds-fg-muted)',
+                }}
               >
                 <Sparkles size={20} className="mx-auto mb-1" />
-                <div className="font-bold text-sm">AI Point</div>
-                <div className="text-[11px] opacity-70">Untuk fitur AI</div>
+                <div style={{ fontWeight: 650, fontSize: 13 }}>AI Point</div>
+                <div className="ds-caption" style={{ textTransform: 'none' }}>Untuk fitur AI</div>
               </button>
             </div>
 
             <div className="mt-8 grid grid-cols-2 gap-4">
-              {[10000, 50000, 100000, 250000].map((amount) => (
-                <button
-                  key={amount}
-                  onClick={() => setTopupAmount(amount)}
-                  className={`p-6 rounded-2xl border-2 transition-all text-center space-y-1 ${
-                    topupAmount === amount
-                      ? topupPurpose === 'ai'
-                        ? 'border-violet-600 bg-violet-50 text-violet-600'
-                        : 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-slate-100 hover:border-slate-200 text-slate-600'
-                  }`}
-                >
-                  <div className="font-black text-lg">{(amount/100).toLocaleString()} Pts</div>
-                  <div className="text-xs font-bold opacity-60">Rp {amount.toLocaleString()}</div>
-                </button>
-              ))}
+              {[10000, 50000, 100000, 250000].map((amount) => {
+                const active = topupAmount === amount;
+                const accent = topupPurpose === 'ai' ? '#7c3aed' : 'var(--ds-primary)';
+                return (
+                  <button
+                    key={amount}
+                    onClick={() => setTopupAmount(amount)}
+                    className="p-6 text-center space-y-1 transition-all"
+                    style={{
+                      borderRadius: 'var(--ds-radius-sm)',
+                      border: `2px solid ${active ? accent : 'var(--ds-border)'}`,
+                      background: active ? (topupPurpose === 'ai' ? '#faf5ff' : 'var(--ds-surface-2)') : 'transparent',
+                      color: active ? accent : 'var(--ds-fg)',
+                    }}
+                  >
+                    <div className="ds-num" style={{ fontWeight: 700, fontSize: 16 }}>{(amount/100).toLocaleString()} Pts</div>
+                    <div className="ds-caption" style={{ textTransform: 'none' }}>Rp {amount.toLocaleString()}</div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="mt-10 flex flex-col gap-3">
               <button
                 onClick={handleTopup}
                 disabled={topupLoading}
-                className={`w-full text-white font-bold py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 ${
-                  topupPurpose === 'ai'
-                    ? 'bg-violet-600 hover:bg-violet-700 shadow-violet-200'
-                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-                }`}
+                className="ds-btn w-full"
+                data-variant="primary"
+                style={{
+                  height: 52,
+                  justifyContent: 'center',
+                  background: topupPurpose === 'ai' ? '#7c3aed' : undefined,
+                  opacity: topupLoading ? 0.6 : 1,
+                }}
               >
-                {topupLoading ? <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" /> : <CheckCircle2 size={24} />}
+                {topupLoading ? <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" /> : <CheckCircle2 size={20} />}
                 {topupLoading ? 'Processing...' : `Bayar Rp ${topupAmount.toLocaleString()} untuk ${topupPurpose === 'ai' ? 'AI Point' : 'Point Order'}`}
               </button>
               <button
                 onClick={() => setShowTopupModal(false)}
-                className="w-full bg-slate-50 hover:bg-slate-100 text-slate-400 font-bold py-4 rounded-2xl transition-all"
+                className="ds-btn w-full"
+                data-variant="secondary"
+                style={{ height: 48, justifyContent: 'center' }}
               >
                 Batalkan
               </button>

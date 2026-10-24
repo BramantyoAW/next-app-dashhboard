@@ -165,17 +165,17 @@ export default function ImportProductPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="bg-white rounded-xl shadow p-6 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Bulk Import Products</h1>
+    <div className="p-8 min-h-screen" style={{ background: 'var(--ds-bg)' }}>
+      <div className="ds-card ds-card-pad max-w-2xl mx-auto">
+        <h1 className="ds-display mb-6">Bulk Import Products</h1>
 
         {/* Download Template */}
         <div className="mb-8">
-          <h2 className="font-semibold mb-2">Step 1: Download Template</h2>
-          <p className="text-sm text-gray-600 mb-3">
+          <h2 className="ds-h2 mb-2">Step 1: Download Template</h2>
+          <p className="ds-small mb-3">
             Template berisi 2 sheet: <b>Produk</b> (isi data) & <b>Petunjuk</b> (panduan cara isi, termasuk contoh produk dengan & tanpa varian).
           </p>
-          <ul className="text-sm text-gray-600 list-disc list-inside mb-4 space-y-1">
+          <ul className="ds-small list-disc list-inside mb-4 space-y-1">
             <li><b>Tanpa varian</b> → isi kolom sku/name/price, biarkan kolom Ukuran/Warna <b>kosong</b>. Stok diatur via <b>Inventory</b>.</li>
             <li><b>Dengan varian</b> → isi kolom Ukuran/Warna. Stok diatur <b>per varian</b> di detail produk.</li>
             <li>Kolom apa pun selain sku/name/description/price/image = <b>varian baru</b>.</li>
@@ -183,30 +183,29 @@ export default function ImportProductPage() {
           <button
             onClick={handleDownloadTemplate}
             disabled={loading}
-            className={`px-4 py-2 rounded text-white font-medium ${
-              loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            className="ds-btn"
+            data-variant="primary"
           >
             {loading ? 'Generating...' : 'Download Template (.xlsx)'}
           </button>
         </div>
 
-        <hr className="my-6" />
+        <hr className="my-6" style={{ borderColor: 'var(--ds-border)' }} />
 
         {/* Upload File */}
         <div className="mb-6">
-          <h2 className="font-semibold mb-2">Step 2: Upload Template</h2>
-          <p className="text-sm text-gray-600 mb-4">
+          <h2 className="ds-h2 mb-2">Step 2: Upload Template</h2>
+          <p className="ds-small mb-4">
             Upload file Excel yang sudah kamu isi sesuai format template.
           </p>
           <input
             type="file"
             accept=".xlsx"
             onChange={handleUpload}
-            className="block w-full text-sm border border-gray-300 rounded p-2"
+            className="ds-input"
           />
           {uploadFile && (
-            <p className="text-sm text-green-600 mt-2">
+            <p className="ds-small mt-2" style={{ color: '#15803d' }}>
               ✅ {uploadFile.name} siap diupload
             </p>
           )}
@@ -214,47 +213,50 @@ export default function ImportProductPage() {
 
         <button
           onClick={handleSubmit}
-          className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded"
+          className="ds-btn"
+          data-variant="primary"
         >
           Upload & Import
         </button>
 
         <div className="mt-10">
-        <h2 className="text-lg font-semibold mb-3">Riwayat Import Terakhir</h2>
-        <table className="w-full text-sm border border-gray-200 rounded">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="p-2 text-left">Filename</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Created</th>
-              <th className="p-2">Updated</th>
-              <th className="p-2">Failed</th>
-              <th className="p-2">Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {histories.length === 0 ? (
+        <h2 className="ds-h2 mb-3">Riwayat Import Terakhir</h2>
+        <div className="ds-table-wrap">
+          <table className="ds-table">
+            <thead className="ds-thead">
               <tr>
-                <td colSpan={6} className="text-center p-4 text-gray-400">
-                  Belum ada riwayat import
-                </td>
+                <th className="text-left">Filename</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Failed</th>
+                <th>Created At</th>
               </tr>
-            ) : (
-              histories.map(h => (
-                <tr key={h.id} className="border-t">
-                  <td className="p-2">{h.filename}</td>
-                  <td className="p-2 capitalize">{h.status}</td>
-                  <td className="p-2 text-green-600">{h.created_count}</td>
-                  <td className="p-2 text-blue-600">{h.updated_count}</td>
-                  <td className="p-2 text-red-600">{h.failed_count}</td>
-                  <td className="p-2 text-gray-500">
-                    {new Date(h.created_at).toLocaleString()}
+            </thead>
+            <tbody>
+              {histories.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center ds-small">
+                    Belum ada riwayat import
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                histories.map(h => (
+                  <tr key={h.id}>
+                    <td>{h.filename}</td>
+                    <td className="capitalize">{h.status}</td>
+                    <td className="ds-num" style={{ color: '#15803d' }}>{h.created_count}</td>
+                    <td className="ds-num ds-accent-text">{h.updated_count}</td>
+                    <td className="ds-num" style={{ color: 'var(--ds-danger)' }}>{h.failed_count}</td>
+                    <td className="ds-caption">
+                      {new Date(h.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       </div>
     </div>

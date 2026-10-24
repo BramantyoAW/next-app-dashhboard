@@ -177,91 +177,92 @@ export default function CreateProductPage() {
   if (loading) return <p>Loading attributes...</p>
 
   return (
-    <div className="flex p-8 gap-8 bg-gray-50 min-h-screen">
+    <div className="flex p-8 gap-8 min-h-screen" style={{ background: 'var(--ds-bg)' }}>
       {/* ================= LEFT: FORM ================= */}
-      <div className="flex-1 bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-bold mb-6">Create Product</h1>
+      <div className="flex-1 ds-card ds-card-pad">
+        <h1 className="ds-display mb-6">Create Product</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6 max-w-lg">
           {formError && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded text-sm">
+            <div className="ds-alert" data-tone="bad">
               {formError}
             </div>
           )}
 
           <div>
-            <label className="font-medium mb-1 block">SKU</label>
+            <label className="ds-label">SKU</label>
             <input
               type="text"
               value={formValues.sku}
               onChange={e => handleChange('sku', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Name</label>
+            <label className="ds-label">Name</label>
             <input
               type="text"
               value={formValues.name}
               onChange={e => handleChange('name', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Description</label>
+            <label className="ds-label">Description</label>
             <textarea
               value={formValues.description}
               onChange={e => handleChange('description', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-textarea"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="font-medium mb-1 block">Price</label>
+            <label className="ds-label">Price</label>
             <input
               type="number"
               value={formValues.price}
               onChange={e => handleChange('price', e.target.value)}
-              className="border rounded p-2 w-full"
+              className="ds-input"
               required
             />
           </div>
 
           {/* ============ Pilih Outlet (multi-outlet) ============ */}
           <div>
-            <label className="font-medium mb-1 block flex items-center gap-2">
+            <label className="ds-label" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <Store size={16} /> Pilih Outlet / Merchant
             </label>
-            <p className="text-xs text-gray-500 mb-2">
+            <p className="ds-hint mb-2">
               Produk akan dibuat di outlet yang dipilih (stok 0 tiap outlet, diatur nanti di Inventory).
             </p>
             {outlets.length === 0 ? (
-              <p className="text-sm text-gray-400">Memuat outlet...</p>
+              <p className="ds-small">Memuat outlet...</p>
             ) : (
               <div className="grid grid-cols-1 gap-2">
                 {outlets.map(o => (
                   <label
                     key={o.id}
-                    className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    className="flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition-colors"
+                    style={
                       selectedOutlets.includes(o.id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
+                        ? { borderColor: 'var(--ds-primary)', background: 'color-mix(in srgb, var(--ds-primary) 6%, var(--ds-surface))' }
+                        : { borderColor: 'var(--ds-border)', background: 'var(--ds-surface)' }
+                    }
                   >
                     <input
                       type="checkbox"
                       checked={selectedOutlets.includes(o.id)}
                       onChange={() => toggleOutlet(o.id)}
-                      className="h-4 w-4 text-blue-600"
+                      className="h-4 w-4 ds-switch"
                     />
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{o.name}</p>
-                      <p className="text-[11px] text-slate-400">{o.address || o.phone || '—'}</p>
+                      <p className="ds-body truncate" style={{ fontWeight: 600 }}>{o.name}</p>
+                      <p className="ds-caption">{o.address || o.phone || '—'}</p>
                     </div>
                   </label>
                 ))}
@@ -271,24 +272,22 @@ export default function CreateProductPage() {
 
           {/* ============ Image Upload / URL Toggle ============ */}
           <div>
-            <label className="font-medium mb-1 block">Product Image</label>
+            <label className="ds-label">Product Image</label>
 
             <div className="flex gap-3 mb-3">
               <button
                 type="button"
                 onClick={() => { setImageMode('upload'); setLocalPreview(null) }}
-                className={`px-3 py-1 border rounded ${
-                  imageMode === 'upload' ? 'bg-blue-600 text-white' : ''
-                }`}
+                className="ds-btn"
+                data-variant={imageMode === 'upload' ? 'primary' : 'secondary'}
               >
                 Upload
               </button>
               <button
                 type="button"
                 onClick={() => { setImageMode('url'); setLocalPreview(null) }}
-                className={`px-3 py-1 border rounded ${
-                  imageMode === 'url' ? 'bg-blue-600 text-white' : ''
-                }`}
+                className="ds-btn"
+                data-variant={imageMode === 'url' ? 'primary' : 'secondary'}
               >
                 URL
               </button>
@@ -303,7 +302,7 @@ export default function CreateProductPage() {
                 );
                 return isBackendUrl ? (
                   <div>
-                    <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded p-2">
+                    <p className="ds-alert" data-tone="ok">
                       ✅ Gambar sudah tersimpan via upload. Masukkan URL baru jika ingin mengganti.
                     </p>
                     <input
@@ -312,7 +311,7 @@ export default function CreateProductPage() {
                       placeholder="https://example.com/image-baru.jpg"
                       value=""
                       onChange={e => handleChange('image', e.target.value)}
-                      className="border rounded p-2 w-full mt-2"
+                      className="ds-input mt-2"
                     />
                   </div>
                 ) : (
@@ -322,7 +321,7 @@ export default function CreateProductPage() {
                     placeholder="https://example.com/image.jpg"
                     value={formValues.image ?? ''}
                     onChange={e => handleChange('image', e.target.value)}
-                    className="border rounded p-2 w-full"
+                    className="ds-input"
                   />
                 );
               })()
@@ -336,17 +335,17 @@ export default function CreateProductPage() {
                     const file = e.target.files?.[0]
                     if (file) handleFileUpload(file)
                   }}
-                  className="border rounded p-2 w-full"
+                  className="ds-input"
                 />
                 {uploading && (
-                  <p className="text-sm text-blue-600 mt-1 animate-pulse">Uploading...</p>
+                  <p className="ds-accent-text text-sm mt-1 animate-pulse">Uploading...</p>
                 )}
               </div>
             )}
           </div>
 
-          <h2 className="text-lg font-semibold mt-6">Varian</h2>
-          <p className="text-xs text-gray-500 mb-2">
+          <h2 className="ds-h2 mt-6">Varian</h2>
+          <p className="ds-hint mb-2">
             Tambahkan pilihan varian produk (mis. Ukuran: 250g, Warna: Merah). Baris dengan nama & nilai kosong diabaikan.
           </p>
           {varian.map((v, idx) => (
@@ -356,14 +355,16 @@ export default function CreateProductPage() {
                 placeholder="Nama (mis. Ukuran)"
                 value={v.name}
                 onChange={e => updateVarian(idx, 'name', e.target.value)}
-                className="border rounded p-2 w-1/2"
+                className="ds-input"
+                style={{ width: '50%' }}
               />
               <input
                 type="text"
                 placeholder="Nilai (mis. 250g)"
                 value={v.value}
                 onChange={e => updateVarian(idx, 'value', e.target.value)}
-                className="border rounded p-2 w-1/2"
+                className="ds-input"
+                style={{ width: '50%' }}
               />
               <button
                 type="button"
@@ -378,14 +379,16 @@ export default function CreateProductPage() {
           <button
             type="button"
             onClick={addVarian}
-            className="flex items-center gap-1 text-blue-600 text-sm hover:underline mt-1"
+            className="ds-btn"
+            data-variant="ghost"
           >
             <Plus size={14} /> Tambah varian
           </button>
 
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="ds-btn"
+            data-variant="primary"
             disabled={uploading}
           >
             Save Product
@@ -396,8 +399,8 @@ export default function CreateProductPage() {
       {/* ================= RIGHT: IMAGE PREVIEW ================= */}
       <div className="w-1/3 flex flex-col items-center justify-start">
         <div className="sticky top-16 w-full flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-4">Preview</h2>
-          <div className="w-72 h-72 border-2 border-dashed rounded-xl flex items-center justify-center bg-white overflow-hidden shadow">
+          <h2 className="ds-h2 mb-4">Preview</h2>
+          <div className="w-72 h-72 rounded-xl flex items-center justify-center overflow-hidden ds-card" style={{ borderStyle: 'dashed', borderWidth: 2, borderColor: 'var(--ds-border-strong)' }}>
             <img
               src={getPreviewSrc()}
               alt="Preview"
