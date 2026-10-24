@@ -327,3 +327,22 @@ html {
 .ds-app .shadow-2xl {
   --tw-shadow: 0 10px 28px -6px rgb(0 0 0 / 0.11), 0 4px 10px -6px rgb(0 0 0 / 0.05);
 }
+
+/* Override di atas unlayered, jadi spesifisitasnya mengalahkan varian
+   `*:shadow-none` buatan Tailwind. Tanpa blok ini, `shadow-xl sm:shadow-none`
+   tetap menampilkan bayangan di layar lebar sehingga tampak seperti garis.
+   ponytail: hanya varian yang benar-benar dipakai; tambahkan baris baru
+   kalau nanti muncul `md:shadow-none` / `xl:shadow-none`. */
+.ds-app .shadow-none {
+  --tw-shadow: 0 0 #0000;
+}
+@media (min-width: 40rem) {
+  .ds-app .sm\:shadow-none {
+    --tw-shadow: 0 0 #0000;
+  }
+}
+@media (min-width: 64rem) {
+  .ds-app .lg\:shadow-none {
+    --tw-shadow: 0 0 #0000;
+  }
+}
