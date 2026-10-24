@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
+
   // Register fields
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
@@ -144,146 +144,153 @@ export default function LoginPage() {
     <div className="ds-app min-h-screen flex text-slate-900 bg-white">
       {/* Left Column - Image/Illustration (hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 bg-blue-50 relative flex-col justify-center items-center overflow-hidden border-r border-blue-100">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-200/50 via-blue-50 to-white -z-10 pattern-dots pattern-blue-200 pattern-bg-transparent pattern-size-4 pattern-opacity-40"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-200/50 via-blue-50 to-white -z-10"></div>
         <div className="z-10 p-12 text-center flex flex-col items-center">
-            <h2 className="text-4xl font-extrabold text-blue-800 mb-6 drop-shadow-sm">
-              {isRegister ? 'Gabung omBot' : 'Selamat Datang Kembali'}
-            </h2>
-            <p className="text-lg text-blue-600/80 mb-12 max-w-md">
-              {isRegister ? 'Mulai kelola toko UMKM Anda dengan sistem order management terbaik.' : 'Kelola toko Anda dengan efisien dan lebih terstruktur dengan omBot.'}
-            </p>
-            <div className="relative w-full max-w-[650px] aspect-[4/3] rounded-2xl bg-white shadow-2xl p-4 transform transition-transform hover:scale-105 duration-500 border border-white/40 backdrop-blur-sm">
-                <img src="/allphase.png" alt="omBot Illustration" className="w-full h-full object-contain rounded-xl bg-slate-50" />
-            </div>
+          <h2 className="ds-display text-blue-800 mb-4">
+            {isRegister ? 'Gabung omBot' : 'Selamat Datang Kembali'}
+          </h2>
+          <p className="text-base text-blue-600/80 mb-10 max-w-md">
+            {isRegister ? 'Mulai kelola toko UMKM Anda dengan sistem order management terbaik.' : 'Kelola toko Anda dengan efisien dan lebih terstruktur dengan omBot.'}
+          </p>
+          <div className="relative w-full max-w-[650px] aspect-[4/3] rounded-2xl bg-white p-4 border border-white/40">
+            <img src="/allphase.png" alt="omBot Illustration" className="w-full h-full object-contain rounded-xl bg-slate-50" />
+          </div>
         </div>
       </div>
 
       {/* Right Column - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-white overflow-y-auto">
-        <div className="bg-white/80 backdrop-blur-lg sm:bg-transparent rounded-3xl shadow-xl sm:shadow-none p-8 sm:p-0 w-full max-w-md border border-slate-100 sm:border-transparent space-y-6 z-10 relative my-8">
+        <div className="relative z-10 w-full max-w-md my-8 space-y-6 rounded-3xl bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
           {loading && (
-            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-3xl sm:rounded-none flex items-center justify-center z-50">
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50">
               <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" />
             </div>
           )}
 
           {errors.general && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm shadow-sm">
-              <span className="font-semibold block">{errors.general}</span>
+            <div className="ds-alert" data-tone="bad">
+              <span className="font-semibold">{errors.general}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 px-4 py-3 rounded-lg text-sm shadow-sm">
-              <span className="font-semibold block">{successMessage}</span>
+            <div className="ds-alert" data-tone="ok">
+              <span className="font-semibold">{successMessage}</span>
             </div>
           )}
 
-          <div className="text-center sm:text-left space-y-2">
+          <div className="space-y-2">
             <div className="flex justify-center sm:justify-start mb-6 lg:hidden">
-                <img src="/ombotico.png" alt="Logo" className="w-16 h-16 object-contain rounded-xl shadow-md" />
+              <img src="/ombotico.png" alt="Logo" className="w-16 h-16 object-contain rounded-xl" />
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="ds-display text-slate-900">
               {isRegister ? 'Daftar Akun Baru' : 'Login ke omBot'}
             </h1>
-            <p className="text-base text-slate-500 font-medium">Order Management Untuk UMKM untuk Indonesia</p>
+            <p className="ds-hint">Order Management Untuk UMKM untuk Indonesia</p>
           </div>
 
           <form onSubmit={isRegister ? handleRegister : handleLogin} className="space-y-4">
             {isRegister && (
               <>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Username</label>
+                  <div>
+                    <label className="ds-label">Username</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                      className="ds-input"
+                      aria-invalid={errors.username ? 'true' : undefined}
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
                     />
-                    {errors.username && <p className="text-xs text-red-500 font-medium">{errors.username[0]}</p>}
+                    {errors.username && <p className="ds-error">{errors.username[0]}</p>}
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
+                  <div>
+                    <label className="ds-label">Nama Lengkap</label>
                     <input
                       type="text"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                      className="ds-input"
+                      aria-invalid={errors.full_name ? 'true' : undefined}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
                     />
+                    {errors.full_name && <p className="ds-error">{errors.full_name[0]}</p>}
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nomor HP</label>
+                <div>
+                  <label className="ds-label">Nomor HP</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                    className="ds-input"
                     placeholder="08123..."
+                    aria-invalid={errors.phone ? 'true' : undefined}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
                   />
-                  {errors.phone && <p className="text-xs text-red-500 font-medium">{errors.phone[0]}</p>}
+                  {errors.phone && <p className="ds-error">{errors.phone[0]}</p>}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Toko</label>
+                <div>
+                  <label className="ds-label">Nama Toko</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                    className="ds-input"
+                    aria-invalid={errors.store_name ? 'true' : undefined}
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
                     required
                   />
+                  {errors.store_name && <p className="ds-error">{errors.store_name[0]}</p>}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Deskripsi Toko</label>
+                <div>
+                  <label className="ds-label">Deskripsi Toko</label>
                   <textarea
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
+                    className="ds-textarea"
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Logo/Gambar Toko <span className="text-red-500">* (Wajib)</span></label>
+                <div>
+                  <label className="ds-label">
+                    Logo/Gambar Toko <span className="text-red-500">* (Wajib)</span>
+                  </label>
                   <input
                     type="file"
-                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                     onChange={(e) => setImage(e.target.files?.[0] || null)}
                     accept="image/*"
                     required
                   />
+                  {errors.image && <p className="ds-error">{errors.image[0]}</p>}
                 </div>
               </>
             )}
 
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Email</label>
+            <div>
+              <label className="ds-label">Alamat Email</label>
               <input
                 type="email"
                 placeholder="nama@email.com"
-                className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  errors.email ? 'border-red-300 focus:ring-red-200 focus:border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100 focus:bg-white'
-                }`}
+                className="ds-input"
+                aria-invalid={errors.email ? 'true' : undefined}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               {errors.email && (
-                <p className="text-xs text-red-500 font-medium">{errors.email[0] || errors.email}</p>
+                <p className="ds-error">{errors.email[0] || errors.email}</p>
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
-                {!isRegister && (
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="ds-label mb-0">Password</label>                {!isRegister && (
                   <button
                     type="button"
                     onClick={() => router.push('/forgot-password')}
@@ -296,21 +303,20 @@ export default function LoginPage() {
               <input
                 type="password"
                 placeholder="••••••••"
-                className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  errors.password ? 'border-red-300 focus:ring-red-200 focus:border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100 focus:bg-white'
-                }`}
+                className="ds-input"
+                aria-invalid={errors.password ? 'true' : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
               {errors.password && (
-                <p className="text-xs text-red-500 font-medium">{errors.password[0] || errors.password}</p>
+                <p className="ds-error">{errors.password[0] || errors.password}</p>
               )}
             </div>
 
             {isRegister && (
               /* Terms & Conditions Checkbox */
-              <div className="flex items-start space-x-3 py-2">
+              <div className="flex items-start gap-3 py-2">
                 <div className="flex items-center h-5">
                   <input
                     id="terms"
@@ -334,7 +340,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowTermsModal(true)}
-                      className="text-blue-600 font-bold hover:underline underline-offset-4 decoration-2 decoration-blue-200"
+                      className="text-blue-600 font-bold hover:underline underline-offset-4"
                     >
                       Syarat & Ketentuan
                     </button>
@@ -346,7 +352,8 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 mt-4 flex items-center justify-center space-x-2"
+              className="ds-btn w-full h-11 mt-4"
+              data-variant="primary"
               disabled={loading}
             >
               <span>{loading ? 'Memproses...' : (isRegister ? 'Daftar Sekarang' : 'Masuk Dashboard')}</span>

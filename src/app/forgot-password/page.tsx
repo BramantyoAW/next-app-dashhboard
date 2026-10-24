@@ -31,49 +31,48 @@ export default function ForgotPasswordPage() {
     <div className="ds-app min-h-screen flex text-slate-900 bg-white">
       {/* Left Column (hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 bg-blue-50 relative flex-col justify-center items-center overflow-hidden border-r border-blue-100">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-200/50 via-blue-50 to-white -z-10 pattern-dots pattern-blue-200 pattern-bg-transparent pattern-size-4 pattern-opacity-40"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-200/50 via-blue-50 to-white -z-10"></div>
         <div className="z-10 p-12 text-center flex flex-col items-center">
-            <h2 className="text-4xl font-extrabold text-blue-800 mb-6 drop-shadow-sm">
-              Lupa Password?
-            </h2>
-            <p className="text-lg text-blue-600/80 mb-12 max-w-md">
-              Jangan khawatir. Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang password Anda.
-            </p>
+          <h2 className="ds-display text-blue-800 mb-4">
+            Lupa Password?
+          </h2>
+          <p className="text-base text-blue-600/80 mb-10 max-w-md">
+            Jangan khawatir. Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang password Anda.
+          </p>
         </div>
       </div>
 
       {/* Right Column - Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative bg-white">
-        <div className="bg-white/80 backdrop-blur-lg sm:bg-transparent rounded-3xl p-8 sm:p-0 w-full max-w-md border border-slate-100 sm:border-transparent space-y-6 z-10 relative">
-          
+        <div className="relative z-10 w-full max-w-md space-y-6 rounded-3xl bg-white/80 p-8 backdrop-blur-lg sm:bg-transparent sm:p-0">
+
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm shadow-sm">
-              <span className="font-semibold block">{error}</span>
+            <div className="ds-alert" data-tone="bad">
+              <span className="font-semibold">{error}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 px-4 py-3 rounded-lg text-sm shadow-sm">
-              <span className="font-semibold block">{successMessage}</span>
+            <div className="ds-alert" data-tone="ok">
+              <span className="font-semibold">{successMessage}</span>
             </div>
           )}
 
-          <div className="text-center sm:text-left space-y-2">
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <div className="space-y-2">
+            <h1 className="ds-display text-slate-900">
               Reset Password
             </h1>
-            <p className="text-base text-slate-500 font-medium">Masukkan email yang terdaftar pada akun Anda.</p>
+            <p className="ds-hint">Masukkan email yang terdaftar pada akun Anda.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Email</label>
+            <div>
+              <label className="ds-label">Alamat Email</label>
               <input
                 type="email"
                 placeholder="nama@email.com"
-                className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                  error ? 'border-red-300 focus:ring-red-200 focus:border-red-400 bg-red-50/50' : 'border-slate-200 focus:border-blue-500 focus:ring-blue-100 focus:bg-white'
-                }`}
+                className="ds-input"
+                aria-invalid={error ? 'true' : undefined}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -82,7 +81,8 @@ export default function ForgotPasswordPage() {
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 mt-4 flex items-center justify-center space-x-2"
+              className="ds-btn w-full h-11 mt-4"
+              data-variant="primary"
               disabled={loading}
             >
               <span>{loading ? 'Mengirim...' : 'Kirim Tautan Reset'}</span>
