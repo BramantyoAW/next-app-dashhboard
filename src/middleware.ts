@@ -97,5 +97,8 @@ export const config = {
   // Jangan rewrite aset statis (public/*): gambar, font, dll. Kalau tidak,
   // request /atlas/img-01.png di subdomain toko ikut di-prefix
   // /storefront/<hash>/atlas/... → 404 (gambar produk & placeholder rusak).
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.[a-z0-9]+$).*)'],
+  // `graphql` wajib dikecualikan: di subdomain toko, path apa pun di-prefix
+  // /storefront/<hash>, termasuk /graphql. Akibatnya POST /graphql dari klien
+  // (register, login, cart, coupon) dibalas HTML 404 Next.js, bukan JSON.
+  matcher: ['/((?!api|graphql|_next/static|_next/image|favicon.ico|.*\\.[a-z0-9]+$).*)'],
 };
