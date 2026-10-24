@@ -163,7 +163,7 @@ export default function FaqSettingsPage() {
         />
         <div className="flex flex-wrap items-center gap-3">
           <input
-            className="ds-input w-48"
+            className="ds-input" style={{ width: 192 }}
             placeholder="Kategori (opsional)"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
@@ -195,7 +195,7 @@ export default function FaqSettingsPage() {
         ) : items.length === 0 ? (
           <p className="ds-note">Belum ada FAQ. Tambahkan yang pertama di atas.</p>
         ) : (
-          <ul className="divide-y divide-[var(--ds-border)]">
+          <ul className="divide-y divide-[color:var(--ds-border)]">
             {items.map((f) => (
               <li key={f.id} className="flex items-start gap-3 p-4">
                 <div className="min-w-0 flex-1">
@@ -215,21 +215,21 @@ export default function FaqSettingsPage() {
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     onClick={() => toggleActive(f)}
-                    className="ds-btn" data-variant="ghost"
+                    className="ds-btn-sm" data-tone="neutral"
                     title={f.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   >
                     {f.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   </button>
                   <button
                     onClick={() => startEdit(f)}
-                    className="ds-btn" data-variant="ghost"
+                    className="ds-btn-sm" data-tone="neutral"
                     title="Ubah"
                   >
                     <Pencil size={15} />
                   </button>
                   <button
                     onClick={() => handleDelete(f)}
-                    className="ds-btn" data-variant="danger"
+                    className="ds-link-danger p-1"
                     title="Hapus"
                   >
                     <Trash2 size={15} />
