@@ -60,7 +60,36 @@ function backendBase() {
 
 const uid = () => Math.random().toString(36).slice(2);
 
-export default function OmBotAiAssistance() {
+/** Contoh perintah yang relevan saat panel dipasang di halaman Web Store. */
+const CONTOH_WEBSTORE: { grup: string; ketik: string }[] = [
+  { grup: 'Status web store', ketik: 'web store saya aktif?' },
+  { grup: 'URL toko', ketik: 'url toko online saya apa?' },
+  { grup: 'Domain kustom', ketik: 'domain saya sudah nyambung belum?' },
+  { grup: 'Halaman', ketik: 'web store saya punya halaman apa saja?' },
+  { grup: 'Pembayaran', ketik: 'metode pembayaran apa yang aktif?' },
+  { grup: 'Pengiriman', ketik: 'ongkir yang aktif berapa?' },
+  { grup: 'Kupon', ketik: 'kupon aktif apa saja?' },
+  { grup: 'Jumlah produk', ketik: 'berapa produk yang siap dijual?' },
+  { grup: 'Stok menipis', ketik: 'produk mana yang stoknya menipis?' },
+  { grup: 'Daftar toko', ketik: 'toko saya ada berapa?' },
+];
+
+type Props = {
+  /**
+   * Pemisah riwayat per halaman. Panel di dashboard memakai 'dashboard'
+   * (kunci localStorage lama tetap dipakai supaya riwayat tidak hilang).
+   */
+  scope?: string;
+  /** Kalau diisi, toko dikunci ke outlet ini dan pemilih toko disembunyikan. */
+  pinnedStoreId?: number | null;
+};
+
+export default function OmBotAiAssistance({ scope = 'dashboard', pinnedStoreId = null }: Props = {}) {
+  // Panel dashboard mempertahankan kunci lama; halaman lain dapat kunci sendiri
+  // supaya riwayatnya tidak tercampur.
+  const historyKey = scope === 'dashboard' ? 'aiops_history' : `aiops_history:${scope}`;
+  const storeKey = scope === 'dashboard' ? 'aiops_store_id' : `aiops_store_id:${scope}`;
+  const contoh = pinnedStoreId ? CONTOH_WEBSTORE : CONTOH;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -87,35 +116,43 @@ export default function OmBotAiAssistance() {
       .then((res) => {
         const list = res?.myStores ?? [];
         setStores(list);
+        // Panel yang dipasang di halaman tertentu mengunci outletnya: jangan
+        // ambil dari localStorage supaya tidak menunjuk toko lain.
+        if (pinnedStoreId) {
+          setStoreId(pinnedStoreId);
+          return;
+        }
         if (list.length) {
-          const saved = Number(localStorage.getItem('aiops_store_id') || 0);
+          const saved = Number(localStorage.getItem(storeKey) || 0);
           const valid = list.some((s) => s.id === saved);
           setStoreId(valid ? saved : list[0].id);
         }
       })
       .catch(() => {});
-  }, [open]);
+  }, [open, pinnedStoreId, storeKey]);
 
   // Riwayat & toko aktif disimpan per browser (tanpa tabel baru).
   useEffect(() => {
     if (!open) return;
-    const raw = localStorage.getItem('aiops_history');
+    const raw = localStorage.getItem(historyKey);
     if (raw) {
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) setMessages(parsed);
       } catch {}
     }
-  }, [open]);
+  }, [open, historyKey]);
 
   useEffect(() => {
     if (!open) return;
-    localStorage.setItem('aiops_history', JSON.stringify(messages.slice(-40)));
-  }, [messages, open]);
+    localStorage.setItem(historyKey, JSON.stringify(messages.slice(-40)));
+  }, [messages, open, historyKey]);
 
   useEffect(() => {
-    if (storeId) localStorage.setItem('aiops_store_id', String(storeId));
-  }, [storeId]);
+    // Outlet yang dikunci halaman tidak boleh menimpa pilihan global owner.
+    if (pinnedStoreId) return;
+    if (storeId) localStorage.setItem(storeKey, String(storeId));
+  }, [storeId, pinnedStoreId, storeKey]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -311,15 +348,16 @@ export default function OmBotAiAssistance() {
               <Bot size={20} />
               <div className="min-w-0">
                 <div className="truncate text-sm font-bold">Manage OmBot AI</div>
-                {/* Pemilih toko aktif — pengganti "ganti toko" */}
+                {/* Pemilih toko aktif — pengganti "ganti toko".
+                    Disembunyikan saat panel dipatok ke satu outlet halaman. */}
                 <button
                   onClick={() => setStoreOpen((v) => !v)}
                   className="mt-0.5 flex items-center gap-1 rounded-md bg-white/15 px-1.5 py-0.5 text-[11px] font-medium hover:bg-white/25"
-                  disabled={stores.length < 2}
+                  disabled={!!pinnedStoreId || stores.length < 2}
                 >
                   <Store size={11} />
                   <span className="max-w-[180px] truncate">{storeName}</span>
-                  {stores.length > 1 && <ChevronDown size={11} />}
+                  {!pinnedStoreId && stores.length > 1 && <ChevronDown size={11} />}
                 </button>
               </div>
             </div>
@@ -334,7 +372,7 @@ export default function OmBotAiAssistance() {
               <button
                 onClick={() => {
                   setMessages([]);
-                  localStorage.removeItem('aiops_history');
+                  localStorage.removeItem(historyKey);
                 }}
                 className="rounded-lg p-1.5 hover:bg-white/15"
                 title="Hapus riwayat"
@@ -348,7 +386,7 @@ export default function OmBotAiAssistance() {
           </header>
 
           {/* Daftar toko */}
-          {storeOpen && stores.length > 1 && (
+          {storeOpen && !pinnedStoreId && stores.length > 1 && (
             <div className="border-b border-slate-100 bg-slate-50 p-2">
               {stores.map((s) => (
                 <button
@@ -375,7 +413,7 @@ export default function OmBotAiAssistance() {
                 Mau ngapain — klik contoh
               </div>
               <div className="space-y-1.5">
-                {CONTOH.map((c) => (
+                {contoh.map((c) => (
                   <button
                     key={c.ketik}
                     onClick={() => {
