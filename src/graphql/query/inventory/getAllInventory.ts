@@ -6,6 +6,7 @@ export const GET_ALL_INVENTORY = `
       data {
         product_id
         current_qty
+        has_variant
         product {
           id
           sku

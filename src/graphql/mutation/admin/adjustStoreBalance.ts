@@ -4,6 +4,7 @@ const ADJUST_STORE_BALANCE = `
   mutation AdjustStoreBalance($store_id: ID!, $amount: Int!, $note: String!) {
     adjustStoreBalance(store_id: $store_id, amount: $amount, note: $note) {
       id
+      user_id
       points
     }
   }

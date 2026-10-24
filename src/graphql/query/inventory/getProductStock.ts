@@ -16,8 +16,8 @@ export type GetProductStockResponse = {
 };
 
 const GET_PRODUCT_STOCK = gql`
-  query GetProductStock($product_id: ID!) {
-    productStock(product_id: $product_id) {
+  query GetProductStock($product_id: ID!, $store_id: ID) {
+    productStock(product_id: $product_id, store_id: $store_id) {
       current_qty
       logs {
         change
@@ -31,10 +31,12 @@ const GET_PRODUCT_STOCK = gql`
 
 export async function getProductStock(
   token: string,
-  productId: number
+  productId: number,
+  storeId?: number | string | null
 ): Promise<GetProductStockResponse> {
   graphqlClient.setHeader("Authorization", `Bearer ${token}`);
   return graphqlClient.request<GetProductStockResponse>(GET_PRODUCT_STOCK, {
     product_id: productId,
+    store_id: storeId ? String(storeId) : null,
   });
 }

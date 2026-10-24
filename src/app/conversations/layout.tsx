@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import DashboardLayout from '@/app/dashboard/layout'
+import DashboardLayout from '@/app/(dashboard)/layout';
 
 export const metadata: Metadata = {
   title: 'Conversations — OmBot',

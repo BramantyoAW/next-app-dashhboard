@@ -41,7 +41,7 @@ export default function ConfirmModal({
     >
       <div
         ref={panelRef}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
+        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl max-h-[88vh] overflow-y-auto"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-gray-800">{title}</h2>

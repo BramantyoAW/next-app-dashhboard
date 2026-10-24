@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  allowedDevOrigins: ['localhost', '127.0.0.1', '*.lvh.me'],
   async rewrites() {
     const backendUrl = process.env.GRAPHQL_URL?.replace('/graphql', '') || 'http://nginx-server:80';
     return [

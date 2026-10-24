@@ -3,9 +3,11 @@ export async function gqlFetch<T>(
   variables: Record<string, any> = {},
   token?: string
 ): Promise<T> {
-  const endpoint = process.env.NEXT_PUBLIC_GRAPHQL_URL?.trim();
+  // Server components need an absolute URL; the browser uses the relative
+  // /api/graphql proxy. GRAPHQL_URL is only defined server-side.
+  const endpoint = process.env.GRAPHQL_URL?.trim() || process.env.NEXT_PUBLIC_GRAPHQL_URL?.trim();
   if (!endpoint) {
-    throw new Error('NEXT_PUBLIC_GRAPHQL_URL is empty.');
+    throw new Error('GRAPHQL_URL / NEXT_PUBLIC_GRAPHQL_URL is empty.');
   }
 
   // Recursive helper to find all files and their paths
@@ -69,7 +71,18 @@ export async function gqlFetch<T>(
 
   const json = JSON.parse(raw);
   if (json.errors?.length) {
-    throw new Error(json.errors.map((e: any) => e.message).join(', '));
+    const messages = json.errors.map((e: any) => e.message);
+    const isAuth = messages.some((m: string) => /unauthenticated|not authenticated|token.*expired|login.*required/i.test(m));
+    if (isAuth && typeof window !== 'undefined') {
+      // Sesi habis / token invalid → bersihkan kredensial lalu lempar ke halaman login.
+      localStorage.removeItem('token');
+      document.cookie = 'ombot_token=; Path=/; Max-Age=0; SameSite=Lax';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login');
+      }
+      throw new Error('Unauthenticated. Sesi berakhir, silakan masuk kembali.');
+    }
+    throw new Error(messages.join(', '));
   }
 
   return json.data as T;

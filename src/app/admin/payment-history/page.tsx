@@ -66,7 +66,7 @@ export default function PaymentHistoryPage() {
 
     return ReactDOM.createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg max-h-[88vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
           {/* Header */}
           <div className="relative h-48 bg-slate-100 flex-shrink-0">
             {store.image ? (

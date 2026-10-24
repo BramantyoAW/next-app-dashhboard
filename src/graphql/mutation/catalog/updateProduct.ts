@@ -5,6 +5,7 @@ export const UPDATE_PRODUCT = gql`
   mutation UpdateProduct(
     $id: ID!
     $store_id: ID!
+    $store_ids: [ID!]
     $sku: String!
     $name: String!
     $description: String
@@ -15,6 +16,7 @@ export const UPDATE_PRODUCT = gql`
     updateProduct(
       id: $id
       store_id: $store_id
+      store_ids: $store_ids
       sku: $sku
       name: $name
       description: $description
@@ -42,12 +44,13 @@ export async function updateProduct(
   variables: {
     id: string
     store_id: string
+    store_ids?: number[]
     sku: string
     name: string
     description?: string
     price: number
     image: string
-    attributes: { attribute_id: string; value: string }[]
+    attributes: { name: string; value: string }[]
   }
 ): Promise<UpdateProductResponse> {
   if (!token) throw new Error("Token not found")

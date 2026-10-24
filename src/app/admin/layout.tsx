@@ -15,7 +15,10 @@ import {
   CreditCard,
   History,
   Phone,
-  ShieldCheck
+  ShieldCheck,
+  HelpCircle,
+  Sparkles,
+  Truck
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -62,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="ds-app min-h-screen flex bg-background">
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && (
         <div 
@@ -113,6 +116,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebarLink href="/admin/payment-history" icon={<History size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Payment History
           </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/ai-points" icon={<Sparkles size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            AI Point
+          </AdminSidebarLink>
 
           <div className="pt-6 pb-2 px-4">
             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">Settings</span>
@@ -126,8 +132,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <AdminSidebarLink href="/admin/settings/whatsapp" icon={<Phone size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Whatsapp Config
           </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/rajaongkir" icon={<Truck size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Ongkir Ekspedisi
+          </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/terms" icon={<ShieldCheck size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Syarat & Ketentuan
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/faq" icon={<HelpCircle size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            FAQ OmBot AI
           </AdminSidebarLink>
         </nav>
 
