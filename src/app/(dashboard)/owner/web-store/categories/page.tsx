@@ -270,16 +270,16 @@ export default function OwnerWebStoreCategoriesPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
+      <div className="flex flex-col items-center justify-center py-20 gap-3 ds-small">
         <Link
           href="/owner/web-store"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 mb-4"
+          className="ds-link inline-flex items-center gap-1.5 mb-4"
         >
           <ArrowLeft size={16} />
           Kembali ke Web Store
         </Link>
-        <Loader2 className="animate-spin text-blue-600" size={32} />
-        <span className="text-sm font-medium">Memuat kategori...</span>
+        <Loader2 className="animate-spin ds-accent-text" size={32} />
+        <span className="ds-body font-medium">Memuat kategori...</span>
       </div>
     );
   }
@@ -291,17 +291,17 @@ export default function OwnerWebStoreCategoriesPage() {
         <div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3"
+            className="ds-small inline-flex items-center gap-1.5 transition-colors mb-3"
           >
             <ArrowLeft size={16} />
             Kembali ke Management Merchant
           </Link>
           <div className="flex items-center gap-2 mb-2">
-            <FolderTree size={15} className="text-slate-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Kategori Produk</span>
+            <FolderTree size={15} className="ds-icon-muted" />
+            <span className="ds-section-label">Kategori Produk</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Kelola Kategori Produk</h1>
-          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+          <h1 className="ds-display">Kelola Kategori Produk</h1>
+          <p className="ds-small mt-1 max-w-xl">
             Atur kategori produk toko online Anda. Kategori dipakai untuk memfilter katalog di halaman
             storefront dan menata produk menjadi lebih rapi.
           </p>
@@ -313,7 +313,7 @@ export default function OwnerWebStoreCategoriesPage() {
       </div>
 
       {!webStoreId && (
-        <div className="flex items-center gap-3 p-4 rounded-xl text-sm font-medium border bg-rose-50 text-rose-800 border-rose-200">
+        <div className="ds-alert" data-tone="bad">
           <AlertCircle className="shrink-0 text-rose-600" size={20} />
           Web store belum terhubung. Silakan selesaikan Setup Web Store terlebih dahulu.
         </div>
@@ -322,11 +322,8 @@ export default function OwnerWebStoreCategoriesPage() {
       {/* Status alert */}
       {status && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${
-            status.kind === 'ok'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-          }`}
+          className="ds-alert transition-all animate-in fade-in"
+          data-tone={status.kind === 'ok' ? 'ok' : 'bad'}
         >
           {status.kind === 'ok' ? <CheckCircle2 className="shrink-0 text-emerald-600" size={20} /> : <AlertCircle className="shrink-0 text-rose-600" size={20} />}
           {status.msg}
@@ -336,14 +333,16 @@ export default function OwnerWebStoreCategoriesPage() {
       {/* Category list */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900">Daftar Kategori ({categories.length})</h2>
+          <h2 className="ds-h1">Daftar Kategori ({categories.length})</h2>
         </div>
 
         {categories.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-12 text-center">
-            <FolderTree size={40} className="mx-auto text-slate-300 mb-3" />
-            <p className="font-semibold text-slate-600">Belum ada kategori</p>
-            <p className="text-sm text-slate-400 mt-1">
+          <div className="ds-empty">
+            <div className="ds-empty-icon">
+              <FolderTree size={20} />
+            </div>
+            <p className="ds-h2">Belum ada kategori</p>
+            <p className="ds-small mt-1">
               Klik "Tambah Kategori" untuk membuat kategori pertama toko Anda. Setelah itu assign ke produk
               di halaman Stock per Store.
             </p>
@@ -353,29 +352,27 @@ export default function OwnerWebStoreCategoriesPage() {
             {categories.map((c) => (
               <div
                 key={c.id}
-                className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-md ${
-                  c.is_active ? 'border-slate-200/80' : 'border-slate-100 opacity-70'
-                }`}
+                className={`ds-card relative overflow-hidden p-5 transition-all ${c.is_active ? '' : 'opacity-70'}`}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 to-teal-500" />
+                <div className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: 'var(--ds-primary)' }} />
                 <div className="flex items-start justify-between gap-4 pl-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-base truncate">{c.name}</span>
+                      <span className="ds-h2 truncate">{c.name}</span>
                       {!c.is_active && (
-                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">
+                        <span className="ds-badge">
                           Nonaktif
                         </span>
                       )}
                     </div>
                     {c.slug && (
-                      <p className="mt-0.5 font-mono text-[11px] text-slate-400">/{c.slug}</p>
+                      <p className="mt-0.5 ds-mono">/{c.slug}</p>
                     )}
-                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 border border-slate-200 px-2 py-1">
+                    <div className="mt-2 flex flex-wrap gap-2 ds-caption">
+                      <span className="ds-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                         <Tag size={11} /> Urutan {c.sort_order}
                       </span>
-                      <span className="inline-flex items-center rounded-lg bg-blue-50 border border-blue-100 px-2 py-1 font-semibold text-blue-700">
+                      <span className="ds-chip inline-flex items-center font-semibold ds-accent-text">
                         {c.store_products?.length ?? 0} produk
                       </span>
                     </div>
@@ -383,20 +380,24 @@ export default function OwnerWebStoreCategoriesPage() {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => openAssign(c)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
                     >
                       <PackagePlus size={14} /> Assign Produk
                     </button>
                     <button
                       onClick={() => openForm(c)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => remove(c)}
                       disabled={deletingId === c.id}
-                      className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 transition-colors"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
+                      style={{ color: 'var(--ds-danger)' }}
                       aria-label={`Hapus ${c.name}`}
                     >
                       {deletingId === c.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
@@ -412,23 +413,23 @@ export default function OwnerWebStoreCategoriesPage() {
       {/* Form modal */}
       {form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeForm} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'rgba(15, 23, 42, 0.4)' }} onClick={closeForm} />
+          <div className="ds-card relative z-10 w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <FolderTree size={20} className="text-emerald-500" />
+              <h3 className="ds-h1 flex items-center gap-2">
+                <FolderTree size={20} className="ds-accent-text" />
                 {form.id ? 'Edit Kategori' : 'Kategori Baru'}
               </h3>
-              <button onClick={closeForm} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+              <button onClick={closeForm} className="ds-btn-sm" data-tone="neutral">
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Nama Kategori</label>
+                <label className="ds-label">Nama Kategori</label>
                 <input
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="ds-input"
                   placeholder="contoh: Minuman"
                   value={form.name}
                   onChange={(e) =>
@@ -440,48 +441,49 @@ export default function OwnerWebStoreCategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Slug (opsional)</label>
+                <label className="ds-label">Slug (opsional)</label>
                 <input
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="ds-input ds-mono"
                   placeholder="minuman"
                   value={form.slug}
                   onChange={(e) => setForm((f) => (f ? { ...f, slug: e.target.value } : f))}
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="ds-hint">
                   Slug dipakai di URL storefront (cth: /kategori/minuman). Kosongkan untuk otomatis dari nama.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Urutan (sort_order)</label>
+                <label className="ds-label">Urutan (sort_order)</label>
                 <input
                   type="number"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="ds-input ds-num"
                   value={form.sort_order}
                   onChange={(e) => setForm((f) => (f ? { ...f, sort_order: Number(e.target.value) || 0 } : f))}
                 />
               </div>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition-colors">
+              <label className="ds-toggle-row">
                 <div>
-                  <span className="block text-sm font-bold text-slate-900">Kategori Aktif</span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
+                  <span className="ds-h2 block">Kategori Aktif</span>
+                  <span className="ds-caption block mt-0.5">
                     Kategori nonaktif tidak tampil di storefront.
                   </span>
                 </div>
                 <input
                   type="checkbox"
-                  className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
+                  className="ds-switch"
                   checked={form.is_active}
                   onChange={(e) => setForm((f) => (f ? { ...f, is_active: e.target.checked } : f))}
                 />
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-5 border-t border-slate-100 mt-5">
+            <div className="ds-divider-top flex items-center justify-end gap-2 mt-5">
               <button
                 onClick={closeForm}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="ds-btn"
+                data-variant="ghost"
               >
                 Batal
               </button>
@@ -502,38 +504,38 @@ export default function OwnerWebStoreCategoriesPage() {
       {/* Assign products modal */}
       {assignCat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setAssignCat(null)} />
-          <div className="relative z-10 w-full max-w-3xl rounded-2xl bg-white shadow-2xl max-h-[88vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <PackagePlus size={20} className="text-blue-500" />
+          <div className="absolute inset-0 backdrop-blur-sm" style={{ background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setAssignCat(null)} />
+          <div className="ds-card relative z-10 w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+            <div className="ds-section flex items-center justify-between px-6 py-4">
+              <h3 className="ds-h1 flex items-center gap-2">
+                <PackagePlus size={20} className="ds-accent-text" />
                 Assign Produk — {assignCat.name}
               </h3>
-              <button onClick={() => setAssignCat(null)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg" aria-label="Tutup">
+              <button onClick={() => setAssignCat(null)} className="ds-btn-sm" data-tone="neutral" aria-label="Tutup">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="px-6 pt-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                <Search size={15} className="text-slate-400 shrink-0" />
+            <div className="px-6 pt-4 pb-3 ds-divider-top">
+              <div className="ds-well flex items-center gap-2" style={{ padding: '0 12px', height: 36 }}>
+                <Search size={15} className="ds-icon-muted shrink-0" />
                 <input
                   className="w-full bg-transparent text-sm outline-none"
                   placeholder="Cari nama atau SKU produk…"
                   value={pickerSearch}
                   onChange={(e) => setPickerSearch(e.target.value)}
                 />
-                <span className="text-xs font-semibold text-slate-400 shrink-0">{pickerSelected.size} dipilih</span>
+                <span className="ds-caption shrink-0">{pickerSelected.size} dipilih</span>
               </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
               {pickerLoading ? (
-                <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
+                <div className="ds-small flex items-center justify-center gap-2 py-12">
                   <Loader2 size={18} className="animate-spin" /> Memuat produk…
                 </div>
               ) : filteredPicker.length === 0 ? (
-                <div className="py-12 text-center text-sm text-slate-400">
+                <div className="ds-note py-12">
                   {pickerProducts.length === 0 ? 'Belum ada master product.' : 'Tidak ada produk yang cocok dengan pencarian.'}
                 </div>
               ) : (
@@ -545,29 +547,30 @@ export default function OwnerWebStoreCategoriesPage() {
                         key={p.key}
                         type="button"
                         onClick={() => togglePicker(p.key)}
-                        className={`relative text-left rounded-xl border-2 p-3 transition-all ${
+                        className={`relative text-left p-3 transition-all ${
                           checked
-                            ? 'border-blue-500 bg-blue-50/70 shadow-sm'
-                            : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'
+                            ? 'ds-well'
+                            : 'ds-card'
                         }`}
+                        data-tone={checked ? 'accent' : undefined}
                       >
                         {checked && (
-                          <span className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                          <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)' }}>
                             <Check size={12} />
                           </span>
                         )}
-                        <div className="w-full aspect-square rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mb-2">
+                        <div className="ds-well w-full aspect-square overflow-hidden mb-2" style={{ padding: 0 }}>
                           {p.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={resolveImageUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <div className="w-full h-full flex items-center justify-center ds-icon-muted">
                               <PackagePlus size={22} />
                             </div>
                           )}
                         </div>
-                        <p className="text-sm font-semibold text-slate-900 truncate">{p.name}</p>
-                        <p className="text-[11px] font-mono text-slate-400 truncate">{p.sku ?? '—'}</p>
+                        <p className="ds-h2 truncate">{p.name}</p>
+                        <p className="ds-mono truncate">{p.sku ?? '—'}</p>
                       </button>
                     );
                   })}
@@ -575,17 +578,19 @@ export default function OwnerWebStoreCategoriesPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+            <div className="ds-divider-top flex items-center justify-end gap-2 px-6 py-4">
               <button
                 onClick={() => setAssignCat(null)}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="ds-btn"
+                data-variant="ghost"
               >
                 Batal
               </button>
               <button
                 onClick={saveAssign}
                 disabled={pickerSaving || pickerLoading}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {pickerSaving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
                 Simpan Assignment ({pickerSelected.size})

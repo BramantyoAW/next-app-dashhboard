@@ -917,7 +917,7 @@ export default function OwnerWebStoreSetupPage() {
                     <div className="ds-subcard-title">
                       <CreditCard size={14} /> Payment Gateway Midtrans
                     </div>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${mtServerKey.trim() && mtClientKey.trim() ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                    <span className="ds-badge" data-tone={mtServerKey.trim() && mtClientKey.trim() ? 'ok' : undefined}>
                       {mtServerKey.trim() && mtClientKey.trim() ? 'Terhubung' : 'Belum diisi'}
                     </span>
                   </div>
@@ -1322,7 +1322,10 @@ export default function OwnerWebStoreSetupPage() {
                         yang dicoba — tiap kurir menambah satu panggilan API
                         berbayar tiap kali tarif dihitung. */}
                     {shippingMethodKind(sm) === 'expedition' && (
-                      <div className="rounded-lg border bg-white p-2">
+                      <div
+                        className="rounded-lg border p-2"
+                        style={{ background: 'var(--ds-surface)', borderColor: 'var(--ds-border)' }}
+                      >
                         <p className="ds-section-label">Kurir</p>
                         <div className="flex flex-wrap gap-2">
                           {KURIR_EKSPEDISI.map((k) => {

@@ -82,14 +82,22 @@ function SortableBlock({
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1, zIndex: isDragging ? 50 : undefined }}
-      className={`relative group ${selected ? 'rounded-2xl ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-100' : ''}`}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        zIndex: isDragging ? 50 : undefined,
+        boxShadow: selected ? '0 0 0 2px var(--ds-primary)' : undefined,
+        borderRadius: selected ? 'var(--ds-radius-sm)' : undefined,
+      }}
+      className="relative group"
     >
       {/* Drag handle — selalu tampil di hover, diseret untuk reorder */}
       <button
         {...attributes}
         {...listeners}
-        className={`absolute -left-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-md bg-slate-900 text-white shadow-md hover:bg-blue-600 group-hover:flex ${selected ? 'flex' : ''}`}
+        className={`absolute -left-3 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-md shadow-md hover:opacity-90 group-hover:flex ${selected ? 'flex' : ''}`}
+        style={{ background: 'var(--ds-fg)', color: 'var(--ds-surface)' }}
         aria-label="Seret untuk pindah"
         onClick={(e) => e.stopPropagation()}
       >
@@ -98,14 +106,17 @@ function SortableBlock({
 
       {/* Toolbar kecil di pojok kanan atas — hanya untuk blok terpilih */}
       {selected && (
-        <div className="absolute -top-3 right-2 z-20 flex items-center gap-0.5 rounded-lg bg-slate-900 px-1 py-0.5 text-white shadow-md">
-          <button onClick={() => onMove(-1)} disabled={index === 0} className="rounded p-1 hover:bg-white/20 disabled:opacity-30" aria-label="Naik">
+        <div
+          className="absolute -top-3 right-2 z-20 flex items-center gap-0.5 rounded-lg px-1 py-0.5 shadow-md"
+          style={{ background: 'var(--ds-fg)', color: 'var(--ds-surface)' }}
+        >
+          <button onClick={() => onMove(-1)} disabled={index === 0} className="rounded p-1 hover:opacity-70 disabled:opacity-30" aria-label="Naik">
             <ChevronUp size={13} />
           </button>
-          <button onClick={() => onMove(1)} disabled={index === total - 1} className="rounded p-1 hover:bg-white/20 disabled:opacity-30" aria-label="Turun">
+          <button onClick={() => onMove(1)} disabled={index === total - 1} className="rounded p-1 hover:opacity-70 disabled:opacity-30" aria-label="Turun">
             <ChevronDown size={13} />
           </button>
-          <span className="mx-0.5 h-3.5 w-px bg-white/30" />
+          <span className="mx-0.5 h-3.5 w-px" style={{ background: 'currentColor', opacity: 0.3 }} />
           <BlockRemoveButton onClick={onRemove} />
         </div>
       )}
@@ -404,11 +415,11 @@ export default function WebStoreBuilderPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
-        <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 mb-4">
+      <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: 'var(--ds-fg-muted)' }}>
+        <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm ds-link mb-4">
           <ArrowLeft size={8} /> Kembali ke Setup
         </Link>
-        <Loader2 className="animate-spin text-blue-600" size={32} />
+        <Loader2 className="animate-spin ds-accent-text" size={32} />
         <span className="text-sm font-medium">Memuat builder...</span>
       </div>
     );
@@ -417,14 +428,25 @@ export default function WebStoreBuilderPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-16">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="ds-page-head">
         <div>
-          <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm ds-link">
             <ArrowLeft size={16} /> Kembali ke Setup
           </Link>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-1 flex items-center gap-2">
-            <Blocks size={22} className="text-blue-600" /> Page Builder
-            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 uppercase tracking-wide border border-indigo-100">
+          <h1 className="ds-display flex items-center gap-2" style={{ marginTop: 4 }}>
+            <Blocks size={22} className="ds-accent-text" /> Page Builder
+            <span
+              className="uppercase tracking-wide"
+              style={{
+                padding: '2px 8px',
+                borderRadius: 999,
+                fontSize: 10,
+                fontWeight: 700,
+                background: 'var(--ds-surface-2)',
+                border: '1px solid var(--ds-border)',
+                color: 'var(--ds-primary)',
+              }}
+            >
               Tema + Blok
             </span>
           </h1>
@@ -436,7 +458,8 @@ export default function WebStoreBuilderPage() {
               const p = pages.find((x) => x.slug === e.target.value);
               if (p) selectPage(p);
             }}
-            className="px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="ds-select"
+            style={{ width: 'auto' }}
           >
             {pages.map((p) => (
               <option key={p.id} value={p.slug}>
@@ -446,14 +469,16 @@ export default function WebStoreBuilderPage() {
           </select>
           <button
             onClick={() => setPreview((p) => !p)}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${preview ? 'bg-slate-800 text-white' : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+            className="ds-btn"
+            data-variant={preview ? 'primary' : 'secondary'}
           >
             <Eye size={16} /> {preview ? 'Edit' : 'Preview'}
           </button>
           <button
             onClick={save}
             disabled={saving || !activePage}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
+            className="ds-btn"
+            data-variant="primary"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             Simpan
@@ -462,25 +487,28 @@ export default function WebStoreBuilderPage() {
       </div>
 
       {status && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium ${status.kind === 'ok' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-rose-50 border border-rose-200 text-rose-700'}`}>
+        <div className="ds-alert" data-tone={status.kind === 'ok' ? 'ok' : 'bad'}>
           {status.kind === 'ok' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />} {status.msg}
         </div>
       )}
 
       {preview ? (
         /* ---------- Preview mode (kanvas full-page tanpa navbar) ---------- */
-        <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="bg-slate-800 text-white text-xs px-4 py-2 flex items-center gap-2">
+        <div className="ds-card overflow-hidden">
+          <div
+            className="text-xs px-4 py-2 flex items-center gap-2"
+            style={{ background: 'var(--ds-fg)', color: 'var(--ds-surface)' }}
+          >
             <span className="w-2 h-2 rounded-full bg-rose-400" />
             <span className="w-2 h-2 rounded-full bg-amber-400" />
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="ml-2 font-mono">{webStore?.store_name ?? ''} — preview full-page (tanpa navbar)</span>
+            <span className="ml-2 ds-mono" style={{ color: 'inherit' }}>{webStore?.store_name ?? ''} — preview full-page (tanpa navbar)</span>
           </div>
-          <div className="bg-slate-100 p-6">
+          <div className="p-6" style={{ background: 'var(--ds-surface-2)' }}>
             <style dangerouslySetInnerHTML={{ __html: themeToCss(theme) }} />
-            <div className="max-w-3xl mx-auto bg-white rounded-xl shadow overflow-hidden">
+            <div className="max-w-3xl mx-auto ds-card overflow-hidden">
               {blocks.length === 0 ? (
-                <div className="text-center py-16 text-slate-400 text-sm">Belum ada blok. Tambahkan blok untuk mulai.</div>
+                <div className="ds-empty ds-small">Belum ada blok. Tambahkan blok untuk mulai.</div>
               ) : (
                 blocks.map((b) => <CanvasBlockRenderer key={b.id} block={b} />)
               )}
@@ -491,8 +519,8 @@ export default function WebStoreBuilderPage() {
         /* ---------- Edit mode ---------- */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* LEFT: Blok / Tema */}
-          <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
-            <div className="flex rounded-xl border border-slate-200 p-0.5 mb-4">
+          <div className="lg:col-span-3 ds-card ds-card-pad">
+            <div className="flex ds-well mb-4" style={{ padding: 2 }}>
               {([
                 { key: 'blocks' as const, label: 'Blok', icon: Plus },
                 { key: 'theme' as const, label: 'Tema', icon: Palette },
@@ -500,7 +528,8 @@ export default function WebStoreBuilderPage() {
                 <button
                   key={t.key}
                   onClick={() => setLeftTab(t.key)}
-                  className={`flex-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 ${leftTab === t.key ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                  className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                  style={leftTab === t.key ? { background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)' } : { background: 'transparent', color: 'var(--ds-fg-muted)' }}
                 >
                   <t.icon size={12} /> {t.label}
                 </button>
@@ -509,24 +538,24 @@ export default function WebStoreBuilderPage() {
 
             {leftTab === 'blocks' ? (
               <div className="space-y-2">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Tambah Blok</h3>
+                <h3 className="ds-h2 mb-2">Tambah Blok</h3>
                 {BLOCK_DEFS.map((def) => (
                   <button
                     key={def.type}
                     onClick={() => addBlock(def.type)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/60 transition-colors text-left"
+                    className="ds-subcard w-full flex items-center gap-3 hover:opacity-90 transition-opacity text-left cursor-pointer"
                   >
-                    <span className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                    <span className="w-9 h-9 rounded-lg flex items-center justify-center ds-icon-muted" style={{ background: 'var(--ds-surface)' }}>
                       <def.icon size={18} />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-800 truncate">{def.label}</div>
-                      <div className="text-[11px] text-slate-400 truncate">{def.description}</div>
+                      <div className="ds-body truncate" style={{ fontWeight: 600 }}>{def.label}</div>
+                      <div className="ds-caption truncate">{def.description}</div>
                     </div>
-                    <Plus size={16} className="text-slate-300 shrink-0" />
+                    <Plus size={16} className="ds-icon-muted shrink-0" />
                   </button>
                 ))}
-                <div className="mt-3 p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-[11px] text-blue-700 leading-relaxed">
+                <div className="ds-well mt-3" data-tone="accent">
                   💡 Seret blok untuk urutan, klik blok untuk ubah konten & desain.
                 </div>
               </div>
@@ -534,7 +563,7 @@ export default function WebStoreBuilderPage() {
               /* Tema editor */
               <div className="space-y-4">
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preset Tema</span>
+                  <span className="ds-section-label">Preset Tema</span>
                   <div className="flex flex-wrap gap-1.5 mt-1.5">
                     {THEME_PRESETS.map((p) => {
                       const active =
@@ -547,7 +576,12 @@ export default function WebStoreBuilderPage() {
                           key={p.name}
                           type="button"
                           onClick={() => setTheme((prev) => ({ ...prev, ...p.theme, custom_css: prev.custom_css }))}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${active ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-semibold cursor-pointer transition-colors"
+                          style={
+                            active
+                              ? { background: 'var(--ds-primary)', border: '1px solid var(--ds-primary)', color: 'var(--ds-primary-fg)' }
+                              : { background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)', color: 'var(--ds-fg-muted)' }
+                          }
                         >
                           <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ backgroundColor: p.theme.colors.brand }} />
                           {p.name}
@@ -557,11 +591,11 @@ export default function WebStoreBuilderPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Font</span>
+                  <span className="ds-section-label">Font</span>
                   <select
                     value={theme.font}
                     onChange={(e) => setTheme((t) => ({ ...t, font: e.target.value }))}
-                    className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="ds-select mt-1.5"
                   >
                     {FONT_OPTIONS.map((f) => (
                       <option key={f.value} value={f.value}>{f.label}</option>
@@ -576,19 +610,20 @@ export default function WebStoreBuilderPage() {
                     ['muted', 'Teks Redup'],
                   ] as const).map(([key, label]) => (
                     <div key={key}>
-                      <span className="text-[11px] font-semibold text-slate-400">{label}</span>
+                      <span className="ds-caption">{label}</span>
                       <div className="flex items-center gap-1.5 mt-1">
                         <input
                           type="color"
                           value={theme.colors[key]}
                           onChange={(e) => setTheme((t) => ({ ...t, colors: { ...t.colors, [key]: e.target.value } }))}
-                          className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                          className="w-9 h-9 rounded-lg cursor-pointer p-0.5"
+                          style={{ border: '1px solid var(--ds-border)' }}
                         />
                         <input
                           type="text"
                           value={theme.colors[key]}
                           onChange={(e) => setTheme((t) => ({ ...t, colors: { ...t.colors, [key]: e.target.value } }))}
-                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono uppercase"
+                          className="ds-input ds-mono uppercase"
                         />
                       </div>
                     </div>
@@ -596,21 +631,21 @@ export default function WebStoreBuilderPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Radius (px)</span>
+                    <span className="ds-section-label">Radius (px)</span>
                     <input
                       type="number"
                       min={0} max={48}
                       value={theme.radius}
                       onChange={(e) => setTheme((t) => ({ ...t, radius: Number(e.target.value) || 0 }))}
-                      className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium"
+                      className="ds-input mt-1.5"
                     />
                   </div>
                   <div>
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Gaya Tombol</span>
+                    <span className="ds-section-label">Gaya Tombol</span>
                     <select
                       value={theme.buttonStyle}
                       onChange={(e) => setTheme((t) => ({ ...t, buttonStyle: e.target.value as WebTheme['buttonStyle'] }))}
-                      className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium"
+                      className="ds-select mt-1.5"
                     >
                       <option value="rounded">Membulat</option>
                       <option value="pill">Pill</option>
@@ -619,13 +654,13 @@ export default function WebStoreBuilderPage() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Custom CSS</span>
+                  <span className="ds-section-label">Custom CSS</span>
                   <textarea
                     rows={5}
                     value={theme.custom_css}
                     onChange={(e) => setTheme((t) => ({ ...t, custom_css: e.target.value }))}
                     placeholder=".hero { ... }"
-                    className="mt-1.5 w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-mono text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="ds-textarea ds-mono mt-1.5"
                   />
                 </div>
               </div>
@@ -635,14 +670,17 @@ export default function WebStoreBuilderPage() {
           {/* MIDDLE: Canvas (Stitch — render halaman utuh, klik blok untuk edit) */}
           <div className="lg:col-span-6">
             {blocks.length === 0 ? (
-              <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400 text-sm">
+              <div
+                className="ds-empty ds-small"
+                style={{ border: '1px dashed var(--ds-border-strong)', borderRadius: 'var(--ds-radius)', background: 'var(--ds-surface)' }}
+              >
                 Halaman masih kosong. Pilih blok di kiri untuk mulai membangun.
               </div>
             ) : (
-              <div className="bg-slate-100 rounded-2xl p-4 sm:p-8 border border-slate-200/60">
+              <div className="p-4 sm:p-8" style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)', borderRadius: 'var(--ds-radius)' }}>
                 {/* Tema aktif: font/warna/radius dipakai render blok */}
                 <style dangerouslySetInnerHTML={{ __html: themeToCss(theme) }} />
-                <div className="mx-auto bg-white shadow-sm rounded-lg overflow-hidden min-h-[400px]">
+                <div className="mx-auto ds-card overflow-hidden min-h-[400px]">
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                     <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
                       <div>
@@ -664,7 +702,7 @@ export default function WebStoreBuilderPage() {
                     </SortableContext>
                   </DndContext>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2 text-center">
+                <p className="ds-caption mt-2 text-center">
                   💡 Klik blok untuk memilih → ubah di panel kanan. Seret handle ⠿ (hover kiri) untuk urutan. Halaman ini dirender full-page tanpa navbar.
                 </p>
               </div>
@@ -672,24 +710,26 @@ export default function WebStoreBuilderPage() {
           </div>
 
           {/* RIGHT: Property panel */}
-          <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm lg:sticky lg:top-4">
+          <div className="lg:col-span-3 ds-card ds-card-pad lg:sticky lg:top-4">
             {selected ? (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    {(() => { const Icon = defFor(selected).icon; return <Icon size={16} className="text-blue-600" />; })()}
+                  <h3 className="ds-h2 flex items-center gap-2">
+                    {(() => { const Icon = defFor(selected).icon; return <Icon size={16} className="ds-accent-text" />; })()}
                     {defFor(selected).label}
                   </h3>
-                  <div className="flex rounded-xl border border-slate-200 p-0.5">
+                  <div className="flex ds-well" style={{ padding: 2 }}>
                     <button
                       onClick={() => setPropTab('content')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${propTab === 'content' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                      style={propTab === 'content' ? { background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)' } : { background: 'transparent', color: 'var(--ds-fg-muted)' }}
                     >
                       <Settings2 size={12} /> Konten
                     </button>
                     <button
                       onClick={() => setPropTab('design')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${propTab === 'design' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                      style={propTab === 'design' ? { background: 'var(--ds-primary)', color: 'var(--ds-primary-fg)' } : { background: 'transparent', color: 'var(--ds-fg-muted)' }}
                     >
                       <Palette size={12} /> Desain
                     </button>
@@ -710,40 +750,40 @@ export default function WebStoreBuilderPage() {
                           />
                         ))
                       : (
-                        <div className="text-xs text-slate-400 py-4 text-center">Blok ini belum punya pengaturan desain.</div>
+                        <div className="ds-note">Blok ini belum punya pengaturan desain.</div>
                       )}
                 </div>
               </>
             ) : (
               /* Page settings */
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Globe size={16} className="text-blue-600" /> Pengaturan Halaman
+                <h3 className="ds-h2 flex items-center gap-2">
+                  <Globe size={16} className="ds-accent-text" /> Pengaturan Halaman
                 </h3>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Halaman</label>
+                  <label className="ds-label">Judul Halaman</label>
                   <input
                     type="text"
                     value={pageTitle}
                     onChange={(e) => setPageTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="ds-input"
                   />
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold text-slate-500 mb-1">Slug</span>
-                  <span className="w-full inline-block px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-500">
+                  <span className="ds-label">Slug</span>
+                  <span className="ds-well ds-mono inline-block w-full">
                     /storefront/{webStore?.subdomain_hash ?? ''}/{activeSlug || 'home'}
                   </span>
                 </div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={pagePub} onChange={(e) => setPagePub(e.target.checked)} className="w-4 h-4 accent-blue-600" />
+                <label className="ds-body flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={pagePub} onChange={(e) => setPagePub(e.target.checked)} className="ds-switch" />
                   Terbitkan halaman
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={pageFull} onChange={(e) => setPageFull(e.target.checked)} className="w-4 h-4 accent-blue-600" />
+                <label className="ds-body flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={pageFull} onChange={(e) => setPageFull(e.target.checked)} className="ds-switch" />
                   Mode layar penuh (tanpa navbar)
                 </label>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+                <p className="ds-hint">
                   Mode layar penuh = halaman dirender tanpa header/footer global; akses keranjang & akun lewat floating mini-bar.
                 </p>
               </div>

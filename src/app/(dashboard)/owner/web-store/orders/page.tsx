@@ -127,14 +127,15 @@ export default function WebOrdersPage() {
     <div className="space-y-6">
       <div className="ds-page-head">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Package size={22} className="text-slate-400" /> Web Orders
+          <h1 className="ds-display flex items-center gap-2">
+            <Package size={22} className="ds-icon-muted" /> Web Orders
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Pesanan dari toko online Anda.</p>
+          <p className="ds-small mt-1">Pesanan dari toko online Anda.</p>
         </div>
         <div className="flex gap-3">
           <select
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+            className="ds-select"
+            style={{ width: 'auto' }}
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
           >
@@ -145,7 +146,8 @@ export default function WebOrdersPage() {
             ))}
           </select>
           <select
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+            className="ds-select"
+            style={{ width: 'auto' }}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -159,9 +161,10 @@ export default function WebOrdersPage() {
       </div>
 
       <div className="relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 ds-icon-muted" />
         <input
-          className="w-full border border-slate-300 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          className="ds-input"
+          style={{ paddingLeft: 40 }}
           placeholder="Cari nomor order / nama customer…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -169,31 +172,31 @@ export default function WebOrdersPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
+        <div className="ds-alert" data-tone="bad">
           <AlertCircle size={16} /> {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-slate-500">
-          <Loader2 className="animate-spin text-blue-600" size={28} />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="animate-spin ds-accent-text" size={28} />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border bg-white p-12 text-center text-sm text-slate-500">
-          Belum ada web order di store ini.
+        <div className="ds-empty">
+          <p className="ds-small">Belum ada web order di store ini.</p>
         </div>
       ) : (
         <ul className="space-y-3">
           {filtered.map((o) => (
-            <li key={o.id} className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+            <li key={o.id} className="ds-card overflow-hidden">
               <div className="flex items-center gap-4 px-4 py-3">
                 <button
                   className="flex-1 flex items-center gap-4 text-left"
                   onClick={() => setExpanded(expanded === o.id ? null : o.id)}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-slate-900">{o.order_number}</div>
-                    <div className="text-xs text-slate-500 truncate">
+                    <div className="text-sm font-semibold">{o.order_number}</div>
+                    <div className="ds-caption truncate">
                       {o.customer?.name ?? 'Guest'} • {new Date(o.created_at).toLocaleString('id-ID')}
                     </div>
                   </div>
@@ -202,7 +205,7 @@ export default function WebOrdersPage() {
                   >
                     {STATUS_OPTIONS.find((s) => s.value === o.status)?.label ?? o.status}
                   </span>
-                  <span className="text-sm font-bold text-slate-900">{formatIDR(o.total_amount)}</span>
+                  <span className="text-sm font-bold ds-num">{formatIDR(o.total_amount)}</span>
                   {o.additional_data?.unique_amount != null && Number(o.additional_data.unique_amount) !== Number(o.total_amount) && (
                     <span
                       className="rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[11px] font-bold text-amber-700"
@@ -212,51 +215,52 @@ export default function WebOrdersPage() {
                     </span>
                   )}
                   {expanded === o.id ? (
-                    <ChevronUp size={18} className="text-slate-400" />
+                    <ChevronUp size={18} className="ds-icon-muted" />
                   ) : (
-                    <ChevronDown size={18} className="text-slate-400" />
+                    <ChevronDown size={18} className="ds-icon-muted" />
                   )}
                 </button>
                 <button
                   onClick={() => invoice(o)}
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  className="ds-btn-sm"
+                  data-tone="neutral"
                 >
                   <FileDown size={14} /> Invoice
                 </button>
               </div>
 
               {expanded === o.id && (
-                <div className="border-t bg-slate-50/60 px-4 py-4 space-y-4">
+                <div className="ds-subcard space-y-4">
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Customer</div>
-                      <div className="mt-1 font-medium text-slate-800">{o.customer?.name ?? 'Guest'}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="ds-section-label">Customer</div>
+                      <div className="mt-1 font-medium">{o.customer?.name ?? 'Guest'}</div>
+                      <div className="ds-caption">
                         {o.customer?.email} {o.customer?.phone ? `• ${o.customer.phone}` : ''}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Alamat Kirim</div>
-                      <div className="mt-1 text-xs text-slate-600">{o.shipping_address ?? '-'}</div>
+                      <div className="ds-section-label">Alamat Kirim</div>
+                      <div className="mt-1 ds-caption">{o.shipping_address ?? '-'}</div>
                       {o.tracking_number && (
-                        <div className="mt-1 text-xs text-slate-500">Resi: {o.tracking_number}</div>
+                        <div className="mt-1 ds-caption">Resi: {o.tracking_number}</div>
                       )}
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-white border divide-y">
+                  <div className="ds-card divide-y">
                     {o.items.map((it) => (
                       <div key={it.id} className="flex justify-between px-3 py-2 text-sm">
-                        <span className="pr-2 text-slate-700">
+                        <span className="pr-2">
                           {it.name} × {it.qty}
                           {it.store && (
-                            <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 text-[10px] font-bold">
+                            <span className="ml-1.5 ds-badge" data-tone="info">
                               <Store size={9} /> {it.store.name}
                             </span>
                           )}
                         </span>
-                        <span className="font-medium text-slate-800">{formatIDR(it.subtotal)}</span>
+                        <span className="font-medium ds-num">{formatIDR(it.subtotal)}</span>
                       </div>
                     ))}
                     <div className="flex justify-between px-3 py-2 text-sm font-bold">
@@ -276,7 +280,7 @@ export default function WebOrdersPage() {
                       <button
                         onClick={() => changeStatus(o, 'paid')}
                         disabled={busy}
-                        className="flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
+                        className="ds-btn-sm"
                       >
                         <CheckCircle2 size={14} /> Tandai Dibayar
                       </button>
@@ -284,7 +288,8 @@ export default function WebOrdersPage() {
                     {(o.status === 'pending_payment' || o.status === 'paid') && (
                       <>
                         <input
-                          className="w-40 rounded-lg border px-2.5 py-1.5 text-xs"
+                          className="ds-input"
+                          style={{ width: 160 }}
                           placeholder="No. resi (opsional)"
                           value={trackingInput[o.id] ?? ''}
                           onChange={(e) => setTrackingInput((p) => ({ ...p, [o.id]: e.target.value }))}
@@ -292,7 +297,7 @@ export default function WebOrdersPage() {
                         <button
                           onClick={() => changeStatus(o, 'shipped')}
                           disabled={busy}
-                          className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                          className="ds-btn-sm"
                         >
                           <Truck size={14} /> Kirim
                         </button>
@@ -302,7 +307,7 @@ export default function WebOrdersPage() {
                       <button
                         onClick={() => changeStatus(o, 'completed')}
                         disabled={busy}
-                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                        className="ds-btn-sm"
                       >
                         <CheckCircle2 size={14} /> Selesai
                       </button>
@@ -311,7 +316,9 @@ export default function WebOrdersPage() {
                       <button
                         onClick={() => changeStatus(o, 'cancelled')}
                         disabled={busy}
-                        className="flex items-center gap-1.5 rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                        className="ds-btn"
+                        data-variant="danger"
+                        data-size="sm"
                       >
                         <XCircle size={14} /> Batalkan
                       </button>

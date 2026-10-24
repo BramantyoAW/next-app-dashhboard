@@ -81,12 +81,12 @@ export default function PuckEditorRoute() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500">
-        <Link href="/owner/web-store/pages" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+      <div className="flex flex-col items-center justify-center py-24 gap-3 ds-small">
+        <Link href="/owner/web-store/pages" className="ds-link inline-flex items-center gap-1.5">
           <ArrowLeft size={16} /> Kembali ke Pages
         </Link>
-        <Loader2 className="animate-spin text-blue-600" size={30} />
-        <span className="text-sm font-medium">Memuat editor...</span>
+        <Loader2 className="animate-spin ds-accent-text" size={30} />
+        <span className="ds-body font-medium">Memuat editor...</span>
       </div>
     );
   }
@@ -94,10 +94,10 @@ export default function PuckEditorRoute() {
   if (error || !page) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+        <div className="ds-alert" data-tone="bad">
           <AlertCircle size={16} /> {error ?? 'Halaman tidak ditemukan'}
         </div>
-        <Link href="/owner/web-store/pages" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+        <Link href="/owner/web-store/pages" className="ds-link">
           ← Kembali ke Pages
         </Link>
       </div>

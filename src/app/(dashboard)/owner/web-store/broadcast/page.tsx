@@ -11,11 +11,11 @@ type Broadcast = {
   created_at?: string | null; sent_at?: string | null;
 };
 
-const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
-  sending: { text: 'Mengirim…', cls: 'bg-blue-100 text-blue-700' },
-  done: { text: 'Selesai', cls: 'bg-emerald-100 text-emerald-700' },
-  failed: { text: 'Gagal', cls: 'bg-rose-100 text-rose-700' },
-  cancelled: { text: 'Dibatalkan', cls: 'bg-slate-200 text-slate-600' },
+const STATUS_LABEL: Record<string, { text: string; cls: string; tone?: 'ok' | 'warn' | 'bad' | 'info' }> = {
+  sending: { text: 'Mengirim…', cls: 'ds-badge', tone: 'info' },
+  done: { text: 'Selesai', cls: 'ds-badge', tone: 'ok' },
+  failed: { text: 'Gagal', cls: 'ds-badge', tone: 'bad' },
+  cancelled: { text: 'Dibatalkan', cls: 'ds-badge' },
 };
 
 export default function OwnerBroadcastPage() {
@@ -109,53 +109,54 @@ export default function OwnerBroadcastPage() {
     <div className="mx-auto max-w-4xl px-4 py-6">
       <div className="ds-page-head">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Broadcast Promo</h1>
-          <p className="mt-1 text-sm text-slate-500">Kirim email promo ke semua pelanggan terdaftar toko Anda.</p>
+          <h1 className="ds-display">Broadcast Promo</h1>
+          <p className="ds-small mt-1">Kirim email promo ke semua pelanggan terdaftar toko Anda.</p>
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">{error}</div>}
-      {success && <div className="mt-4 rounded-lg bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{success}</div>}
+      {error && <div className="ds-alert mt-4" data-tone="bad">{error}</div>}
+      {success && <div className="ds-alert mt-4" data-tone="ok">{success}</div>}
 
       {/* Form */}
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="ds-card mt-6 p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <Megaphone className="h-4 w-4 text-slate-400" />
+          <div className="ds-h2 flex items-center gap-2">
+            <Megaphone className="h-4 w-4 ds-icon-muted" />
             Email baru
           </div>
           {recipientCount !== null && (
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            <span className="ds-badge" data-tone="info">
               {recipientCount} pelanggan akan menerima
             </span>
           )}
         </div>
 
-        <label className="mt-4 block text-xs font-bold uppercase tracking-wide text-slate-500">Subject</label>
+        <label className="ds-label mt-4 uppercase tracking-wide">Subject</label>
         <input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           maxLength={255}
           placeholder="Contoh: Promo Spesial — Diskon 20%!"
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          className="ds-input mt-1"
         />
 
-        <label className="mt-4 block text-xs font-bold uppercase tracking-wide text-slate-500">Pesan</label>
+        <label className="ds-label mt-4 uppercase tracking-wide">Pesan</label>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={6}
           maxLength={5000}
           placeholder={'Halo {nama}, nikmati promo spesial kami…'}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          className="ds-textarea mt-1"
         />
-        <div className="mt-1 text-right text-xs text-slate-400">{message.length}/5000</div>
+        <div className="ds-caption mt-1 text-right">{message.length}/5000</div>
 
         <div className="mt-3 flex justify-end">
           <button
             onClick={send}
             disabled={sending || !token}
-            className="flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+            className="ds-btn"
+            data-variant="primary"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Kirim Broadcast
@@ -164,35 +165,35 @@ export default function OwnerBroadcastPage() {
       </div>
 
       {/* Riwayat */}
-      <h2 className="mt-10 text-lg font-bold text-slate-900">Riwayat Broadcast</h2>
+      <h2 className="ds-h1 mt-10">Riwayat Broadcast</h2>
       {broadcasts.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500">
+        <div className="ds-note mt-4">
           Belum ada broadcast.
         </div>
       ) : (
         <div className="mt-4 space-y-3">
           {broadcasts.map((b) => {
-            const st = STATUS_LABEL[b.status] ?? { text: b.status, cls: 'bg-slate-100 text-slate-600' };
+            const st = STATUS_LABEL[b.status] ?? { text: b.status, cls: 'ds-badge', tone: 'info' as const };
             const Icon = b.status === 'done' ? CheckCircle2 : b.status === 'failed' ? XCircle : Clock;
             return (
-              <div key={b.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div key={b.id} className="ds-card p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold text-slate-900">{b.subject}</div>
-                    <div className="mt-0.5 line-clamp-2 text-sm text-slate-500">{b.message}</div>
+                    <div className="ds-body truncate font-semibold">{b.subject}</div>
+                    <div className="ds-small mt-0.5 line-clamp-2">{b.message}</div>
                     {b.created_at && (
-                      <div className="mt-1 text-xs text-slate-400">{new Date(b.created_at).toLocaleString('id-ID')}</div>
+                      <div className="ds-caption mt-1">{new Date(b.created_at).toLocaleString('id-ID')}</div>
                     )}
                   </div>
-                  <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${st.cls}`}>
+                  <span className={`shrink-0 ${st.cls}`} data-tone={st.tone}>
                     <Icon className="h-3.5 w-3.5" />
                     {st.text}
                   </span>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
-                  <span>Penerima: <b className="text-slate-700">{b.total_recipients}</b></span>
-                  <span className="text-emerald-600">Terkirim: <b>{b.sent_count}</b></span>
-                  {b.failed_count > 0 && <span className="text-rose-600">Gagal: <b>{b.failed_count}</b></span>}
+                <div className="ds-caption mt-3 flex flex-wrap gap-4">
+                  <span>Penerima: <b className="ds-num">{b.total_recipients}</b></span>
+                  <span className="text-emerald-600">Terkirim: <b className="ds-num">{b.sent_count}</b></span>
+                  {b.failed_count > 0 && <span className="text-rose-600">Gagal: <b className="ds-num">{b.failed_count}</b></span>}
                 </div>
               </div>
             );

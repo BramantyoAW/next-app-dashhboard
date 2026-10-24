@@ -14,7 +14,7 @@ export default function RedirectWebStoreStock() {
   }, [router]);
 
   return (
-    <div className="flex h-screen items-center justify-center text-sm text-slate-500">
+    <div className="flex h-screen items-center justify-center ds-small">
       Mengalihkan ke Inventory…
     </div>
   );

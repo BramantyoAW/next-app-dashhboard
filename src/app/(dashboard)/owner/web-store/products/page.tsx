@@ -203,51 +203,56 @@ export default function MasterProductsPage() {
     <div className="space-y-6">
       <div className="ds-page-head">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Master Products</h1>
-          <p className="text-sm text-slate-500 mt-1">Catalog induk lintas store. Assign ke store di halaman Stock.</p>
+          <h1 className="ds-display">Master Products</h1>
+          <p className="ds-small mt-1">Catalog induk lintas store. Assign ke store di halaman Stock.</p>
         </div>
         <button
           onClick={() => { setEditing({ name: '', sku: '', price: 0, description: '', is_active: true }); setDraftAttrs([{ name: '', value: '' }]); setDraftCategoryIds([]); }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+          className="ds-btn"
+          data-variant="primary"
         >
           <Plus size={16} /> Tambah Produk
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
-        <div className="flex items-center gap-2 px-3 py-1.5 flex-1 min-w-[200px]">
-          <Search size={16} className="text-slate-400" />
+      <div className="ds-card flex flex-wrap items-center gap-2 p-2">
+        <div className="relative flex items-center flex-1 min-w-[200px]">
+          <Search size={16} className="ds-icon-muted absolute left-3 pointer-events-none" />
           <input
-            className="flex-1 outline-none text-sm bg-transparent"
+            className="ds-input w-full"
+            style={{ paddingLeft: 36 }}
             placeholder="Cari SKU atau nama…"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
-        <div className="hidden sm:block h-6 w-px bg-slate-200" />
+        <div className="hidden sm:block h-6 w-px" style={{ background: 'var(--ds-border)' }} />
         <div className="flex items-center gap-1 text-sm">
-          <span className="text-xs font-semibold text-slate-500 px-1">Harga</span>
+          <span className="ds-caption px-1">Harga</span>
           <input
             type="number"
             value={minPrice}
             onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
             placeholder="Min"
-            className="w-20 rounded-lg border border-slate-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:bg-white"
+            className="ds-input"
+            style={{ width: 80 }}
           />
-          <span className="text-slate-400">–</span>
+          <span className="ds-caption">–</span>
           <input
             type="number"
             value={maxPrice}
             onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
             placeholder="Max"
-            className="w-20 rounded-lg border border-slate-300 bg-neutral-50 px-2 py-1.5 text-sm outline-none focus:bg-white"
+            className="ds-input"
+            style={{ width: 80 }}
           />
         </div>
-        <div className="hidden sm:block h-6 w-px bg-slate-200" />
+        <div className="hidden sm:block h-6 w-px" style={{ background: 'var(--ds-border)' }} />
         <select
           value={storeId}
           onChange={(e) => { setStoreId(e.target.value); setPage(1); }}
-          className="rounded-lg border border-slate-300 bg-neutral-50 px-3 py-1.5 text-sm outline-none focus:bg-white"
+          className="ds-select"
+          style={{ width: 'auto' }}
         >
           <option value="">Semua Store</option>
           {stores.map((s) => (
@@ -257,7 +262,8 @@ export default function MasterProductsPage() {
         {(minPrice || maxPrice || storeId) && (
           <button
             onClick={() => { setMinPrice(''); setMaxPrice(''); setStoreId(''); setPage(1); }}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 text-xs font-semibold"
+            className="ds-btn-sm"
+            data-tone="neutral"
             title="Reset filter"
             type="button"
           >
@@ -267,110 +273,120 @@ export default function MasterProductsPage() {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-sm">
+        <div className="ds-alert" data-tone="bad">
           <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600">
-            <tr className="text-left">
-              <th className="px-4 py-3 font-semibold w-16">Gambar</th>
-              <th className="px-4 py-3 font-semibold">SKU</th>
-              <th className="px-4 py-3 font-semibold">Nama</th>
-              <th className="px-4 py-3 font-semibold">Harga</th>
-              <th className="px-4 py-3 font-semibold">Assigned Stores</th>
-              <th className="px-4 py-3 font-semibold text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="ds-card overflow-hidden">
+        <div className="ds-table-wrap" style={{ border: 0, borderRadius: 0, marginTop: 0 }}>
+          <table className="ds-table w-full">
+            <thead className="ds-thead">
+              <tr>
+                <th className="w-16">Gambar</th>
+                <th>SKU</th>
+                <th>Nama</th>
+                <th>Harga</th>
+                <th>Assigned Stores</th>
+                <th style={{ textAlign: 'right' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+              <tr><td colSpan={6} className="text-center ds-small" style={{ paddingTop: 48, paddingBottom: 48 }}>
                 <Loader2 className="inline animate-spin mr-2" size={16} /> Memuat…
               </td></tr>
             ) : items.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-400">Belum ada produk.</td></tr>
+              <tr><td colSpan={6} className="text-center ds-caption" style={{ paddingTop: 48, paddingBottom: 48 }}>Belum ada produk.</td></tr>
             ) : items.map((p) => (
-              <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                <td className="px-4 py-3">
-                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+              <tr key={p.id}>
+                <td>
+                  <div className="w-10 h-10 rounded-lg overflow-hidden" style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)' }}>
                     {p.image ? (
                       <img src={resolveImageUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                      <div className="w-full h-full flex items-center justify-center ds-icon-muted">
                         <ImagePlus size={16} />
                       </div>
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-600">{p.sku || '—'}</td>
-                <td className="px-4 py-3 font-semibold text-slate-800">{p.name}</td>
-                <td className="px-4 py-3">Rp {(p.price ?? 0).toLocaleString('id-ID')}</td>
-                <td className="px-4 py-3">
+                <td className="ds-mono">{p.sku || '—'}</td>
+                <td className="font-semibold">{p.name}</td>
+                <td className="ds-num">Rp {(p.price ?? 0).toLocaleString('id-ID')}</td>
+                <td>
                   <div className="flex flex-wrap gap-1.5">
                     {p.store_products && p.store_products.length > 0 ? (
                       p.store_products.map((sp) => (
-                        <span key={sp.id} className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                        <span key={sp.id} className="ds-badge" data-tone="ok">
                           {sp.store?.name ?? sp.store_id}
                         </span>
                       ))
                     ) : (
-                      <Link href="/owner/web-store/stock" className="text-xs text-blue-600 font-semibold hover:underline">
+                      <Link href="/owner/web-store/stock" className="ds-link text-xs">
                         + Assign
                       </Link>
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td style={{ textAlign: 'right' }}>
                   <div className="flex items-center justify-end gap-1.5 flex-wrap">
                     <button
                       onClick={() => { setEditing(p); setDraftAttrs(Array.isArray(p.attributes) && p.attributes.length ? p.attributes.map((a) => ({ name: a.name ?? '', value: a.value ?? '' })) : [{ name: '', value: '' }]); setDraftCategoryIds((p.categories ?? []).map((c: any) => String(c.id))); }}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
                     >Edit</button>
                     <button
                       onClick={() => openVariantEditor(p)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
                     >
                       <Tag size={13} />
                       Varian
                       {Array.isArray(p.attributes) && p.attributes.length > 0 && (
-                        <span className="rounded-md bg-indigo-100 text-indigo-700 px-1.5 text-[10px]">{p.attributes.length}</span>
+                        <span className="ds-chip">{p.attributes.length}</span>
                       )}
                     </button>
                     <button
                       onClick={() => toggleMasterActive(p)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold ${p.is_active ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                      className="ds-btn-sm"
+                      data-tone="neutral"
+                      style={p.is_active ? { color: '#15803d' } : undefined}
                       title={p.is_active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}
                     >
                       {p.is_active ? 'Aktif' : 'Nonaktif'}
                     </button>
                     <button
                       onClick={() => remove(String(p.id))}
-                      className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
+                      style={{ color: 'var(--ds-danger)' }}
                     ><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
 
         {pagination && (pagination as any).last_page > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 text-sm">
-            <span className="text-slate-500">
+          <div className="ds-divider-top flex items-center justify-between text-sm">
+            <span className="ds-small">
               Halaman {(pagination as any).current_page} dari {(pagination as any).last_page}
             </span>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 disabled:opacity-50"
+                className="ds-btn-sm"
+                data-tone="neutral"
               >Prev</button>
               <button
                 disabled={page >= (pagination as any).last_page}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg bg-slate-100 disabled:opacity-50"
+                className="ds-btn-sm"
+                data-tone="neutral"
               >Next</button>
             </div>
           </div>
@@ -378,29 +394,29 @@ export default function MasterProductsPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[88vh] overflow-y-auto p-6 space-y-4">
+        <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ background: 'color-mix(in srgb, var(--ds-fg) 40%, transparent)' }}>
+          <div className="ds-card w-full max-w-lg max-h-[88vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">{editing.id ? 'Edit' : 'Tambah'} Master Product</h3>
-              <button onClick={() => setEditing(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+              <h3 className="ds-h1">{editing.id ? 'Edit' : 'Tambah'} Master Product</h3>
+              <button onClick={() => setEditing(null)} className="p-2 rounded-lg hover:bg-[var(--ds-surface-2)]"><X size={18} /></button>
             </div>
             <FormField label="SKU">
-              <input className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              <input className="ds-input"
                 value={editing.sku ?? ''} onChange={(e) => setEditing({ ...editing, sku: e.target.value })} />
             </FormField>
             <FormField label="Nama">
-              <input className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              <input className="ds-input"
                 value={editing.name ?? ''} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
             </FormField>
             <FormField label="Foto Produk">
               <div className="flex items-start gap-4">
-                <div className="w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
+                <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)' }}>
                   {editing.image ? (
                     <img src={resolveImageUrl(editing.image)} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-300">
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 ds-icon-muted">
                       <ImagePlus size={22} />
-                      <span className="text-[10px] font-medium">Belum ada</span>
+                      <span className="ds-caption">Belum ada</span>
                     </div>
                   )}
                 </div>
@@ -410,10 +426,10 @@ export default function MasterProductsPage() {
                     accept="image/*"
                     onChange={handleImageChange}
                     disabled={uploading}
-                    className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 disabled:opacity-50"
+                    className="block w-full ds-small file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--ds-surface-2)] file:text-[var(--ds-primary)] hover:file:bg-[var(--ds-surface-2)] disabled:opacity-50"
                   />
                   {uploading && (
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 ds-caption">
                       <Loader2 className="animate-spin" size={14} /> Mengunggah…
                     </div>
                   )}
@@ -421,43 +437,45 @@ export default function MasterProductsPage() {
                     <button
                       type="button"
                       onClick={() => setEditing({ ...editing, image: null })}
-                      className="text-xs text-rose-600 font-semibold hover:underline"
+                      className="ds-link-danger text-xs"
                     >Hapus foto</button>
                   )}
                 </div>
               </div>
             </FormField>
             <FormField label="Harga">
-              <input type="number" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+              <input type="number" className="ds-input"
                 value={editing.price ?? 0} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })} />
             </FormField>
             <FormField label="Deskripsi">
-              <textarea className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" rows={3}
+              <textarea className="ds-textarea" rows={3}
                 value={editing.description ?? ''} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
             </FormField>
 
             <FormField label="Varian (Definisi)">
-              <p className="text-[11px] text-slate-500 mb-2">
+              <p className="ds-hint mb-2">
                 Opsi varian produk — satu sumber, berlaku semua outlet. Mis. Ukuran → 250g / 500g, Kemasan → Biji / Bubuk.
               </p>
               <div className="space-y-2">
                 {draftAttrs.map((a, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      className="flex-1 ds-input"
                       placeholder="Nama (mis. Ukuran)"
                       value={a.name}
                       onChange={(e) => updateDraft(i, 'name', e.target.value)}
                     />
                     <input
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                      className="flex-1 ds-input"
                       placeholder="Nilai (mis. 250g)"
                       value={a.value}
                       onChange={(e) => updateDraft(i, 'value', e.target.value)}
                     />
                     <button
                       onClick={() => removeAttrRow(i)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
+                      style={{ color: 'var(--ds-danger)' }}
                       aria-label="Hapus baris"
                     >
                       <Trash2 size={16} />
@@ -467,7 +485,8 @@ export default function MasterProductsPage() {
               </div>
               <button
                 onClick={addAttrRow}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-slate-300 text-sm text-slate-600 hover:bg-slate-50"
+                className="mt-2 ds-btn-sm"
+                data-tone="neutral"
                 type="button"
               >
                 <Plus size={14} /> Tambah baris varian
@@ -476,16 +495,16 @@ export default function MasterProductsPage() {
 
             <FormField label="Kategori">
               {categories.length === 0 ? (
-                <p className="text-xs text-slate-500">
-                  Belum ada kategori. <Link href="/owner/web-store/categories" className="font-semibold text-blue-600 hover:underline">Buat kategori →</Link>
+                <p className="ds-caption">
+                  Belum ada kategori. <Link href="/owner/web-store/categories" className="ds-link">Buat kategori →</Link>
                 </p>
               ) : (
-                <div className="max-h-40 overflow-y-auto rounded-xl border border-slate-200 p-3 space-y-1.5">
+                <div className="max-h-40 overflow-y-auto ds-well space-y-1.5">
                   {categories.map((c) => (
-                    <label key={c.id} className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1.5">
+                    <label key={c.id} className="ds-check-label flex items-center gap-2.5 cursor-pointer hover:bg-[var(--ds-surface)] rounded-lg px-2 py-1.5">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 accent-blue-600"
+                        className="ds-switch w-4 h-4"
                         checked={draftCategoryIds.includes(c.id)}
                         onChange={(e) => setDraftCategoryIds((ids) => e.target.checked ? [...ids, c.id] : ids.filter((x) => x !== c.id))}
                       />
@@ -494,7 +513,7 @@ export default function MasterProductsPage() {
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-slate-500 mt-1">Kategori menentukan navigasi produk di storefront.</p>
+              <p className="ds-hint">Kategori menentukan navigasi produk di storefront.</p>
             </FormField>
 
             <FormField label="Status">
@@ -503,20 +522,21 @@ export default function MasterProductsPage() {
                   type="checkbox"
                   checked={editing.is_active ?? true}
                   onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
-                  className="w-4 h-4 accent-blue-600"
+                  className="ds-switch w-4 h-4"
                 />
-                <span className="text-sm text-slate-700">{editing.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                <span className="ds-body">{editing.is_active ? 'Aktif' : 'Nonaktif'}</span>
               </label>
-              <p className="text-[11px] text-slate-500 mt-1">Produk nonaktif tidak tampil di semua store.</p>
+              <p className="ds-hint">Produk nonaktif tidak tampil di semua store.</p>
             </FormField>
 
-            {error && <div className="text-sm text-rose-700">{error}</div>}
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => setEditing(null)} className="px-4 py-2 rounded-xl bg-slate-100 text-sm font-semibold">Batal</button>
+            {error && <div className="ds-alert" data-tone="bad">{error}</div>}
+            <div className="ds-divider-top flex justify-end gap-2">
+              <button onClick={() => setEditing(null)} className="ds-btn" data-variant="secondary">Batal</button>
               <button
                 onClick={save}
                 disabled={saving || !editing.name}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-semibold"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {saving && <Loader2 className="animate-spin" size={14} />} Simpan
               </button>
@@ -531,7 +551,7 @@ export default function MasterProductsPage() {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">{label}</label>
+      <label className="ds-label">{label}</label>
       {children}
     </div>
   );

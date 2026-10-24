@@ -174,27 +174,27 @@ export default function WebPagesPage() {
       {/* Header */}
       <div className="ds-page-head">
         <div>
-          <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3">
+          <Link href="/owner/web-store" className="ds-link inline-flex items-center gap-1.5 mb-3">
             <ArrowLeft size={16} /> Kembali ke Setup
           </Link>
           <div className="flex items-center gap-2 mb-2">
-            <LayoutTemplate size={15} className="text-slate-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Halaman Dinamis</span>
+            <LayoutTemplate size={15} className="ds-icon-muted" />
+            <span className="ds-caption uppercase tracking-wide">Halaman Dinamis</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pages Manager</h1>
-          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+          <h1 className="ds-display">Pages Manager</h1>
+          <p className="ds-small mt-1 max-w-xl">
             Kelola halaman toko (Beranda, Tentang, Kontak, FAQ) dan susun bloknya seperti Shopify.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+        <div className="ds-alert" data-tone="bad">
           <AlertCircle size={16} /> {error}
         </div>
       )}
       {ok && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+        <div className="ds-alert" data-tone="ok">
           ✓ {ok}
         </div>
       )}
@@ -205,9 +205,9 @@ export default function WebPagesPage() {
       )}
 
       {/* Create new — SELALU buat halaman baru (slug bebas) */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <Plus size={18} className="text-blue-600" /> Buat Halaman Baru
+      <div className="ds-card p-6">
+        <h2 className="ds-h1 mb-4 flex items-center gap-2">
+          <Plus size={18} className="ds-accent-text" /> Buat Halaman Baru
         </h2>
         <div className="flex flex-col gap-2">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 max-w-2xl">
@@ -216,58 +216,59 @@ export default function WebPagesPage() {
               onChange={(e) => setCustomSlug(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') createCustomPage(); }}
               placeholder="ketik slug baru — mis. promo, kebijakan, katalog"
-              className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="ds-input flex-1 min-w-0"
             />
             <button
               onClick={createCustomPage}
               disabled={saving || !token}
-              className="inline-flex shrink-0 items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md transition-all"
+              className="ds-btn shrink-0"
+              data-variant="primary"
             >
               {saving ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
               Buat Halaman Baru
             </button>
           </div>
-          <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+          <p className="ds-caption max-w-2xl">
             Halaman statis baru yang benar-benar baru. Diisi sendiri dengan blok di Page Builder,
-            dan otomatis tampil di <span className="font-mono text-slate-500">/storefront/&lt;hash&gt;/{customSlug || 'slug'}</span>.
+            dan otomatis tampil di <span className="ds-mono">/storefront/&lt;hash&gt;/{customSlug || 'slug'}</span>.
           </p>
         </div>
       </div>
 
       {/* Pages list */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <FileText size={18} className="text-blue-600" /> Daftar Halaman ({pages.length})
+      <div className="ds-card p-6">
+        <h2 className="ds-h1 mb-4 flex items-center gap-2">
+          <FileText size={18} className="ds-accent-text" /> Daftar Halaman ({pages.length})
         </h2>
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-slate-500">
-            <Loader2 className="animate-spin text-blue-600 mr-2" size={20} /> Memuat...
+          <div className="ds-small flex items-center justify-center py-10">
+            <Loader2 className="animate-spin ds-accent-text mr-2" size={20} /> Memuat...
           </div>
         ) : pages.length === 0 ? (
-          <div className="text-center py-10 text-slate-400 text-sm">
+          <div className="ds-empty">
             Belum ada halaman. Buat satu di atas.
           </div>
         ) : (
           <div className="space-y-3">
             {pages.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors">
+              <div key={p.id} className="ds-subcard flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900">{p.title}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                    <span className="ds-body font-semibold">{p.title}</span>
+                    <span className="ds-badge uppercase tracking-wide">
                       {p.slug}
                     </span>
                     {SYSTEM_SLUGS.includes(p.slug) ? (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                      <span className="ds-badge uppercase tracking-wide" data-tone="ok">
                         Bawaan
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                      <span className="ds-badge uppercase tracking-wide">
                         Custom
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5">
+                  <div className="ds-caption mt-0.5">
                     {p.blocks?.length ? `${p.blocks.length} blok` : 'Belum ada blok'} ·{' '}
                     {p.is_published ? 'Tayang' : 'Draft'}
                   </div>
@@ -275,7 +276,8 @@ export default function WebPagesPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <Link
                     href={`/owner/web-store/pages/${p.id}`}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors"
+                    className="ds-btn"
+                    data-variant="primary"
                   >
                     <ExternalLink size={14} /> Edit Blok
                   </Link>
@@ -283,7 +285,9 @@ export default function WebPagesPage() {
                     <button
                       onClick={() => removePage(p.id)}
                       disabled={deleting === p.id}
-                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
+                      className="ds-btn"
+                      data-variant="danger"
+                      data-size="sm"
                       aria-label="Hapus"
                       title="Halaman custom dapat dihapus"
                     >

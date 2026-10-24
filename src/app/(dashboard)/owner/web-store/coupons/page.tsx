@@ -189,15 +189,15 @@ export default function OwnerWebStoreCouponsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
+      <div className="flex flex-col items-center justify-center py-20 gap-3 ds-small">
         <Link
           href="/owner/web-store"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 mb-4"
+          className="inline-flex items-center gap-1.5 mb-4 ds-link"
         >
           <ArrowLeft size={16} />
           Kembali ke Web Store
         </Link>
-        <Loader2 className="animate-spin text-blue-600" size={32} />
+        <Loader2 className="animate-spin ds-accent-text" size={32} />
         <span className="text-sm font-medium">Memuat kupon...</span>
       </div>
     );
@@ -210,17 +210,17 @@ export default function OwnerWebStoreCouponsPage() {
         <div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3"
+            className="inline-flex items-center gap-1.5 mb-3 ds-small"
           >
             <ArrowLeft size={16} />
             Kembali ke Management Merchant
           </Link>
           <div className="flex items-center gap-2 mb-2">
-            <Ticket size={15} className="text-slate-400" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Kupon Diskon</span>
+            <Ticket size={15} className="ds-icon-muted" />
+            <span className="ds-section-label">Kupon Diskon</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Kelola Kupon Diskon</h1>
-          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+          <h1 className="ds-display">Kelola Kupon Diskon</h1>
+          <p className="ds-small mt-1 max-w-xl">
             Buat kode diskon untuk toko online Anda. Pelanggan memasukkan kode saat checkout untuk
             mendapatkan potongan harga otomatis.
           </p>
@@ -232,7 +232,7 @@ export default function OwnerWebStoreCouponsPage() {
       </div>
 
       {!webStoreId && (
-        <div className="flex items-center gap-3 p-4 rounded-xl text-sm font-medium border bg-rose-50 text-rose-800 border-rose-200">
+        <div className="ds-alert">
           <AlertCircle className="shrink-0 text-rose-600" size={20} />
           Web store belum terhubung. Silakan selesaikan Setup Web Store terlebih dahulu.
         </div>
@@ -240,12 +240,7 @@ export default function OwnerWebStoreCouponsPage() {
 
       {/* Status alert */}
       {status && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${status.kind === 'ok'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200'
-            }`}
-        >
+        <div className="ds-alert animate-in fade-in" data-tone={status.kind === 'ok' ? 'ok' : 'bad'}>
           {status.kind === 'ok' ? <CheckCircle2 className="shrink-0 text-emerald-600" size={20} /> : <AlertCircle className="shrink-0 text-rose-600" size={20} />}
           {status.msg}
         </div>
@@ -254,14 +249,16 @@ export default function OwnerWebStoreCouponsPage() {
       {/* Coupon list */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900">Daftar Kupon ({coupons.length})</h2>
+          <h2 className="ds-h2">Daftar Kupon ({coupons.length})</h2>
         </div>
 
         {coupons.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-12 text-center">
-            <Ticket size={40} className="mx-auto text-slate-300 mb-3" />
-            <p className="font-semibold text-slate-600">Belum ada kupon</p>
-            <p className="text-sm text-slate-400 mt-1">
+          <div className="ds-empty">
+            <div className="ds-empty-icon">
+              <Ticket size={18} />
+            </div>
+            <p className="ds-h2">Belum ada kupon</p>
+            <p className="ds-small">
               Klik "Tambah Kupon" untuk membuat kode diskon pertama toko Anda.
             </p>
           </div>
@@ -270,23 +267,25 @@ export default function OwnerWebStoreCouponsPage() {
             {coupons.map((c) => (
               <div
                 key={c.id}
-                className={`relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-md ${c.is_active ? 'border-slate-200/80' : 'border-slate-100 opacity-70'
-                  }`}
+                className={`ds-card relative overflow-hidden p-5 ${c.is_active ? '' : 'opacity-70'}`}
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 to-orange-500" />
                 <div className="flex items-start justify-between gap-4 pl-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-extrabold text-slate-900 text-lg tracking-tight truncate">
+                      <span className="font-mono font-extrabold text-lg tracking-tight truncate">
                         {c.code}
                       </span>
                       {!c.is_active && (
-                        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase">
+                        <span className="ds-badge uppercase">
                           Nonaktif
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-bold text-blue-700">
+                    <p
+                      className="mt-1 inline-flex items-center gap-1 px-2.5 py-1 text-sm font-bold ds-accent-text"
+                      style={{ background: 'var(--ds-surface-2)', borderRadius: 'var(--ds-radius-sm)' }}
+                    >
                       {c.type === 'percent' ? <Percent size={14} /> : <Banknote size={14} />}
                       {discountLabel(c)}
                     </p>
@@ -294,13 +293,14 @@ export default function OwnerWebStoreCouponsPage() {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => openForm(c)}
-                      className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+                      className="ds-btn-sm"
+                      data-tone="neutral"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => remove(c)}
-                      className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 transition-colors"
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
                       aria-label={`Hapus ${c.code}`}
                     >
                       <Trash2 size={15} />
@@ -308,7 +308,7 @@ export default function OwnerWebStoreCouponsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 pl-2 text-xs text-slate-500">
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 pl-2 ds-caption">
                   {c.min_order ? (
                     <span className="inline-flex items-center gap-1">
                       <Tag size={12} /> Min. {formatIDR(c.min_order)}
@@ -339,14 +339,18 @@ export default function OwnerWebStoreCouponsPage() {
       {/* Form modal */}
       {showForm && editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={closeForm} />
-          <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ background: 'rgba(15, 23, 42, 0.4)' }}
+            onClick={closeForm}
+          />
+          <div className="ds-card relative z-10 w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h3 className="ds-h1 flex items-center gap-2">
                 <Ticket size={20} className="text-amber-500" />
                 {editing.id ? 'Edit Kupon' : 'Kupon Baru'}
               </h3>
-              <button onClick={closeForm} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+              <button onClick={closeForm} className="ds-btn" data-variant="ghost">
                 <X size={18} />
               </button>
             </div>
@@ -354,18 +358,18 @@ export default function OwnerWebStoreCouponsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Kode Kupon</label>
+                  <label className="ds-label">Kode Kupon</label>
                   <input
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-mono uppercase tracking-wider focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input font-mono uppercase tracking-wider"
                     placeholder="contoh: PROMO10"
                     value={editing.code}
                     onChange={(e) => setEditing({ ...editing, code: e.target.value.toUpperCase() })}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Jenis Diskon</label>
+                  <label className="ds-label">Jenis Diskon</label>
                   <select
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                    className="ds-select"
                     value={editing.type}
                     onChange={(e) => setEditing({ ...editing, type: e.target.value as CouponType })}
                   >
@@ -377,23 +381,23 @@ export default function OwnerWebStoreCouponsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Nilai / Besaran</label>
+                  <label className="ds-label">Nilai / Besaran</label>
                   <input
                     type="number"
                     min="0"
                     step={editing.type === 'percent' ? '1' : 'any'}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input"
                     value={editing.value}
                     onChange={(e) => setEditing({ ...editing, value: Number(e.target.value) || 0 })}
                   />
                 </div>
                 {editing.type === 'percent' && (
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Diskon Maks (Rp)</label>
+                    <label className="ds-label">Diskon Maks (Rp)</label>
                     <input
                       type="number"
                       min="0"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="ds-input"
                       placeholder="Opsional"
                       value={editing.max_discount ?? ''}
                       onChange={(e) => setEditing({ ...editing, max_discount: e.target.value === '' ? null : Number(e.target.value) })}
@@ -404,22 +408,22 @@ export default function OwnerWebStoreCouponsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Min. Belanja (Rp)</label>
+                  <label className="ds-label">Min. Belanja (Rp)</label>
                   <input
                     type="number"
                     min="0"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input"
                     placeholder="Opsional"
                     value={editing.min_order ?? ''}
                     onChange={(e) => setEditing({ ...editing, min_order: e.target.value === '' ? null : Number(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Batas Pemakaian</label>
+                  <label className="ds-label">Batas Pemakaian</label>
                   <input
                     type="number"
                     min="0"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input"
                     placeholder="Kosongkan = tanpa batas"
                     value={editing.usage_limit ?? ''}
                     onChange={(e) => setEditing({ ...editing, usage_limit: e.target.value === '' ? null : Number(e.target.value) })}
@@ -429,45 +433,46 @@ export default function OwnerWebStoreCouponsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Berlaku Mulai</label>
+                  <label className="ds-label">Berlaku Mulai</label>
                   <input
                     type="datetime-local"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input"
                     value={toLocalInput(editing.starts_at)}
                     onChange={(e) => setEditing({ ...editing, starts_at: e.target.value ? toIso(e.target.value) : null })}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Berlaku Sampai</label>
+                  <label className="ds-label">Berlaku Sampai</label>
                   <input
                     type="datetime-local"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="ds-input"
                     value={toLocalInput(editing.expires_at)}
                     onChange={(e) => setEditing({ ...editing, expires_at: e.target.value ? toIso(e.target.value) : null })}
                   />
                 </div>
               </div>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition-colors">
+              <label className="ds-toggle-row">
                 <div>
-                  <span className="block text-sm font-bold text-slate-900">Kupon Aktif</span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
+                  <span className="block ds-h2">Kupon Aktif</span>
+                  <span className="block ds-caption mt-0.5">
                     Kupon nonaktif tidak dapat digunakan saat checkout.
                   </span>
                 </div>
                 <input
                   type="checkbox"
-                  className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+                  className="ds-switch"
                   checked={!!editing.is_active}
                   onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
                 />
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-5 border-t border-slate-100 mt-5">
+            <div className="ds-divider-top flex items-center justify-end gap-2 mt-5">
               <button
                 onClick={closeForm}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                className="ds-btn"
+                data-variant="ghost"
               >
                 Batal
               </button>

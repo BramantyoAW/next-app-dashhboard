@@ -34,7 +34,7 @@ function ResolvedPuckPreview({ data }: { data: any }) {
       alive = false;
     };
   }, [data]);
-  if (!resolved) return <div className="p-10 text-center text-sm text-slate-400">Menyiapkan preview...</div>;
+  if (!resolved) return <div className="ds-small p-10 text-center">Menyiapkan preview...</div>;
   return <Render config={puckLabConfig} data={resolved} />;
 }
 
@@ -72,33 +72,38 @@ export default function PuckLabPage() {
   }, []);
 
   if (!data) {
-    return <div className="py-20 text-center text-sm text-slate-400">Memuat Puck Lab...</div>;
+    return <div className="ds-small py-20 text-center">Memuat Puck Lab...</div>;
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       {/* Bar atas */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
+      <div
+        className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5"
+        style={{ borderColor: 'var(--ds-border)', background: 'var(--ds-surface)' }}
+      >
         <div className="flex items-center gap-3">
-          <Link href="/owner/web-store" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
+          <Link href="/owner/web-store" className="ds-btn" data-variant="ghost">
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <div className="text-sm font-extrabold text-slate-900">🧪 Puck Lab — Visual Editor (Prototipe)</div>
-            <div className="text-[11px] text-slate-400">Seluruh halaman = kanvas drag&drop: header, body, footer bisa di-drag & diedit</div>
+            <div className="ds-h2">🧪 Puck Lab — Visual Editor (Prototipe)</div>
+            <div className="ds-caption">Seluruh halaman = kanvas drag&drop: header, body, footer bisa di-drag & diedit</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-slate-200 p-0.5">
+          <div className="flex rounded-xl border p-0.5" style={{ borderColor: 'var(--ds-border)' }}>
             <button
               onClick={() => setMode('edit')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${mode === 'edit' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+              className="ds-btn-sm"
+              data-tone={mode === 'edit' ? undefined : 'neutral'}
             >
               <Pencil size={13} /> Edit
             </button>
             <button
               onClick={() => setMode('preview')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${mode === 'preview' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+              className="ds-btn-sm"
+              data-tone={mode === 'preview' ? undefined : 'neutral'}
             >
               <Eye size={13} /> Preview
             </button>
@@ -110,7 +115,8 @@ export default function PuckLabPage() {
                 setTimeout(() => setCopied(false), 1500);
               });
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50"
+            className="ds-btn-sm"
+            data-tone="neutral"
           >
             <Code2 size={13} /> {copied ? 'Tersalin!' : 'Salin JSON'}
           </button>
@@ -132,11 +138,11 @@ export default function PuckLabPage() {
           />
         </div>
       ) : (
-        <div className="flex-1 overflow-auto bg-slate-200">
-          <div className="mx-auto max-w-4xl bg-white shadow-sm" style={{ minHeight: '90vh' }}>
+        <div className="flex-1 overflow-auto" style={{ background: 'var(--ds-surface-2)' }}>
+          <div className="ds-card mx-auto max-w-4xl" style={{ minHeight: '90vh' }}>
             <ResolvedPuckPreview data={data} />
           </div>
-          <div className="py-4 text-center text-[11px] text-slate-500">
+          <div className="ds-caption py-4 text-center">
             <ExternalLink size={12} className="inline mr-1" />
             Ini tampilan storefront jika layout disimpan. Belum tersambung ke web store asli (prototipe).
           </div>
