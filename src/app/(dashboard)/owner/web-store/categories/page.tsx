@@ -287,36 +287,29 @@ export default function OwnerWebStoreCategoriesPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10">
+      <div className="ds-page-head">
+        <div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3"
           >
             <ArrowLeft size={16} />
             Kembali ke Management Merchant
           </Link>
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/15 text-emerald-300 text-xs font-semibold mb-3 border border-emerald-400/30 backdrop-blur-sm">
-              <FolderTree size={14} className="text-emerald-300" /> Kategori Produk
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Kelola Kategori Produk</h1>
-            <p className="text-slate-300 text-sm mt-1 max-w-xl leading-relaxed">
-              Atur kategori produk toko online Anda. Kategori dipakai untuk memfilter katalog di halaman
-              storefront dan menata produk menjadi lebih rapi.
-            </p>
+          <div className="flex items-center gap-2 mb-2">
+            <FolderTree size={15} className="text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Kategori Produk</span>
           </div>
-          <button
-            onClick={() => openForm(null)}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-400 text-slate-900 text-sm font-bold shadow-lg shadow-emerald-500/20 hover:bg-emerald-300 transition-all active:scale-95"
-          >
-            <Plus size={18} />
-            Tambah Kategori
-          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Kelola Kategori Produk</h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+            Atur kategori produk toko online Anda. Kategori dipakai untuk memfilter katalog di halaman
+            storefront dan menata produk menjadi lebih rapi.
+          </p>
         </div>
+        <button onClick={() => openForm(null)} className="ds-btn" data-variant="primary">
+          <Plus size={16} />
+          Tambah Kategori
+        </button>
       </div>
 
       {!webStoreId && (
@@ -495,7 +488,8 @@ export default function OwnerWebStoreCategoriesPage() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                 {form.id ? 'Simpan Perubahan' : 'Buat Kategori'}

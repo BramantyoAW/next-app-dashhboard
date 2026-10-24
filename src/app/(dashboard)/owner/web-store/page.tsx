@@ -147,6 +147,12 @@ export default function OwnerWebStoreSetupPage() {
   const [lokasiMsg, setLokasiMsg] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
   const [uploading, setUploading] = useState<'logo' | 'banner' | null>(null);
   const [customDomain, setCustomDomain] = useState('');
+  const [customDomainStatus, setCustomDomainStatus] = useState<string>('none');
+  // Instruksi record DNS dari backend: token TXT tidak bisa ditebak merchant,
+  // jadi harus ditampilkan apa adanya untuk disalin.
+  const [customDomainDns, setCustomDomainDns] = useState<
+    { type: string; name: string; value: string; note?: string }[]
+  >([]);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -190,6 +196,8 @@ export default function OwnerWebStoreSetupPage() {
           setTagline(w.tagline ?? '');
           setActive(!!w.is_active);
           setCustomDomain(w.custom_domain ?? '');
+          setCustomDomainStatus(w.custom_domain_status ?? 'none');
+          setCustomDomainDns((w as any).custom_domain_dns ?? []);
           setNotifyWhatsapp(w.notify_whatsapp ?? '');
           setNotifyTelegram(w.notify_telegram ?? '');
           setPaymentMethods(w.payment_methods ?? []);
@@ -550,6 +558,7 @@ export default function OwnerWebStoreSetupPage() {
         notify_telegram: notifyTelegram.trim() || null,
       });
       setWs(res.upsertWebStore);
+      setCustomDomainStatus(res.upsertWebStore.custom_domain_status ?? 'none');
       setSubdomainHash(res.upsertWebStore.subdomain_hash ?? '');
       if (pagesDirty && draftPages.length > 0) {
         await Promise.all(draftPages.map((p) => upsertWebPage(token, {
@@ -596,140 +605,155 @@ export default function OwnerWebStoreSetupPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-500">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 mb-4"
-        >
-          <ArrowLeft size={8} />
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <Link href="/dashboard" className="ds-link inline-flex items-center gap-1.5 mb-4" style={{ fontSize: 13 }}>
+          <ArrowLeft size={13} />
           Kembali ke Management Merchant
         </Link>
-        <Loader2 className="animate-spin text-blue-600" size={32} />
-        <span className="text-sm font-medium">Menyiapkan Web Store Studio...</span>
+        <Loader2 className="animate-spin ds-accent-text" size={26} />
+        <span className="ds-small">Menyiapkan Web Store Studio…</span>
       </div>
     );
   }
 
+  const TAB_LIST = [
+    { key: 'toko' as const, label: 'Toko', icon: Store },
+    { key: 'pembayaran' as const, label: 'Pembayaran', icon: ShieldCheck },
+    { key: 'pengiriman' as const, label: 'Pengiriman', icon: Truck },
+    { key: 'lanjutan' as const, label: 'Lanjutan', icon: Settings },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-12">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10">
-          {/* Back to merchant management */}
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4"
-          >
-            <ArrowLeft size={8} />
-            Kembali ke Management Merchant
-          </Link>
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold mb-3 border border-blue-500/30 backdrop-blur-sm">
-              <Sparkles size={14} className="text-blue-400" /> E-Commerce Builder Phase 1
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Web Store Setup Studio</h1>
-            <p className="text-slate-300 text-sm mt-1 max-w-xl leading-relaxed">
-              Atur domain, nama toko, identitas visual, dan warna tema toko online Anda secara real-time.
+    <div style={{ maxWidth: 1120, margin: '0 auto', paddingBottom: 48 }}>
+      {/* Header — panel terang, bukan banner gelap. Kesan "alat kerja",
+          bukan landing page. */}
+      <header className="ds-card" style={{ padding: '18px 20px', marginBottom: 16 }}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div style={{ minWidth: 260 }}>
+            <Link
+              href="/dashboard"
+              className="ds-small inline-flex items-center gap-1.5"
+              style={{ textDecoration: 'none', marginBottom: 8 }}
+            >
+              <ArrowLeft size={13} />
+              Management Merchant
+            </Link>
+            <h1 className="ds-display" style={{ fontSize: 22, marginTop: 2 }}>
+              Web Store Setup
+            </h1>
+            <p className="ds-small" style={{ marginTop: 4, maxWidth: 460 }}>
+              Domain, identitas, pembayaran, dan pengiriman toko online Anda.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {ws && <WebStoreStatusBadge active={ws.is_active} />}
             <StorefrontPreviewButton hash={subdomain} isActive={active} />
-            <Link
-              href="/owner/web-store/pages"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-bold hover:bg-white/20 transition-colors"
-            >
-              <LayoutTemplate size={15} /> Page Builder
+            <Link href="/owner/web-store/pages" className="ds-btn" data-variant="secondary">
+              <LayoutTemplate size={14} /> Page Builder
             </Link>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Form Settings */}
-        <div className="lg:col-span-12 space-y-6">
-          {/* Tab Navigation */}
-          <div className="flex gap-1 rounded-xl bg-slate-100 p-1 text-sm">
-            {([
-              { key: 'toko' as const, label: 'Toko', icon: Store },
-              { key: 'pembayaran' as const, label: 'Pembayaran', icon: ShieldCheck },
-              { key: 'pengiriman' as const, label: 'Pengiriman', icon: Truck },
-              { key: 'lanjutan' as const, label: 'Lanjutan', icon: Settings },
-            ]).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
-                  activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <tab.icon size={14} />
-                {tab.label}
-              </button>
-            ))}
+        <div className="lg:col-span-12 space-y-4">
+          {/* Tab Navigation — segmented control */}
+          <div
+            className="flex gap-1"
+            style={{
+              background: 'var(--ds-surface-2)',
+              border: '1px solid var(--ds-border)',
+              borderRadius: 'var(--ds-radius)',
+              padding: 4,
+            }}
+          >
+            {TAB_LIST.map((tab) => {
+              const isActive = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5"
+                  style={{
+                    borderRadius: 'var(--ds-radius-sm)',
+                    padding: '7px 10px',
+                    fontSize: 12.5,
+                    fontWeight: isActive ? 600 : 500,
+                    border: '1px solid transparent',
+                    background: isActive ? 'var(--ds-surface)' : 'transparent',
+                    color: isActive ? 'var(--ds-fg)' : 'var(--ds-fg-muted)',
+                    boxShadow: isActive ? 'var(--ds-shadow)' : 'none',
+                    cursor: 'pointer',
+                    transition: 'background-color .12s ease, color .12s ease',
+                  }}
+                >
+                  <tab.icon size={13} style={{ color: isActive ? 'var(--ds-primary)' : 'inherit' }} />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-7 shadow-sm space-y-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
-              {activeTab === 'toko' && <><Store size={20} className="text-blue-600" /> Informasi Toko</>}
-              {activeTab === 'pembayaran' && <><ShieldCheck size={20} className="text-blue-600" /> Metode Pembayaran</>}
-              {activeTab === 'pengiriman' && <><Truck size={20} className="text-blue-600" /> Metode Pengiriman</>}
-              {activeTab === 'lanjutan' && <><Settings size={20} className="text-blue-600" /> Pengaturan Lanjutan</>}
+          <div className="ds-card" style={{ padding: 20 }}>
+            <h2 className="ds-h1" style={{ marginBottom: 16 }}>
+              {activeTab === 'toko' && <><Store size={17} className="ds-accent-text" /> Informasi Toko</>}
+              {activeTab === 'pembayaran' && <><ShieldCheck size={17} className="ds-accent-text" /> Metode Pembayaran</>}
+              {activeTab === 'pengiriman' && <><Truck size={17} className="ds-accent-text" /> Metode Pengiriman</>}
+              {activeTab === 'lanjutan' && <><Settings size={17} className="ds-accent-text" /> Pengaturan Lanjutan</>}
             </h2>
 
             {activeTab === 'toko' && (<>
             {/* Relasi outlet awal hanya muncul saat membuat webstore baru. Produk dan stok storefront tetap berasal dari seluruh outlet owner. */}
             {!ws && (
-              <Field label="Outlet Awal Web Store" icon={<Store size={16} className="text-slate-400" />}>
+              <Field label="Outlet Awal Web Store" icon={<Store size={16} className="ds-icon-muted" />}>
                 <select
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl bg-white text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                  className="ds-input"
                   value={selectedStoreId}
                   onChange={(e) => setSelectedStoreId(e.target.value)}
                 >
                   <option value="">— Pilih outlet awal —</option>
                   {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
-                <p className="text-xs text-slate-500 mt-1.5 leading-normal">
+                <p className="ds-hint">
                   Hanya diperlukan saat membuat Web Store baru. Produk dan stok tetap berasal dari seluruh outlet milik owner.
                 </p>
               </Field>
             )}
 
-            <Field label="Nama Web Store" icon={<Globe size={16} className="text-slate-400" />}>
+            <Field label="Nama Web Store" icon={<Globe size={16} className="ds-icon-muted" />}>
               <input
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                className="ds-input"
                 value={storeName}
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="Contoh: Toko Budi Official Store"
               />
             </Field>
 
-            <Field label="Subdomain URL Public" icon={<Sparkles size={16} className="text-slate-400" />}>
+            <Field label="Subdomain URL Public" icon={<Sparkles size={16} className="ds-icon-muted" />}>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                    className="ds-input font-mono"
                     value={subdomain}
                     onChange={(e) => setSubdomainHash(e.target.value.replace(/[^a-z0-9]/g, '').slice(0, 16))}
                     placeholder="tokobudi"
                   />
                 </div>
-                <span className="px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-mono text-xs font-bold border border-slate-200">
+                <span className="ds-suffix">
                   .{mainDomain}
                 </span>
               </div>
               <div className="flex items-center justify-between mt-2">
-                <p className="text-xs text-slate-500">
+                <p className="ds-small">
                   Subdomain publik (4–16 karakter alphanumeric).
                 </p>
                 <button
                   type="button"
                   onClick={copyUrl}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  className="ds-link inline-flex items-center gap-1"
                 >
                   {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
                   {copied ? 'Tersalin!' : 'Salin URL'}
@@ -737,9 +761,9 @@ export default function OwnerWebStoreSetupPage() {
               </div>
             </Field>
 
-            <Field label="Tagline / Slogan Toko" icon={<Sparkles size={16} className="text-slate-400" />}>
+            <Field label="Tagline / Slogan Toko" icon={<Sparkles size={16} className="ds-icon-muted" />}>
               <input
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                className="ds-input"
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 placeholder="Produk Berkualitas dengan Pelayanan Tercepat"
@@ -749,12 +773,12 @@ export default function OwnerWebStoreSetupPage() {
 
 
             {activeTab === 'pembayaran' && (<>
-            <Field label="Metode Pembayaran & Notifikasi" icon={<ShieldCheck size={16} className="text-slate-400" />}>
+            <Field label="Metode Pembayaran & Notifikasi" icon={<ShieldCheck size={16} className="ds-icon-muted" />}>
               <div className="space-y-4">
                 {/* Payment methods list */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Metode Pembayaran (customer pilih di checkout)</span>
+                    <span className="ds-section-label">Metode Pembayaran (customer pilih di checkout)</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -773,32 +797,32 @@ export default function OwnerWebStoreSetupPage() {
                           },
                         ])
                       }
-                      className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-700"
+                      className="ds-btn-sm"
                     >
                       + Tambah Metode
                     </button>
                   </div>
 
                   {paymentMethods.length === 0 && (
-                    <p className="rounded-lg border border-dashed p-3 text-center text-xs text-slate-400">
+                    <p className="ds-note">
                       Belum ada metode. Tambahkan minimal satu (Bank Transfer gratis bawaan direkomendasikan).
                     </p>
                   )}
 
                   {paymentMethods.map((pm, idx) => (
-                    <div key={pm.id ?? idx} className="rounded-xl border bg-slate-50/70 p-3 space-y-2">
+                    <div key={pm.id ?? idx} className="ds-subcard space-y-2">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                          <span className="rounded bg-white border px-1.5 py-0.5">{pm.type === 'bank_transfer' ? '🏦' : pm.type === 'ewallet' ? '📱' : '💵'}</span>
+                        <div className="ds-subcard-title">
+                          <span className="ds-chip">{pm.type === 'bank_transfer' ? '🏦' : pm.type === 'ewallet' ? '📱' : '💵'}</span>
                           Metode #{idx + 1}
-                          <label className="ml-2 flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                          <label className="ds-check-label ml-2">
                             <input type="checkbox" checked={pm.enabled} onChange={(e) => {
                               const next = [...paymentMethods];
                               next[idx] = { ...pm, enabled: e.target.checked };
                               setPaymentMethods(next);
                             }} /> Aktif
                           </label>
-                          <label className="flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                          <label className="ds-check-label">
                             <input type="checkbox" checked={pm.is_free} onChange={(e) => {
                               const next = [...paymentMethods];
                               next[idx] = { ...pm, is_free: e.target.checked };
@@ -809,14 +833,14 @@ export default function OwnerWebStoreSetupPage() {
                         <button
                           type="button"
                           onClick={() => setPaymentMethods((prev) => prev.filter((_, i) => i !== idx))}
-                          className="text-[10px] text-rose-500 hover:underline"
+                          className="ds-link-danger"
                         >
                           Hapus
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <select
-                          className="rounded-lg border px-2 py-1.5 text-xs"
+                          className="ds-input ds-input-sm"
                           value={pm.type}
                           onChange={(e) => {
                             const next = [...paymentMethods];
@@ -829,7 +853,7 @@ export default function OwnerWebStoreSetupPage() {
                           <option value="cod">COD</option>
                         </select>
                         <input
-                          className="rounded-lg border px-2 py-1.5 text-xs"
+                          className="ds-input ds-input-sm"
                           placeholder="Nama (cth: Bank BCA)"
                           value={pm.name ?? ''}
                           onChange={(e) => {
@@ -841,7 +865,7 @@ export default function OwnerWebStoreSetupPage() {
                         {pm.type !== 'cod' && (
                           <>
                             <input
-                              className="rounded-lg border px-2 py-1.5 text-xs"
+                              className="ds-input ds-input-sm"
                               placeholder="Bank / Provider"
                               value={pm.bank_name ?? ''}
                               onChange={(e) => {
@@ -851,7 +875,7 @@ export default function OwnerWebStoreSetupPage() {
                               }}
                             />
                             <input
-                              className="rounded-lg border px-2 py-1.5 text-xs"
+                              className="ds-input ds-input-sm"
                               placeholder="Nomor rekening / ID"
                               value={pm.account_number ?? ''}
                               onChange={(e) => {
@@ -861,7 +885,7 @@ export default function OwnerWebStoreSetupPage() {
                               }}
                             />
                             <input
-                              className="col-span-2 rounded-lg border px-2 py-1.5 text-xs"
+                              className="ds-input ds-input-sm col-span-2"
                               placeholder="Atas nama (opsional)"
                               value={pm.account_name ?? ''}
                               onChange={(e) => {
@@ -873,7 +897,7 @@ export default function OwnerWebStoreSetupPage() {
                           </>
                         )}
                         <input
-                          className="col-span-2 rounded-lg border px-2 py-1.5 text-xs"
+                          className="ds-input ds-input-sm col-span-2"
                           placeholder="Instruksi tambahan (opsional)"
                           value={pm.instructions ?? ''}
                           onChange={(e) => {
@@ -888,40 +912,40 @@ export default function OwnerWebStoreSetupPage() {
                 </div>
 
                 {/* Midtrans gateway (per toko) */}
-                <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+                <div className="ds-well">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-indigo-700">
+                    <div className="ds-subcard-title">
                       <CreditCard size={14} /> Payment Gateway Midtrans
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${mtServerKey.trim() && mtClientKey.trim() ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
                       {mtServerKey.trim() && mtClientKey.trim() ? 'Terhubung' : 'Belum diisi'}
                     </span>
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-indigo-600/70">
+                  <p className="ds-hint">
                     Aktifkan pembayaran otomatis (VA / QRIS / e-Wallet) via Midtrans. Saat key terisi,
                     metode <b>"Midtrans"</b> otomatis muncul di checkout. Ambil key dari dashboard
                     Midtrans Anda (menu Settings → Access Keys).
                   </p>
                   <div className="mt-3 grid grid-cols-1 gap-2">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Server Key</label>
+                      <label className="ds-label text-[11px]">Server Key</label>
                       <input
-                        className="w-full rounded-lg border bg-white px-2.5 py-1.5 text-sm font-mono"
+                        className="ds-input font-mono"
                         placeholder="SB-Mid-server-xxxx atau Mid-server-xxxx"
                         value={mtServerKey}
                         onChange={(e) => setMtServerKey(e.target.value)}
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">Client Key</label>
+                      <label className="ds-label text-[11px]">Client Key</label>
                       <input
-                        className="w-full rounded-lg border bg-white px-2.5 py-1.5 text-sm font-mono"
+                        className="ds-input font-mono"
                         placeholder="SB-Mid-client-xxxx atau Mid-client-xxxx"
                         value={mtClientKey}
                         onChange={(e) => setMtClientKey(e.target.value)}
                       />
                     </div>
-                    <label className="mt-1 flex items-center gap-2 text-xs font-medium text-slate-700">
+                    <label className="ds-check-label mt-1">
                       <input
                         type="checkbox"
                         checked={mtIsProduction}
@@ -929,32 +953,32 @@ export default function OwnerWebStoreSetupPage() {
                         className="h-4 w-4"
                       />
                       Mode Production
-                      <span className="text-[10px] text-slate-400">(lepas centang = Sandbox / testing)</span>
+                      <span className="ds-hint text-[10px]">(lepas centang = Sandbox / testing)</span>
                     </label>
                   </div>
                 </div>
 
                 {/* Notifications */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ds-divider-top">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Notifikasi WA (nomor owner)</label>
+                    <label className="ds-label">Notifikasi WA (nomor owner)</label>
                     <input
-                      className="w-full rounded-lg border px-2.5 py-1.5 text-sm"
+                      className="ds-input"
                       placeholder="08xxxxxxxxxx"
                       value={notifyWhatsapp}
                       onChange={(e) => setNotifyWhatsapp(e.target.value)}
                     />
-                    <p className="text-[10px] text-slate-400 mt-0.5">Order baru terkirim ke WhatsApp nomor ini.</p>
+                    <p className="ds-hint text-[10px]">Order baru terkirim ke WhatsApp nomor ini.</p>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Notifikasi Telegram (chat ID)</label>
+                    <label className="ds-label">Notifikasi Telegram (chat ID)</label>
                     <input
-                      className="w-full rounded-lg border px-2.5 py-1.5 text-sm"
+                      className="ds-input"
                       placeholder="123456789"
                       value={notifyTelegram}
                       onChange={(e) => setNotifyTelegram(e.target.value)}
                     />
-                    <p className="text-[10px] text-slate-400 mt-0.5">Order baru terkirim ke Telegram chat ini.</p>
+                    <p className="ds-hint text-[10px]">Order baru terkirim ke Telegram chat ini.</p>
                   </div>
                 </div>
 
@@ -963,18 +987,18 @@ export default function OwnerWebStoreSetupPage() {
             </>)}
 
             {activeTab === 'pengiriman' && (<>
-            <Field label="Lokasi & Jangkauan Outlet" icon={<MapPin size={16} className="text-slate-400" />}>
+            <Field label="Lokasi & Jangkauan Outlet" icon={<MapPin size={16} className="ds-icon-muted" />}>
               <div className="space-y-3">
-                <p className="text-xs text-slate-500">
+                <p className="ds-small">
                   Titik outlet dipakai menghitung jarak &amp; ongkir kirim instan. Outlet yang belum
                   dipetakan tidak bisa menolak pesanan di luar jangkauan — jadi ongkir jarak untuknya
                   selalu jatuh ke biaya minimal.
                 </p>
 
-                <label className="block text-xs font-semibold text-slate-500">
+                <label className="ds-label">
                   Outlet yang dipetakan
                   <select
-                    className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                    className="ds-input ds-input-sm mt-1"
                     value={lokasiStoreId}
                     onChange={(e) => pilihOutletUntukLokasi(e.target.value)}
                   >
@@ -999,10 +1023,10 @@ export default function OwnerWebStoreSetupPage() {
                     />
 
                     <div className="grid grid-cols-2 gap-2">
-                      <label className="block text-xs font-semibold text-slate-500">
+                      <label className="ds-label">
                         Latitude
                         <input
-                          className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                          className="ds-input ds-input-sm mt-1"
                           type="number"
                           step="0.0000001"
                           value={lokasiCoords?.lat ?? ''}
@@ -1014,10 +1038,10 @@ export default function OwnerWebStoreSetupPage() {
                           }
                         />
                       </label>
-                      <label className="block text-xs font-semibold text-slate-500">
+                      <label className="ds-label">
                         Longitude
                         <input
-                          className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                          className="ds-input ds-input-sm mt-1"
                           type="number"
                           step="0.0000001"
                           value={lokasiCoords?.lng ?? ''}
@@ -1031,10 +1055,10 @@ export default function OwnerWebStoreSetupPage() {
                       </label>
                     </div>
 
-                    <label className="block text-xs font-semibold text-slate-500">
+                    <label className="ds-label">
                       Radius layanan (km)
                       <input
-                        className="mt-1 w-full rounded-lg border px-2 py-1.5 text-xs font-normal"
+                        className="ds-input ds-input-sm mt-1"
                         type="number"
                         min={0.1}
                         step="0.1"
@@ -1042,7 +1066,7 @@ export default function OwnerWebStoreSetupPage() {
                         onChange={(e) => setLokasiRadius(e.target.value)}
                       />
                     </label>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="ds-hint">
                       Pembeli di luar radius ini tidak bisa memakai metode kirim instan (jenis
                       &ldquo;Distance&rdquo;). Mereka masih bisa memakai metode lain seperti ekspedisi.
                     </p>
@@ -1051,8 +1075,8 @@ export default function OwnerWebStoreSetupPage() {
                         kecamatan, jadi titik peta di atas tidak bisa dipakai
                         untuk ekspedisi — dua jalur pengiriman ini butuh
                         penanda wilayah yang berbeda. */}
-                    <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-2.5">
-                      <p className="mb-1.5 text-xs font-semibold text-slate-600">
+                    <div className="ds-well">
+                      <p className="ds-label">
                         Kecamatan asal ekspedisi
                       </p>
                       {lokasiOrigin ? (
@@ -1060,7 +1084,7 @@ export default function OwnerWebStoreSetupPage() {
                           <span className="text-xs font-medium text-emerald-700">{lokasiOrigin.label}</span>
                           <button
                             type="button"
-                            className="text-xs font-semibold text-slate-500 underline"
+                            className="ds-small underline"
                             onClick={() => {
                               setLokasiOrigin(null);
                               setOriginKata('');
@@ -1073,19 +1097,19 @@ export default function OwnerWebStoreSetupPage() {
                       ) : (
                         <>
                           <input
-                            className="w-full rounded-lg border px-2 py-1.5 text-xs"
+                            className="ds-input ds-input-sm"
                             placeholder="Cari kecamatan, mis. Kemayoran"
                             value={originKata}
                             onChange={(e) => setOriginKata(e.target.value)}
                           />
-                          {originPesan && <p className="mt-1 text-xs text-slate-500">{originPesan}</p>}
+                          {originPesan && <p className="ds-hint">{originPesan}</p>}
                           {originHasil.length > 0 && (
-                            <ul className="mt-1 max-h-40 divide-y divide-slate-100 overflow-auto rounded-lg border bg-white">
+                            <ul className="ds-list">
                               {originHasil.map((k) => (
                                 <li key={k.id}>
                                   <button
                                     type="button"
-                                    className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50"
+                                    className="ds-list-row"
                                     onClick={() => {
                                       setLokasiOrigin({ id: k.id, label: k.label });
                                       setOriginHasil([]);
@@ -1100,7 +1124,7 @@ export default function OwnerWebStoreSetupPage() {
                           )}
                         </>
                       )}
-                      <p className="mt-1.5 text-[10px] leading-snug text-slate-400">
+                      <p className="ds-hint">
                         Wajib untuk pengiriman ekspedisi. Kurir memakai kecamatan + berat paket,
                         bukan titik peta.
                       </p>
@@ -1111,7 +1135,7 @@ export default function OwnerWebStoreSetupPage() {
                         type="button"
                         onClick={simpanLokasiOutlet}
                         disabled={lokasiSaving || (!lokasiCoords && !lokasiOrigin)}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+                        className="ds-btn-sm"
                       >
                         {lokasiSaving ? 'Menyimpan…' : 'Simpan lokasi outlet'}
                       </button>
@@ -1127,17 +1151,17 @@ export default function OwnerWebStoreSetupPage() {
                     </div>
                   </>
                 ) : (
-                  <p className="rounded-lg border border-dashed p-3 text-center text-xs text-slate-400">
+                  <p className="ds-note">
                     Pilih outlet untuk memetakan lokasinya.
                   </p>
                 )}
               </div>
             </Field>
 
-            <Field label="Metode Ongkir" icon={<Truck size={16} className="text-slate-400" />}>
+            <Field label="Metode Ongkir" icon={<Truck size={16} className="ds-icon-muted" />}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Metode Pengiriman (cost dihitung otomatis saat checkout)</span>
+                  <span className="ds-section-label">Metode Pengiriman (cost dihitung otomatis saat checkout)</span>
                   <button
                     type="button"
                     onClick={() =>
@@ -1151,19 +1175,19 @@ export default function OwnerWebStoreSetupPage() {
                         { id: 'flat', name: 'Ongkir Flat', type: 'flat', cost: 15000, per_km: null, min_cost: null, min_order: null, enabled: true },
                       ])
                     }
-                    className="rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-700"
+                    className="ds-btn-sm"
                   >
                     + Tambah Metode
                   </button>
                 </div>
 
                 {shippingMethods.length === 0 && (
-                  <p className="rounded-lg border border-dashed p-3 text-center text-xs text-slate-400">
+                  <p className="ds-note">
                     Belum ada metode. Biarkan kosong untuk ongkir gratis pada semua pesanan.
                   </p>
                 )}
                 {shippingMethods.length > 0 && (
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                  <p className="ds-hint">
                     Ongkir terendah yang memenuhi syarat akan dipakai. <span className="font-mono">flat</span> = tarif tetap,{' '}
                     <span className="font-mono">distance</span> = per km (minimal <span className="font-mono">min_cost</span>),{' '}
                     <span className="font-mono">free</span> = gratis bila pesanan di atas <span className="font-mono">min_order</span>,{' '}
@@ -1175,12 +1199,12 @@ export default function OwnerWebStoreSetupPage() {
                   // key memakai idx, bukan sm.id: id kini berupa JENIS metode
                   // (flat/distance/free), sehingga dua metode berjenis sama akan
                   // menghasilkan key duplikat dan React salah mencocokkan baris.
-                  <div key={idx} className="rounded-xl border bg-slate-50/70 p-3 space-y-2">
+                  <div key={idx} className="ds-subcard space-y-2">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                        <span className="rounded bg-white border px-1.5 py-0.5">🚚</span>
+                      <div className="ds-subcard-title">
+                        <span className="ds-chip">🚚</span>
                         Metode #{idx + 1}
-                        <label className="ml-2 flex items-center gap-1 text-[10px] font-medium text-slate-500">
+                        <label className="ds-check-label ml-2">
                           <input
                             type="checkbox"
                             checked={sm.enabled}
@@ -1195,14 +1219,14 @@ export default function OwnerWebStoreSetupPage() {
                       <button
                         type="button"
                         onClick={() => setShippingMethods((prev) => prev.filter((_, i) => i !== idx))}
-                        className="text-[10px] text-rose-500 hover:underline"
+                        className="ds-link-danger"
                       >
                         Hapus
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <select
-                        className="rounded-lg border px-2 py-1.5 text-xs"
+                        className="ds-input ds-input-sm"
                         // Pakai jenis hasil resolusi, bukan `sm.id` mentah:
                         // data lama tersimpan sebagai "ship_flat", dan
                         // membandingkannya langsung membuat pilihan ini tampak
@@ -1227,7 +1251,7 @@ export default function OwnerWebStoreSetupPage() {
                         <option value="expedition">Ekspedisi (tarif kurir)</option>
                       </select>
                       <input
-                        className="rounded-lg border px-2 py-1.5 text-xs"
+                        className="ds-input ds-input-sm"
                         placeholder="Nama (cth: GoSend Instant)"
                         value={sm.name ?? ''}
                         onChange={(e) => {
@@ -1238,7 +1262,7 @@ export default function OwnerWebStoreSetupPage() {
                       />
                       {shippingMethodKind(sm) === 'flat' && (
                         <input
-                          className="rounded-lg border px-2 py-1.5 text-xs"
+                          className="ds-input ds-input-sm"
                           type="number"
                           min={0}
                           placeholder="Biaya tetap (Rp)"
@@ -1253,7 +1277,7 @@ export default function OwnerWebStoreSetupPage() {
                       {shippingMethodKind(sm) === 'distance' && (
                         <>
                           <input
-                            className="rounded-lg border px-2 py-1.5 text-xs"
+                            className="ds-input ds-input-sm"
                             type="number"
                             min={0}
                             placeholder="Tarif per km (Rp)"
@@ -1265,7 +1289,7 @@ export default function OwnerWebStoreSetupPage() {
                             }}
                           />
                           <input
-                            className="rounded-lg border px-2 py-1.5 text-xs"
+                            className="ds-input ds-input-sm"
                             type="number"
                             min={0}
                             placeholder="Biaya minimal (Rp)"
@@ -1280,7 +1304,7 @@ export default function OwnerWebStoreSetupPage() {
                       )}
                       {shippingMethodKind(sm) === 'free' && (
                         <input
-                          className="rounded-lg border px-2 py-1.5 text-xs"
+                          className="ds-input ds-input-sm"
                           type="number"
                           min={0}
                           placeholder="Min. order (Rp)"
@@ -1299,12 +1323,12 @@ export default function OwnerWebStoreSetupPage() {
                         berbayar tiap kali tarif dihitung. */}
                     {shippingMethodKind(sm) === 'expedition' && (
                       <div className="rounded-lg border bg-white p-2">
-                        <p className="mb-1.5 text-[10px] font-semibold text-slate-500 uppercase">Kurir</p>
+                        <p className="ds-section-label">Kurir</p>
                         <div className="flex flex-wrap gap-2">
                           {KURIR_EKSPEDISI.map((k) => {
                             const dipilih = (sm.couriers ?? []).includes(k.kode);
                             return (
-                              <label key={k.kode} className="flex items-center gap-1 text-xs text-slate-600">
+                              <label key={k.kode} className="ds-check-label">
                                 <input
                                   type="checkbox"
                                   checked={dipilih}
@@ -1324,11 +1348,11 @@ export default function OwnerWebStoreSetupPage() {
                           })}
                         </div>
                         {(sm.couriers ?? []).length === 0 && (
-                          <p className="mt-1.5 text-[10px] text-slate-400">
+                          <p className="ds-hint">
                             Belum ada kurir dipilih — pakai daftar bawaan (JNE, J&amp;T, SiCepat).
                           </p>
                         )}
-                        <p className="mt-1.5 text-[10px] leading-snug text-slate-400">
+                        <p className="ds-hint">
                           Tarif dihitung otomatis dari kurir saat checkout. Isi dulu berat produk
                           dan kecamatan asal outlet agar tarifnya akurat.
                         </p>
@@ -1341,12 +1365,12 @@ export default function OwnerWebStoreSetupPage() {
             </>)}
 
             {activeTab === 'lanjutan' && (<>
-            <Field label="CSS & JavaScript Kustom" icon={<FileCode size={16} className="text-slate-400" />}>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <p className="font-semibold text-slate-800 mb-1">Sudah dipindah ke Page Builder.</p>
+            <Field label="CSS & JavaScript Kustom" icon={<FileCode size={16} className="ds-icon-muted" />}>
+              <div className="ds-well">
+                <p className="ds-h2 mb-1">Sudah dipindah ke Page Builder.</p>
                 <p>
                   CSS &amp; JavaScript global kini dikelola di{' '}
-                  <Link href="/owner/web-store/pages" className="text-blue-600 font-semibold hover:underline">
+                  <Link href="/owner/web-store/pages" className="ds-link">
                     Pages Manager → Tema Toko (CSS &amp; JavaScript Kustom)
                   </Link>
                   , supaya desain toko diatur di satu tempat bersama halaman.
@@ -1354,32 +1378,84 @@ export default function OwnerWebStoreSetupPage() {
               </div>
             </Field>
 
-            <Field label="Domain Kustom" icon={<Globe size={16} className="text-slate-400" />}>
+            <Field label="Domain Kustom" icon={<Globe size={16} className="ds-icon-muted" />}>
               <input
-                className="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                className="ds-input"
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
                 placeholder="toko-anda.com (opsional)"
               />
-              <p className="text-xs text-slate-500 mt-1.5">
-                Hubungkan domain sendiri. Arahkan CNAME ke <code className="text-slate-500">cname.om-bot.com</code>.
+
+              {customDomain.trim() && (
+                <div className="mt-2 flex items-start gap-2 text-xs">
+                  <span
+                    className={`mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 ${
+                      customDomainStatus === 'active'
+                        ? 'bg-emerald-500'
+                        : customDomainStatus === 'failed'
+                          ? 'bg-rose-500'
+                          : 'bg-amber-400'
+                    }`}
+                  />
+                  <span className="ds-small">
+                    {customDomainStatus === 'active'
+                      ? 'Domain aktif — SSL sudah terbit, pembeli bisa membuka domain ini.'
+                      : customDomainStatus === 'failed'
+                        ? 'Pendaftaran domain gagal. Periksa kembali penulisan domain, lalu simpan ulang.'
+                        : 'Menunggu verifikasi. Arahkan CNAME domain ini ke proxy-fallback.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
+                  </span>
+                </div>
+              )}
+
+              <p className="ds-hint">
+                Hubungkan domain sendiri. Tambahkan record berikut di pengaturan DNS domain kamu.
+                Kolom nama diisi relatif terhadap domain — tulis <code>@</code> atau <code>www</code>,
+                jangan nama lengkap, karena banyak registrar menambahkan domain otomatis.
+              </p>
+              {customDomainDns.length > 0 && (
+                <div className="ds-table-wrap">
+                  <table className="w-full text-xs">
+                    <thead className="ds-thead">
+                      <tr>
+                        <th className="text-left font-medium px-3 py-2">Tipe</th>
+                        <th className="text-left font-medium px-3 py-2">Nama</th>
+                        <th className="text-left font-medium px-3 py-2">Nilai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customDomainDns.map((r, i) => (
+                        <tr key={i} className="align-top">
+                          <td className="ds-mono">{r.type}</td>
+                          <td className="ds-mono break-all">{r.name}</td>
+                          <td className="ds-mono break-all">{r.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-amber-600 mt-1">
+                Record <code>@</code> (root domain) ditolak sebagian registrar karena bentrok dengan
+                SOA/NS yang selalu ada di sana. Kalau muncul pesan seperti "Conflicts with pre-existing
+                RRset", pakai record <code>www</code> saja, atau pindahkan nameserver domain ke
+                Cloudflare (gratis) yang bisa memakai CNAME di root.
               </p>
             </Field>
             </>)}
 
             {/* Status Activation — always visible, belongs to toko tab */}
             {activeTab === 'toko' && (
-            <div className="pt-2 border-t border-slate-100">
-              <label className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition-colors">
+            <div className="ds-divider-top">
+              <label className="ds-toggle-row">
                 <div>
-                  <span className="block text-sm font-bold text-slate-900">Status Akses Publik Web Store</span>
-                  <span className="block text-xs text-slate-500 mt-0.5">
+                  <span className="ds-h2">Status Akses Publik Web Store</span>
+                  <span className="ds-hint">
                     {active ? 'Aktif — Toko online dapat diakses langsung oleh pembeli.' : 'Nonaktif — Hanya dapat diakses untuk peninjauan internal.'}
                   </span>
                 </div>
                 <input
                   type="checkbox"
-                  className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+                  className="ds-switch"
                   checked={active}
                   onChange={(e) => setActive(e.target.checked)}
                 />
@@ -1389,28 +1465,25 @@ export default function OwnerWebStoreSetupPage() {
 
             {/* Status Alert Notification — always visible */}
             {status && (
-              <div
-                className={`flex items-center gap-3 p-4 rounded-xl text-sm font-medium border transition-all animate-in fade-in ${status.kind === 'ok'
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  : 'bg-rose-50 text-rose-800 border-rose-200'
-                  }`}
-              >
-                {status.kind === 'ok' ? <CheckCircle2 className="shrink-0 text-emerald-600" size={20} /> : <AlertCircle className="shrink-0 text-rose-600" size={20} />}
+              <div className="ds-alert" data-tone={status.kind === 'ok' ? 'ok' : 'bad'} role="status">
+                {status.kind === 'ok' ? (
+                  <CheckCircle2 className="shrink-0" size={16} />
+                ) : (
+                  <AlertCircle className="shrink-0" size={16} />
+                )}
                 {status.msg}
               </div>
             )}
 
             {/* Action Bar */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <button
-                onClick={save}
-                disabled={saving}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white text-sm font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
-              >
-                {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
+            <div
+              className="flex items-center justify-between"
+              style={{ paddingTop: 14, borderTop: '1px solid var(--ds-border)' }}
+            >
+              <button onClick={save} disabled={saving} className="ds-btn" data-variant="primary">
+                {saving ? <Loader2 className="animate-spin" size={15} /> : <CheckCircle2 size={15} />}
                 {ws ? 'Simpan Perubahan' : 'Buat Web Store Baru'}
               </button>
-
             </div>
           </div>
         </div>
@@ -1430,7 +1503,18 @@ export default function OwnerWebStoreSetupPage() {
 function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600">
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          fontSize: 11.5,
+          fontWeight: 600,
+          letterSpacing: '0.02em',
+          color: 'var(--ds-fg-muted)',
+          marginBottom: 4,
+        }}
+      >
         {icon}
         <span>{label}</span>
       </label>

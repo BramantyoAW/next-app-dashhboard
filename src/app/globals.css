@@ -1,39 +1,65 @@
 @import "tailwindcss";
+/* Komponen design system (ds-btn, ds-input, ds-table, ds-badge, ...).
+   Token --ds-* sudah ada di :root; blok [data-theme] hanya dipakai
+   halaman /design untuk membandingkan arah warna. */
+@import "../components/ui/design-tokens.css";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Design system "Lembut Modern" (dipilih 2026-10-23).
+     Satu aksen, netral lain, radius besar, border nyaris hilang. */
+  --background: #fbfbfd;
+  --foreground: #18181b;
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #18181b;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #1e293b;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #1e293b;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
-  --radius: 0.75rem;
+  --popover-foreground: #18181b;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5fa;
+  --secondary-foreground: #3f3f46;
+  --muted: #f5f5fa;
+  --muted-foreground: #71717a;
+  --accent: #f5f5fa;
+  --accent-foreground: #3f3f46;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+  --border: #ededf2;
+  --input: #dcdce4;
+  --ring: #4f46e5;
+  --radius: 0.875rem;
   /* Custom landing page vars */
   --hero-gradient: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 40%, #eef2ff 100%);
   --card-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --accent-blue: #3b82f6;
-  --accent-indigo: #6366f1;
+  --accent-blue: #4f46e5;
+  --accent-indigo: #4338ca;
   --accent-cyan: #06b6d4;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --surface-white: #ffffff;
   --surface-gray: #f8fafc;
-  --border-light: #e2e8f0;
-  --border-medium: #cbd5e1;
+  --border-light: #ededf2;
+  --border-medium: #dcdce4;
+
+  /* Token tambahan design system (dipakai primitives .ds-*). */
+  --ds-bg: #fbfbfd;
+  --ds-surface: #ffffff;
+  --ds-surface-2: #f5f5fa;
+  --ds-fg: #18181b;
+  --ds-fg-muted: #71717a;
+  --ds-border: #ededf2;
+  --ds-border-strong: #dcdce4;
+  --ds-primary: #4f46e5;
+  --ds-primary-hover: #4338ca;
+  --ds-primary-fg: #ffffff;
+  --ds-accent: #db2777;
+  --ds-ring: rgba(79, 70, 229, 0.28);
+  --ds-danger: #e11d48;
+  --ds-radius: 14px;
+  --ds-radius-sm: 10px;
+  --ds-shadow: 0 1px 2px rgba(24, 24, 27, 0.04), 0 2px 8px rgba(24, 24, 27, 0.04);
+  --ds-shadow-lg: 0 12px 32px -12px rgba(24, 24, 27, 0.18);
+  --ds-font: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
@@ -83,7 +109,7 @@
     background-image: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
   }
   .bg-gradient-brand-hover {
-    background-image: linear-gradient(135deg, #2563eb, #4f46e5);
+    background-image: linear-gradient(135deg, #4338ca, #3730a3);
   }
   .shadow-card {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04),
@@ -213,4 +239,91 @@ html {
 ::selection {
   background-color: #dbeafe;
   color: #1e40af;
+}
+/* ═══════════════════════════════════════════════════════════════════
+   REMAP PALET — Design System C "Lembut Modern"
+   ───────────────────────────────────────────────────────────────────
+   Tailwind v4 menulis utility sebagai var(--color-<nama>-<n>). Dengan
+   mendefinisikan ulang variabelnya di sini, SELURUH halaman yang masih
+   memakai kelas lama (slate/blue/gray) langsung ikut tema baru tanpa
+   perlu menyentuh satu file pun.
+
+   Konsekuensi yang disengaja:
+     slate/gray  → netral murni (bukan kebiruan), teks #18181b
+     blue/indigo → satu aksen indigo #4f46e5
+   Warna status (emerald/rose/amber/red) TIDAK diubah: itu makna, bukan gaya.
+   ═══════════════════════════════════════════════════════════════════ */
+.ds-app {
+  /* netral — dipakai 1788x sebagai text/border/bg */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #ededf2;
+  --color-slate-300: #dcdce4;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
+
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #ededf2;
+  --color-gray-300: #dcdce4;
+  --color-gray-400: #a1a1aa;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #27272a;
+  --color-gray-900: #18181b;
+
+  /* aksen tunggal — dipakai 418x (blue) + 167x (indigo) */
+  --color-blue-50: #eef2ff;
+  --color-blue-100: #e0e7ff;
+  --color-blue-200: #c7d2fe;
+  --color-blue-300: #a5b4fc;
+  --color-blue-400: #818cf8;
+  --color-blue-500: #6366f1;
+  --color-blue-600: #4f46e5;
+  --color-blue-700: #4338ca;
+  --color-blue-800: #3730a3;
+  --color-blue-900: #312e81;
+
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+
+  /* radius lebih lapang (C), dipakai rounded-2xl/3xl di kartu */
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+}
+
+/* ── Bayangan lebih tenang (tema C) ────────────────────────────────
+   Tailwind menulis --tw-shadow literal per utilitas, jadi ditimpa di sini.
+   Hanya di dalam .ds-app: storefront tenant tetap pakai bayangan aslinya. */
+.ds-app .shadow-sm {
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+}
+.ds-app .shadow {
+  --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+}
+.ds-app .shadow-md {
+  --tw-shadow: 0 2px 6px -1px rgb(0 0 0 / 0.07), 0 1px 3px -1px rgb(0 0 0 / 0.05);
+}
+.ds-app .shadow-lg {
+  --tw-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.05);
+}
+.ds-app .shadow-xl {
+  --tw-shadow: 0 6px 18px -4px rgb(0 0 0 / 0.09), 0 3px 8px -4px rgb(0 0 0 / 0.05);
+}
+.ds-app .shadow-2xl {
+  --tw-shadow: 0 10px 28px -6px rgb(0 0 0 / 0.11), 0 4px 10px -6px rgb(0 0 0 / 0.05);
 }

@@ -206,36 +206,29 @@ export default function OwnerWebStoreCouponsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10">
+      <div className="ds-page-head">
+        <div>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3"
           >
-            <ArrowLeft size={8} />
+            <ArrowLeft size={16} />
             Kembali ke Management Merchant
           </Link>
-        </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 text-amber-300 text-xs font-semibold mb-3 border border-amber-400/30 backdrop-blur-sm">
-              <Ticket size={14} className="text-amber-300" /> Kupon Diskon
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white">Kelola Kupon Diskon</h1>
-            <p className="text-slate-300 text-sm mt-1 max-w-xl leading-relaxed">
-              Buat kode diskon untuk toko online Anda. Pelanggan memasukkan kode saat checkout untuk
-              mendapatkan potongan harga otomatis.
-            </p>
+          <div className="flex items-center gap-2 mb-2">
+            <Ticket size={15} className="text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Kupon Diskon</span>
           </div>
-          <button
-            onClick={() => openForm(null)}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-amber-400 text-slate-900 text-sm font-bold shadow-lg shadow-amber-500/20 hover:bg-amber-300 transition-all active:scale-95"
-          >
-            <Plus size={18} />
-            Tambah Kupon
-          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Kelola Kupon Diskon</h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
+            Buat kode diskon untuk toko online Anda. Pelanggan memasukkan kode saat checkout untuk
+            mendapatkan potongan harga otomatis.
+          </p>
         </div>
+        <button onClick={() => openForm(null)} className="ds-btn" data-variant="primary">
+          <Plus size={16} />
+          Tambah Kupon
+        </button>
       </div>
 
       {!webStoreId && (
@@ -481,7 +474,8 @@ export default function OwnerWebStoreCouponsPage() {
               <button
                 onClick={save}
                 disabled={saving}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 disabled:opacity-50 text-slate-900 text-sm font-bold shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                className="ds-btn"
+                data-variant="primary"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                 {editing.id ? 'Simpan Perubahan' : 'Buat Kupon'}

@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * Shell owner — design system "Lembut Modern" (C).
+ *
+ * PERUBAHAN: hanya tampilan topbar & spacing. Logika tidak berubah:
+ *  - isBuilder → full-bleed (tanpa sidebar/header) tetap sama
+ *  - collapse sidebar desktop tetap sama
+ *  - logout tetap sama
+ */
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
@@ -22,14 +30,24 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
 
   if (isBuilder) {
     return (
-      <main style={{ minHeight: '100vh', background: '#f8fafc' }}>
-        {children}
-      </main>
+      <main style={{ minHeight: '100vh', background: 'var(--ds-bg)' }}>{children}</main>
     );
   }
 
+  const iconBtn = {
+    display: 'grid',
+    placeItems: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    border: '1px solid var(--ds-border)',
+    background: 'var(--ds-surface)',
+    color: 'var(--ds-fg-muted)',
+    cursor: 'pointer',
+  } as const;
+
   return (
-    <div className="min-h-screen flex bg-slate-50">
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--ds-bg)', color: 'var(--ds-fg)' }}>
       <OwnerSidebar
         open={open}
         onClose={() => setOpen(false)}
@@ -37,32 +55,51 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
         onLogout={handleLogout}
         desktopCollapsed={collapsed}
       />
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-          <div className="flex items-center gap-3">
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <header
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 30,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '10px 16px',
+            background: 'color-mix(in srgb, var(--ds-surface) 88%, transparent)',
+            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid var(--ds-border)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-xl"
               onClick={() => setOpen(true)}
-              aria-label="Open menu"
+              aria-label="Buka menu"
+              style={iconBtn}
+              className="lg:hidden"
             >
-              <Menu size={22} className="text-slate-700" />
+              <Menu size={17} />
             </button>
             <button
-              className="hidden lg:inline-flex p-2 hover:bg-slate-100 rounded-xl text-slate-600"
               onClick={() => setCollapsed((c) => !c)}
               aria-label={collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'}
               title={collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar (full-bleed)'}
+              style={iconBtn}
+              className="hidden lg:grid"
             >
-              {collapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+              {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
             </button>
-            <span className="text-base md:text-lg font-bold tracking-tight text-slate-800">
-              Owner Console
-            </span>
+            <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>Owner Console</span>
           </div>
-          <span className="hidden sm:block text-sm text-slate-500 font-semibold">{displayName}</span>
+
+          <span style={{ fontSize: 12.5, color: 'var(--ds-fg-muted)', fontWeight: 500 }} className="hidden sm:block">
+            {displayName}
+          </span>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+
+        <main style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 48px' }}>
+          <div style={{ maxWidth: 1120, margin: '0 auto' }}>{children}</div>
         </main>
       </div>
     </div>

@@ -172,17 +172,17 @@ export default function WebPagesPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-8 text-white shadow-xl">
-        <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10">
-          <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-300 hover:text-white transition-colors mb-4">
+      <div className="ds-page-head">
+        <div>
+          <Link href="/owner/web-store" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-3">
             <ArrowLeft size={16} /> Kembali ke Setup
           </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold mb-3 border border-blue-500/30 backdrop-blur-sm">
-            <LayoutTemplate size={14} /> Halaman Dinamis
+          <div className="flex items-center gap-2 mb-2">
+            <LayoutTemplate size={15} className="text-slate-400" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Halaman Dinamis</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Pages Manager</h1>
-          <p className="text-slate-300 text-sm mt-1 max-w-xl leading-relaxed">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pages Manager</h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-xl leading-relaxed">
             Kelola halaman toko (Beranda, Tentang, Kontak, FAQ) dan susun bloknya seperti Shopify.
           </p>
         </div>
