@@ -569,6 +569,22 @@ export function CheckoutForm({ hash }: { hash: string }) {
                     value={pickupNote}
                     onChange={(e) => setPickupNote(e.target.value)}
                   />
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as never]: 'var(--brand)' }}
+                    placeholder="Nama penerima"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    required
+                  />
+                  <input
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as never]: 'var(--brand)' }}
+                    placeholder="No. HP"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
                   <p className="text-xs text-slate-400">Tanpa ongkir — pesanan disiapkan di outlet pilihanmu.</p>
                 </>
               )}
