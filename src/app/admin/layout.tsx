@@ -69,7 +69,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar Overlay (Mobile) */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+          style={{ background: 'rgba(24,24,27,0.5)' }}
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -83,7 +84,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center justify-between mb-10">
           <Link href="/admin/dashboard" className="flex flex-col items-center gap-4 group w-full pt-4">
             <div className="relative">
-              <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity"></div>
+              <div
+                className="absolute -inset-2 rounded-2xl blur opacity-15 group-hover:opacity-30 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, var(--ds-primary), var(--ds-primary-hover))' }}
+              ></div>
               <img 
                 src="/ombotico.png" 
                 alt="OmBot" 
@@ -91,8 +95,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               />
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-black text-2xl tracking-tighter text-blue-600 leading-none">OmBot Admin</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black mt-2 bg-slate-50 px-3 py-1 rounded-full border border-slate-100/50">Order Management Bot</span>
+              <span className="ds-h1" style={{ color: 'var(--ds-primary)' }}>OmBot Admin</span>
+              <span
+                className="ds-caption mt-2 px-3 py-1 rounded-full"
+                style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)', textTransform: 'uppercase', letterSpacing: '0.18em' }}
+              >
+                Order Management Bot
+              </span>
             </div>
           </Link>
           <button className="lg:hidden p-2 hover:bg-secondary rounded-lg" onClick={() => setIsSidebarOpen(false)}>
@@ -165,7 +174,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Menu size={24} />
             </button>
-            <span className="font-bold text-slate-900 tracking-tight">OmBot Admin</span>
+            <span className="ds-h2">OmBot Admin</span>
           </div>
         </header>
 

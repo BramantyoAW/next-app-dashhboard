@@ -102,87 +102,100 @@ export default function AdminAiPointsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">AI Point</h1>
-        <p className="text-slate-500 mt-1">
-          Kelola saldo AI Point owner. Fitur AI (Design &amp; Assistance) memotong saldo ini — 1 permintaan = 1 poin.
-        </p>
+      <div className="ds-page-head">
+        <div>
+          <h1 className="ds-display">AI Point</h1>
+          <p className="ds-hint">
+            Kelola saldo AI Point owner. Fitur AI (Design &amp; Assistance) memotong saldo ini — 1 permintaan = 1 poin.
+          </p>
+        </div>
       </div>
 
       {status && (
-        <div
-          className={`flex items-start gap-3 rounded-2xl border p-4 text-sm font-medium ${
-            status.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-rose-200 bg-rose-50 text-rose-700'
-          }`}
-        >
+        <div className="ds-alert items-start" data-tone={status.type === 'success' ? 'ok' : 'bad'}>
           <span className="flex-1">{status.message}</span>
-          <button onClick={() => setStatus(null)} className="shrink-0 opacity-60 hover:opacity-100">
+          <button
+            onClick={() => setStatus(null)}
+            className="ds-btn"
+            data-variant="ghost"
+            data-size="sm"
+            style={{ height: 22, padding: 0, width: 22 }}
+          >
             <X size={16} />
           </button>
         </div>
       )}
 
       {/* Daftar owner */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+      <div className="ds-card overflow-hidden">
+        <div
+          className="p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between"
+          style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+        >
           <div className="flex items-center gap-2">
-            <Sparkles size={20} className="text-violet-500" />
-            <h2 className="font-bold text-slate-900">Saldo Owner</h2>
+            <Sparkles size={20} style={{ color: '#8b5cf6' }} />
+            <h2 className="ds-h2">Saldo Owner</h2>
           </div>
           <div className="relative w-full sm:w-72">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="ds-icon-muted absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nama, username, atau email…"
-              className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-violet-400"
+              className="ds-input"
+              style={{ paddingLeft: 40 }}
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/30">
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Toko</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Point Order</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">AI Point</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">AI Terpakai</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Aksi</th>
+        <div className="ds-table-wrap" style={{ marginTop: 0, border: 0, borderRadius: 0 }}>
+          <table className="ds-table text-left">
+            <thead className="ds-thead">
+              <tr>
+                <th className="ds-section-label">Owner</th>
+                <th className="ds-section-label">Toko</th>
+                <th className="ds-section-label">Point Order</th>
+                <th className="ds-section-label">AI Point</th>
+                <th className="ds-section-label">AI Terpakai</th>
+                <th className="ds-section-label text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <Loader2 className="mx-auto animate-spin text-slate-300" size={28} />
+                  <td colSpan={6} className="text-center" style={{ padding: '40px 12px' }}>
+                    <Loader2 className="ds-icon-muted mx-auto animate-spin" size={28} />
                   </td>
                 </tr>
               ) : owners.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 italic">
-                    Tidak ada owner yang cocok.
+                  <td colSpan={6} style={{ padding: 0 }}>
+                    <div className="ds-empty">
+                      <p className="ds-small">Tidak ada owner yang cocok.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 owners.map((o) => (
-                  <tr key={o.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-5">
-                      <div className="font-bold text-slate-900">{o.nama}</div>
-                      <div className="text-xs text-slate-400">{o.email}</div>
+                  <tr key={o.id}>
+                    <td>
+                      <div className="ds-body" style={{ fontWeight: 600 }}>{o.nama}</div>
+                      <div className="ds-caption">{o.email}</div>
                     </td>
-                    <td className="px-6 py-5 text-sm text-slate-600">{o.toko ?? '—'}</td>
-                    <td className="px-6 py-5 font-bold text-blue-600">{o.points.toLocaleString()}</td>
-                    <td className="px-6 py-5">
-                      <span className={`font-black ${o.ai_points > 0 ? 'text-violet-600' : 'text-rose-500'}`}>
+                    <td className="ds-body">{o.toko ?? '—'}</td>
+                    <td className="ds-num ds-accent-text" style={{ fontWeight: 700 }}>
+                      {o.points.toLocaleString()}
+                    </td>
+                    <td>
+                      <span
+                        className="ds-num"
+                        style={{ fontWeight: 800, color: o.ai_points > 0 ? '#7c3aed' : 'var(--ds-danger)' }}
+                      >
                         {o.ai_points.toLocaleString()}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-sm text-slate-500">{o.ai_terpakai.toLocaleString()} poin</td>
-                    <td className="px-6 py-5">
+                    <td className="ds-small">{o.ai_terpakai.toLocaleString()} poin</td>
+                    <td>
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
@@ -190,9 +203,10 @@ export default function AdminAiPointsPage() {
                             setAmount('100');
                             setNote('');
                           }}
-                          className="rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition-colors hover:bg-violet-100"
+                          className="ds-btn-sm"
+                          style={{ background: '#f5f3ff', color: '#7c3aed', borderColor: '#ddd6fe' }}
                         >
-                          <Plus size={14} className="mr-1 inline" />
+                          <Plus size={14} />
                           Tambah
                         </button>
                         <button
@@ -201,14 +215,18 @@ export default function AdminAiPointsPage() {
                             setAmount('-10');
                             setNote('');
                           }}
-                          className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200"
+                          className="ds-btn-sm"
+                          data-tone="neutral"
+                          style={{ height: 28 }}
                         >
-                          <Minus size={14} className="mr-1 inline" />
+                          <Minus size={14} />
                           Kurangi
                         </button>
                         <button
                           onClick={() => setRiwayatUser(riwayatUser?.id === o.id ? null : o)}
-                          className="rounded-xl px-3 py-2 text-xs font-bold text-slate-500 transition-colors hover:bg-slate-100"
+                          className="ds-btn-sm"
+                          data-tone="neutral"
+                          style={{ height: 28, background: 'transparent', borderColor: 'transparent', color: 'var(--ds-fg-muted)' }}
                         >
                           Riwayat
                         </button>
@@ -223,59 +241,69 @@ export default function AdminAiPointsPage() {
       </div>
 
       {/* Riwayat */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-4">
-          <h2 className="font-bold text-slate-900">
+      <div className="ds-card overflow-hidden">
+        <div
+          className="p-6 flex items-center justify-between gap-4"
+          style={{ borderBottom: '1px solid var(--ds-border)', background: 'var(--ds-surface-2)' }}
+        >
+          <h2 className="ds-h2">
             Riwayat AI Point {riwayatUser ? `— ${riwayatUser.nama}` : '(semua owner)'}
           </h2>
           {riwayatUser && (
             <button
               onClick={() => setRiwayatUser(null)}
-              className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200"
+              className="ds-btn"
+              data-variant="secondary"
+              data-size="sm"
             >
               Tampilkan semua
             </button>
           )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/30">
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Owner</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Fitur</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Keterangan</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Tanggal</th>
+        <div className="ds-table-wrap" style={{ marginTop: 0, border: 0, borderRadius: 0 }}>
+          <table className="ds-table text-left">
+            <thead className="ds-thead">
+              <tr>
+                <th className="ds-section-label">Owner</th>
+                <th className="ds-section-label">Fitur</th>
+                <th className="ds-section-label">Amount</th>
+                <th className="ds-section-label">Keterangan</th>
+                <th className="ds-section-label text-right">Tanggal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                    Belum ada riwayat AI Point.
+                  <td colSpan={5} style={{ padding: 0 }}>
+                    <div className="ds-empty">
+                      <p className="ds-small">Belum ada riwayat AI Point.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 logs.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-bold text-slate-800">
+                  <tr key={l.id}>
+                    <td className="ds-body" style={{ fontWeight: 600 }}>
                       {l.user?.full_name ?? `User #${l.user_id}`}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
+                    <td className="ds-body">
                       {l.feature === 'design'
                         ? 'Design with OmBot AI'
                         : l.feature === 'assistance'
                           ? 'OmBot AI Assistance'
                           : 'Saldo manual'}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`font-black ${l.amount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    <td>
+                      <span
+                        className="ds-num"
+                        style={{ fontWeight: 800, color: l.amount > 0 ? '#15803d' : 'var(--ds-danger)' }}
+                      >
                         {l.amount > 0 ? '+' : ''}
                         {l.amount}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{l.note}</td>
-                    <td className="px-6 py-4 text-right text-xs whitespace-nowrap text-slate-500">
+                    <td className="ds-body">{l.note}</td>
+                    <td className="ds-caption text-right whitespace-nowrap">
                       {new Intl.DateTimeFormat('en-GB', {
                         day: '2-digit',
                         month: 'short',
@@ -297,41 +325,45 @@ export default function AdminAiPointsPage() {
       {target && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ background: 'rgba(24, 24, 27, 0.6)' }}
             onClick={() => !saving && setTarget(null)}
           />
-          <div className="relative w-full max-w-md rounded-[32px] bg-white p-8 shadow-2xl">
-            <h2 className="text-xl font-black text-slate-900">
+          <div
+            className="ds-card relative w-full max-w-md p-8"
+            style={{ borderRadius: 18, boxShadow: 'var(--ds-shadow-lg)' }}
+          >
+            <h2 className="ds-h1">
               {Number(amount) < 0 ? 'Kurangi' : 'Tambah'} AI Point
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="ds-small mt-1">
               {target.nama} — saldo sekarang{' '}
-              <span className="font-bold text-violet-600">{target.ai_points}</span>
+              <span style={{ fontWeight: 700, color: '#7c3aed' }}>{target.ai_points}</span>
             </p>
 
             <div className="mt-6 space-y-4">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Jumlah</label>
+                <label className="ds-label">Jumlah</label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="mis. 100 atau -10"
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+                  className="ds-input"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="ds-hint">
                   Angka negatif untuk mengurangi. Saldo tidak boleh jadi minus.
                 </p>
               </div>
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Catatan</label>
+                <label className="ds-label">Catatan</label>
                 <input
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="mis. Bonus kompensasi gangguan layanan"
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-violet-400"
+                  className="ds-input"
                 />
-                <p className="mt-1 text-[11px] text-slate-400">Wajib diisi — tercatat di riwayat owner.</p>
+                <p className="ds-hint">Wajib diisi — tercatat di riwayat owner.</p>
               </div>
             </div>
 
@@ -339,7 +371,9 @@ export default function AdminAiPointsPage() {
               <button
                 onClick={simpan}
                 disabled={saving}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-4 font-bold text-white transition-all hover:bg-violet-700 active:scale-95 disabled:opacity-50"
+                className="ds-btn w-full"
+                data-variant="primary"
+                style={{ background: '#7c3aed', height: 44 }}
               >
                 {saving && <Loader2 className="animate-spin" size={18} />}
                 {saving ? 'Menyimpan…' : 'Simpan'}
@@ -347,7 +381,9 @@ export default function AdminAiPointsPage() {
               <button
                 onClick={() => setTarget(null)}
                 disabled={saving}
-                className="w-full rounded-2xl bg-slate-50 py-3 font-bold text-slate-400 transition-all hover:bg-slate-100"
+                className="ds-btn w-full"
+                data-variant="secondary"
+                style={{ height: 40 }}
               >
                 Batalkan
               </button>

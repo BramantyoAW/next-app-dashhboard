@@ -77,7 +77,10 @@ export default function AdminUsersPage() {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+        <div
+          className="animate-spin h-10 w-10 border-4 rounded-full"
+          style={{ borderColor: 'var(--ds-primary)', borderTopColor: 'transparent' }}
+        ></div>
       </div>
     );
   }
@@ -85,86 +88,95 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Manage Users</h1>
+      <div className="ds-page-head">
+        <h1 className="ds-display">Manage Users</h1>
 
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+          className="ds-btn"
+          data-variant="primary"
         >
           + Add User
         </button>
       </div>
 
       {/* Table */}
-      <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-3 border-b">ID</th>
-              <th className="p-3 border-b">User & Toko</th>
-              <th className="p-3 border-b">Email</th>
-              <th className="p-3 border-b">Role</th>
-              <th className="p-3 border-b">Status</th>
-              <th className="p-3 border-b">Actions</th>
-              <th className="p-3 border-b">Created At</th>
+      <div className="ds-card ds-card-pad">
+        <div className="ds-table-wrap">
+        <table className="ds-table">
+          <thead className="ds-thead">
+            <tr>
+              <th>ID</th>
+              <th>User & Toko</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+              <th>Created At</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 text-sm">
-                <td className="p-3 border-b">{u.id}</td>
-                <td className="p-3 border-b">
-                  <div className="font-bold">{u.full_name} (@{u.username})</div>
-                  <div className="text-xs text-blue-600">{u.stores?.[0]?.name || '-'}</div>
+              <tr key={idx}>
+                <td className="ds-mono">{u.id}</td>
+                <td>
+                  <div className="ds-h2">{u.full_name} (@{u.username})</div>
+                  <div className="ds-caption ds-accent-text">{u.stores?.[0]?.name || '-'}</div>
                 </td>
-                <td className="p-3 border-b">{u.email}</td>
-                <td className="p-3 border-b uppercase">{u.role}</td>
-                <td className="p-3 border-b">
+                <td>{u.email}</td>
+                <td className="uppercase">{u.role}</td>
+                <td>
                    {u.status === 0 ? (
-                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-[10px] font-bold uppercase">Pending</span>
+                    <span className="ds-badge" data-tone="warn">Pending</span>
                   ) : u.status === 1 ? (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase">Active</span>
+                    <span className="ds-badge" data-tone="ok">Active</span>
                   ) : (
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase">Suspended</span>
+                    <span className="ds-badge" data-tone="bad">Suspended</span>
                   )}
                 </td>
-                <td className="p-3 border-b">
+                <td>
                    <div className="flex space-x-2">
                     {u.status !== 1 && (
-                      <button onClick={() => handleUpdateStatus(u.id, 1)} className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors">Activate</button>
+                      <button onClick={() => handleUpdateStatus(u.id, 1)} className="ds-btn" data-variant="primary">Activate</button>
                     )}
                     {u.status !== 2 && (
-                      <button onClick={() => handleUpdateStatus(u.id, 2)} className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors">Suspend</button>
+                      <button
+                        onClick={() => handleUpdateStatus(u.id, 2)}
+                        className="ds-btn"
+                        data-variant="danger"
+                      >Suspend</button>
                     )}
                   </div>
                 </td>
-                <td className="p-3 border-b">
+                <td>
                   {new Date(u.created_at).toLocaleString()}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination */}
         <div className="flex justify-between items-center mt-4">
           <button
             disabled={page <= 1}
             onClick={() => setPage(page - 1)}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            className="ds-btn"
+            data-variant="secondary"
           >
             Prev
           </button>
 
-          <span>
+          <span className="ds-small">
             Page {pagination.current_page} of {pagination.total_pages}
           </span>
 
           <button
             disabled={page >= pagination.total_pages}
             onClick={() => setPage(page + 1)}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            className="ds-btn"
+            data-variant="secondary"
           >
             Next
           </button>
@@ -173,38 +185,43 @@ export default function AdminUsersPage() {
 
       {/* Modal Add User */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[88vh] overflow-y-auto space-y-4">
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{ background: 'rgba(24,24,27,0.5)' }}
+        >
+          <div className="ds-card ds-card-pad w-full max-w-md max-h-[88vh] overflow-y-auto space-y-4">
 
-            <h2 className="text-xl font-bold mb-4">Add New User</h2>
+            <h2 className="ds-h1 mb-4">Add New User</h2>
 
             <div className="space-y-3">
               {/** All fields based on GraphQL input */}
               {["username", "full_name", "email", "phone", "password", "store_name"].map((field) => (
                 <div key={field}>
-                  <label className="text-sm font-medium capitalize">{field.replace("_", " ")}</label>
+                  <label className="ds-label capitalize">{field.replace("_", " ")}</label>
                   <input
                     type={field === "password" ? "password" : "text"}
                     name={field}
                     value={(formData as any)[field]}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="ds-input"
                   />
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end space-x-3 mt-4">
+            <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 bg-gray-300 rounded-lg"
+                className="ds-btn"
+                data-variant="secondary"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleCreateUser}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                className="ds-btn"
+                data-variant="primary"
               >
                 Save User
               </button>
