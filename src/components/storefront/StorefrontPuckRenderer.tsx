@@ -59,7 +59,7 @@ export default function StorefrontPuckRenderer({
     );
   }
   return (
-    <div className="storefront-puck-root" style={{ minHeight: '100vh' }}>
+    <div className="storefront-page-root" style={{ minHeight: '100vh' }}>
       <PuckDynamicContext.Provider
         value={{
           hash: dynamic.hash ?? '',

@@ -281,7 +281,7 @@ export function PuckAiAssistant({
               <Bot size={18} />
               <div>
                 <div className="text-sm font-bold">Design With OmBot Ai</div>
-                <div className={`truncate text-[11px] text-slate-300 ${maximized ? 'max-w-xs' : 'max-w-[190px]'}`}>“{pageTitle ?? pageSlug}” · blok Puck</div>
+                <div className={`truncate text-[11px] text-slate-300 ${maximized ? 'max-w-xs' : 'max-w-[190px]'}`}>“{pageTitle ?? pageSlug}” · halaman ini</div>
               </div>
             </div>
             <div className="flex items-center gap-1">

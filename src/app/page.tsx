@@ -2,7 +2,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Zap, Shield, TrendingUp, Clock } from "lucide-react";
 
-export default function Home() {
+type PlatformStats = { stores: number; orders: number; products: number; pages: number };
+
+/** Angka landing page diambil dari data nyata (query publik `platformStats`). */
+async function getPlatformStats(): Promise<PlatformStats | null> {
+  try {
+    const url = process.env.GRAPHQL_URL || "http://127.0.0.1:8000/graphql";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: "{ platformStats { stores orders products pages } }" }),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json?.data?.platformStats as PlatformStats) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Data nyata hanya bisa diambil saat request: host `laravel` tidak ada
+// di dalam build image, jadi jangan di-prerender.
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const stats = await getPlatformStats();
+  const nf = new Intl.NumberFormat("id-ID");
+  const statItems = stats
+    ? [
+        { value: nf.format(stats.products), label: "Produk Terkelola" },
+        { value: nf.format(stats.stores), label: "Toko Aktif" },
+        { value: nf.format(stats.orders), label: "Pesanan Diproses" },
+      ]
+    : [];
   return (
     <div className="ds-app min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-100 overflow-x-hidden">
 
@@ -82,19 +115,17 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Stats */}
-              <div className="flex flex-wrap justify-center gap-6 md:gap-12 pt-4 animate-fade-up animation-delay-300">
-                {[
-                  { value: "10K+", label: "Toko Terdaftar" },
-                  { value: "50K+", label: "Pesanan/Hari" },
-                  { value: "99.9%", label: "Uptime" },
-                ].map(({ value, label }) => (
-                  <div key={label} className="text-center">
-                    <div className="text-2xl md:text-3xl font-black text-slate-900">{value}</div>
-                    <div className="text-xs md:text-sm text-slate-500 font-medium mt-0.5">{label}</div>
-                  </div>
-                ))}
-              </div>
+              {/* Stats — angka nyata dari platform, bukan estimasi */}
+              {statItems.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-6 md:gap-12 pt-4 animate-fade-up animation-delay-300">
+                  {statItems.map(({ value, label }) => (
+                    <div key={label} className="text-center">
+                      <div className="text-2xl md:text-3xl font-black text-slate-900">{value}</div>
+                      <div className="text-xs md:text-sm text-slate-500 font-medium mt-0.5">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Hero Mockup */}

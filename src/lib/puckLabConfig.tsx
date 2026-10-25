@@ -30,8 +30,7 @@ import { ProductReviews } from '@/components/storefront/ProductReviews';
  * Di sini header/footer BUKAN global statis: keduanya komponen biasa di dalam
  * kanvas, sehingga tiap halaman bisa punya header custom berbeda.
  *
- * Route demo: /owner/web-store/puck-lab
- * File: src/lib/puckLabConfig.tsx (client) + halaman editor + halaman render.
+ * File: src/lib/puckLabConfig.tsx (client, konfigurasi internal editor).
  */
 
 type RootProps = DefaultRootProps;
