@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Check, ChevronDown, Loader2, Send, Sparkles, Store, Trash2, X } from 'lucide-react';
 import { myStoresService, type MyStore } from '@/graphql/query/myStores';
 import { useAiSplitView } from '@/lib/aiSplitView';
+import { onAiPanelOpen } from '@/lib/aiPanelBus';
 
 /**
  * "Manage OmBot AI" — panel samping untuk owner di halaman /dashboard/*.
@@ -105,6 +106,9 @@ export default function OmBotAiAssistance({ scope = 'dashboard', pinnedStoreId =
   const bottomRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
   useAiSplitView(open);
+
+  // Dibuka dari tombol header halaman (bukan lagi tombol melayang).
+  useEffect(() => onAiPanelOpen(scope, () => setOpen(true)), [scope]);
 
   // Muat daftar toko (untuk pemilih toko aktif) sekali saat panel dibuka.
   useEffect(() => {
@@ -327,18 +331,6 @@ export default function OmBotAiAssistance({ scope = 'dashboard', pinnedStoreId =
 
   return (
     <>
-      {/* Tombol melayang */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:scale-105"
-          aria-label="Buka Manage OmBot AI"
-        >
-          <Sparkles size={18} />
-          <span className="hidden sm:inline">Manage OmBot AI</span>
-        </button>
-      )}
-
       {/* Panel */}
       {open && (
         <div className="fixed right-0 top-0 z-40 flex h-dvh w-full flex-col overflow-hidden border-l border-slate-200 bg-white lg:w-[var(--ai-split-w)]">

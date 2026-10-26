@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { getProfile } from '@/graphql/query/getProfile'
 import UserMenu from '@/components/UserMenu'
 import OmBotAiAssistance from '@/components/ai-ops/OmBotAiAssistance'
+import { openAiPanel } from '@/lib/aiPanelBus'
 import { resolveImageUrl } from '@/lib/imageUtils'
 import {
   Home,
@@ -419,6 +420,20 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
               </Link>
             </>
+            )}
+
+            {/* Pembuka Manage OmBot AI — ditaruh di header agar sejajar dengan
+                "Design With OmBot Ai" di editor halaman, bukan tombol melayang. */}
+            {!isStaff && (
+              <button
+                onClick={() => openAiPanel('dashboard')}
+                title="Tanya data toko ke Manage OmBot AI"
+                className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all flex-shrink-0"
+                style={{ background: 'var(--ds-surface-2)', border: '1px solid var(--ds-border)' }}
+              >
+                <Sparkles size={15} style={{ color: 'var(--ds-primary)' }} />
+                <span className="text-sm" style={{ fontWeight: 600 }}>Manage OmBot AI</span>
+              </button>
             )}
 
             <UserMenu

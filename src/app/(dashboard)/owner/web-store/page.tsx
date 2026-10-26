@@ -37,6 +37,7 @@ import {
 import { WebStoreStatusBadge } from '@/components/web-store/WebStoreStatusBadge';
 import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPreviewButton';
 import OmBotAiAssistance from '@/components/ai-ops/OmBotAiAssistance';
+import { openAiPanel } from '@/lib/aiPanelBus';
 
 /**
  * Kurir yang bisa dipilih merchant untuk metode ekspedisi.
@@ -476,6 +477,14 @@ export default function OwnerWebStoreSetupPage() {
           <div className="flex flex-wrap items-center gap-2">
             {ws && <WebStoreStatusBadge active={ws.is_active} />}
             <StorefrontPreviewButton hash={subdomain} isActive={active} />
+            <button
+              onClick={() => openAiPanel('web-store')}
+              title="Tanya status web store ke Manage OmBot AI"
+              className="ds-btn"
+              data-variant="secondary"
+            >
+              <Sparkles size={14} /> Manage OmBot AI
+            </button>
             <Link href="/owner/web-store/pages" className="ds-btn" data-variant="secondary">
               <LayoutTemplate size={14} /> Page Builder
             </Link>
