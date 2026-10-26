@@ -34,8 +34,10 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
     );
   }
 
+  // `display` sengaja TIDAK di sini: inline style menang atas kelas Tailwind,
+  // sehingga `hidden` / `lg:hidden` tidak akan pernah berlaku. Display diatur
+  // per tombol lewat kelas.
   const iconBtn = {
-    display: 'grid',
     placeItems: 'center',
     width: 32,
     height: 32,
@@ -77,7 +79,7 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
               onClick={() => setOpen(true)}
               aria-label="Buka menu"
               style={iconBtn}
-              className="lg:hidden"
+              className="grid lg:hidden"
             >
               <Menu size={17} />
             </button>

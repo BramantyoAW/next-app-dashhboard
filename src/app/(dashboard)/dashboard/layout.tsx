@@ -24,7 +24,9 @@ import {
   Store,
   Zap,
   Globe,
-  CreditCard
+  CreditCard,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react'
 
 const ProfileContext = createContext<any>(null)
@@ -143,6 +145,9 @@ function SidebarLink({
       onClick={onClick}
       aria-current={isActive ? 'page' : undefined}
       data-active={isActive ? 'true' : undefined}
+      // data-title dipakai tooltip CSS saat sidebar dilipat jadi rail ikon.
+      data-title={typeof children === 'string' ? children : undefined}
+      className="sidebar-link relative"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -162,7 +167,7 @@ function SidebarLink({
       >
         {icon}
       </span>
-      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span className="sidebar-label" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {children}
       </span>
     </Link>
@@ -175,6 +180,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  // Desktop: lipat sidebar jadi rail ikon. Drawer mobile pakai isSidebarOpen.
+  const [collapsed, setCollapsed] = useState(false)
   // Saldo AI Point ditampilkan real time: panel OmBot AI mengirim nilai terbaru
   // lewat event `aiPointsChanged` setiap kali poin terpotong, sehingga angka di
   // header ikut turun tanpa perlu refresh halaman.
@@ -234,11 +241,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       {!isStaff && (
       <aside className={`
+        ds-sidebar
         fixed inset-y-0 left-0 z-50 w-64 md:w-72 flex flex-col p-4 md:p-6
         transition-transform duration-300 ease-in-out lg:shadow-none
         lg:translate-x-0 lg:static lg:inset-auto lg:z-auto
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
+      data-collapsed={collapsed ? 'true' : 'false'}
       style={{
         background: 'var(--ds-surface)',
         borderRight: '1px solid var(--ds-border)',
@@ -246,13 +255,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       }}>
         {/* Logo */}
         <div className="flex items-center justify-between mb-8 md:mb-10">
-          <Link href="/dashboard" className="flex flex-col items-center gap-3 group w-full pt-2">
+          <Link href="/dashboard" className="sidebar-brand flex flex-col items-center gap-3 group w-full pt-2">
             <img
               src="/ombotico.png"
               alt="OmBot"
-              className="w-16 md:w-24 h-16 md:h-24 object-contain"
+              className="sidebar-logo w-16 md:w-24 h-16 md:h-24 object-contain"
             />
-            <div className="flex flex-col items-center">
+            <div className="sidebar-brand-text flex flex-col items-center">
               <span
                 className="text-2xl md:text-3xl leading-none"
                 style={{ fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ds-fg)' }}
@@ -294,7 +303,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Credits & Points
           </SidebarLink>
 
-          <div className="pt-5 pb-1.5 px-3">
+          <div className="sidebar-group pt-5 pb-1.5 px-3">
             <span className="ds-section-label">Catalog</span>
           </div>
           <SidebarLink href="/dashboard/catalog/product" icon={<Package size={18} />} onClick={() => setIsSidebarOpen(false)}>
@@ -304,7 +313,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Inventory
           </SidebarLink>
 
-          <div className="pt-5 pb-1.5 px-3">
+          <div className="sidebar-group pt-5 pb-1.5 px-3">
             <span className="ds-section-label">Web Store</span>
           </div>
           <SidebarLink href="/owner/web-store" icon={<Globe size={18} />} onClick={() => setIsSidebarOpen(false)}>
@@ -314,7 +323,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Master Products
           </SidebarLink>
 
-          <div className="pt-5 pb-1.5 px-3">
+          <div className="sidebar-group pt-5 pb-1.5 px-3">
             <span className="ds-section-label">User &amp; Store</span>
           </div>
           <SidebarLink href="/dashboard/merchant" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
@@ -327,7 +336,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             Messages
           </SidebarLink>
 
-          <div className="pt-5 pb-1.5 px-3">
+          <div className="sidebar-group pt-5 pb-1.5 px-3">
             <span className="ds-section-label">Settings</span>
           </div>
           <SidebarLink href="/dashboard/settings/store" icon={<Store size={18} />} onClick={() => setIsSidebarOpen(false)}>
@@ -347,7 +356,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         {/* User Profile Footer */}
         <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--ds-border)' }}>
           <div
-            className="p-3 rounded-xl flex items-center gap-3"
+            className="sidebar-profile p-3 rounded-xl flex items-center gap-3"
             style={{ background: 'var(--ds-surface-2)' }}
           >
             <div
@@ -356,7 +365,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             >
               {profile?.me?.user?.full_name?.[0] ?? 'U'}
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
+            <div className="sidebar-profile-text flex flex-col min-w-0 flex-1">
               <span className="text-sm truncate" style={{ fontWeight: 600, color: 'var(--ds-fg)' }}>{profile?.me?.user?.full_name}</span>
               <span className="text-[11px] truncate" style={{ color: 'var(--ds-fg-muted)' }}>{profile?.me?.user?.store_name}</span>
             </div>
@@ -384,6 +393,17 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
               aria-label="Buka menu"
             >
               <Menu size={22} style={{ color: 'var(--ds-fg)' }} />
+            </button>
+            )}
+            {!isStaff && (
+            <button
+              className="hidden lg:flex p-2 rounded-xl transition-colors"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? 'Tampilkan menu samping' : 'Sembunyikan menu samping'}
+              title={collapsed ? 'Tampilkan menu' : 'Sembunyikan menu'}
+              style={{ color: 'var(--ds-fg-muted)' }}
+            >
+              {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
             </button>
             )}
             <h2 className="text-base md:text-lg" style={{ fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--ds-fg)' }}>{getPageTitle(pathname)}</h2>

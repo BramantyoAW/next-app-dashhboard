@@ -362,3 +362,73 @@ html {
     transition: padding-right 0.18s ease;
   }
 }
+
+/* ───────────────── SIDEBAR RAIL (dashboard) ─────────────────
+   Sidebar dashboard bisa dilipat jadi rail ikon di desktop. Kelas ini
+   menggantikan pengecekan `collapsed` di puluhan elemen nav: satu atribut
+   di <aside>, sisanya CSS. Hanya berlaku >=1024px supaya drawer mobile
+   tetap selebar penuh. */
+@media (min-width: 1024px) {
+  .ds-sidebar[data-collapsed='true'] {
+    width: 76px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Teks hilang, ikon tetap. */
+  .ds-sidebar[data-collapsed='true'] .sidebar-label,
+  .ds-sidebar[data-collapsed='true'] .sidebar-group,
+  .ds-sidebar[data-collapsed='true'] .sidebar-brand-text,
+  .ds-sidebar[data-collapsed='true'] .sidebar-profile-text {
+    display: none;
+  }
+
+  .ds-sidebar[data-collapsed='true'] .sidebar-link {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Logo besar jadi ikon kecil; jangan makan tinggi layar. */
+  .ds-sidebar[data-collapsed='true'] .sidebar-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .ds-sidebar[data-collapsed='true'] .sidebar-brand {
+    margin-bottom: 14px;
+    padding-top: 0;
+  }
+
+  .ds-sidebar[data-collapsed='true'] .sidebar-profile {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Label grup jadi garis pemisah tipis, bukan ruang kosong. */
+  .ds-sidebar[data-collapsed='true'] .sidebar-group {
+    display: block;
+    height: 1px;
+    margin: 10px 6px;
+    padding: 0;
+    font-size: 0;
+    background: var(--ds-border);
+  }
+
+  /* Tooltip nama menu saat rail mengecil. */
+  .ds-sidebar[data-collapsed='true'] .sidebar-link:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    left: 64px;
+    z-index: 60;
+    padding: 5px 9px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--ds-primary-fg);
+    background: var(--ds-fg);
+    pointer-events: none;
+  }
+}
