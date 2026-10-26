@@ -78,10 +78,11 @@ export function OwnerSidebar({
           color: active ? 'var(--ds-fg)' : 'var(--ds-fg-muted)',
           transition: 'background-color .12s ease, color .12s ease',
         }}
-        className="owner-nav-link"
+        className="sidebar-link owner-nav-link relative"
+        data-title={label}
       >
         <Icon size={17} style={{ flex: 'none', color: active ? 'var(--ds-primary)' : 'inherit' }} />
-        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className="sidebar-label" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {label}
         </span>
       </Link>
@@ -104,25 +105,20 @@ export function OwnerSidebar({
           background: 'var(--ds-surface)',
           borderRight: '1px solid var(--ds-border)',
           padding: 16,
-          display: 'flex',
-          flexDirection: 'column',
         }}
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${
-          desktopCollapsed
-            ? '-translate-x-full lg:hidden'
-            : open
-              ? 'translate-x-0'
-              : '-translate-x-full lg:translate-x-0'
+        data-collapsed={desktopCollapsed ? 'true' : 'false'}
+        className={`ds-sidebar flex flex-col fixed inset-y-0 left-0 z-50 transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <Link
             href="/owner"
             style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
           >
-            <img src="/ombotico.png" width={32} height={32} alt="omBot" style={{ objectFit: 'contain' }} />
-            <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <img src="/ombotico.png" width={32} height={32} alt="omBot" className="sidebar-logo" style={{ objectFit: 'contain' }} />
+            <span className="sidebar-brand-text" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
               <span style={{ fontSize: 15, fontWeight: 650, letterSpacing: '-0.01em', color: 'var(--ds-fg)' }}>
                 omBot
               </span>
@@ -153,6 +149,7 @@ export function OwnerSidebar({
         <Link
           href="/dashboard"
           onClick={onClose}
+          className="sidebar-back"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -169,7 +166,7 @@ export function OwnerSidebar({
           }}
         >
           <ArrowLeft size={13} />
-          Management Merchant
+          <span className="sidebar-label">Management Merchant</span>
         </Link>
 
         <nav style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -185,6 +182,7 @@ export function OwnerSidebar({
 
         {/* Akun */}
         <div
+          className="sidebar-profile"
           style={{
             marginTop: 12,
             paddingTop: 12,
@@ -211,6 +209,7 @@ export function OwnerSidebar({
             {displayName?.[0]?.toUpperCase() ?? 'O'}
           </div>
           <span
+            className="sidebar-profile-text"
             style={{
               flex: 1,
               minWidth: 0,
@@ -248,6 +247,7 @@ export function OwnerSidebar({
 function GroupLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
+      className="sidebar-group"
       style={{
         padding: '16px 11px 5px',
         fontSize: 10.5,
@@ -257,7 +257,7 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
         color: 'var(--ds-fg-muted)',
       }}
     >
-      {children}
+      <span>{children}</span>
     </div>
   );
 }

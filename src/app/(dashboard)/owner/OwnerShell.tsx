@@ -86,7 +86,7 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
             <button
               onClick={() => setCollapsed((c) => !c)}
               aria-label={collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'}
-              title={collapsed ? 'Tampilkan sidebar' : 'Sembunyikan sidebar (full-bleed)'}
+              title={collapsed ? 'Tampilkan sidebar' : 'Kecilkan sidebar jadi ikon'}
               style={iconBtn}
               className="hidden lg:grid"
             >
