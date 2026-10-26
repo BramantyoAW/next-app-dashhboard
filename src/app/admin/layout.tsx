@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   HelpCircle,
   Sparkles,
-  Truck
+  Truck,
+  Brain
 } from "lucide-react";
 
 function AdminSidebarLink({
@@ -143,6 +144,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/rajaongkir" icon={<Truck size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Ongkir Ekspedisi
+          </AdminSidebarLink>
+          <AdminSidebarLink href="/admin/settings/ai" icon={<Brain size={18} />} onClick={() => setIsSidebarOpen(false)}>
+            Model AI
           </AdminSidebarLink>
           <AdminSidebarLink href="/admin/settings/terms" icon={<ShieldCheck size={18} />} onClick={() => setIsSidebarOpen(false)}>
             Syarat & Ketentuan
