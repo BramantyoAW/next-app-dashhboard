@@ -117,8 +117,8 @@ export function OwnerSidebar({
             href="/owner"
             style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
           >
-            <img src="/ombotico.png" width={32} height={32} alt="omBot" className="sidebar-logo" style={{ objectFit: 'contain' }} />
-            <span className="sidebar-brand-text" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <img src="/ombotico.png" width={32} height={32} alt="omBot" className="sidebar-logo" style={{ objectFit: 'contain', flex: 'none' }} />
+            <span className="sidebar-brand-text flex flex-col" style={{ lineHeight: 1.15 }}>
               <span style={{ fontSize: 15, fontWeight: 650, letterSpacing: '-0.01em', color: 'var(--ds-fg)' }}>
                 omBot
               </span>
