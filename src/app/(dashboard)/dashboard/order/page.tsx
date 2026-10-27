@@ -130,8 +130,12 @@ export default function OrdersPage() {
   async function fetchOrders(p = page, limit = perPage) {
     try {
       const token = localStorage.getItem('token')
-      const storeId = selectedStoreId ?? getActiveStoreId(token)
       if (!token) throw new Error("Token not found")
+
+      const storeId = selectedStoreId ?? getActiveStoreId(token)
+      // Outlet belum siap (loadOutlets masih jalan). Efek [selectedStoreId]
+      // akan memicu fetch begitu outlet diketahui; jangan kirim store_id null.
+      if (!storeId) return
 
       graphqlClient.setHeader("Authorization", `Bearer ${token}`)
       const res = await graphqlClient.request<GetOrdersByStoreResponse>(
