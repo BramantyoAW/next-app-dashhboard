@@ -14,6 +14,74 @@ import { resolveImageUrl } from "@/lib/imageUtils"
 import { Search, User, Package, Calendar, XCircle, Filter, FileText, Download, Store, ChevronDown } from "lucide-react"
 import { Pagination } from "@/components/ui/Pagination"
 
+/** Ubah snake_case/kebab jadi label yang enak dibaca. */
+function labelMeta(key: string) {
+  return key.replace(/[_-]/g, ' ')
+}
+
+/** Tampilkan nilai skalar; null/undefined/objek kosong jadi "-". */
+function MetaScalar({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === '') {
+    return <>-</>
+  }
+  if (typeof value === 'boolean') {
+    return <>{value ? 'Ya' : 'Tidak'}</>
+  }
+  return <>{String(value)}</>
+}
+
+/**
+ * Render metadata bertingkat tanpa pernah mencetak JSON mentah.
+ *
+ * Data order punya kedalaman variabel (shipping_option.method,
+ * shipping_estimate.options[].method), jadi renderer harus rekursif.
+ * Sebelumnya hanya 2 level yang ditangani; sisanya jatuh ke
+ * JSON.stringify() dan tampil sebagai glondongan JSON di layar.
+ */
+function MetaValue({ value, depth = 0 }: { value: unknown; depth?: number }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <>-</>
+    return (
+      <div className="space-y-2">
+        {value.map((item, i) => (
+          <div key={i} className="ds-well">
+            {item !== null && typeof item === 'object' ? (
+              <MetaValue value={item} depth={depth + 1} />
+            ) : (
+              <span className="ds-body"><MetaScalar value={item} /></span>
+            )}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+    if (entries.length === 0) return <>-</>
+    return (
+      <div className={depth === 0 ? 'space-y-6' : 'space-y-1.5'}>
+        {entries.map(([k, v]) => (
+          <div
+            key={k}
+            className={depth === 0 ? 'flex flex-col border-b pb-4' : 'flex ds-body'}
+            style={depth === 0 ? { borderColor: 'var(--ds-border)' } : undefined}
+          >
+            <span className={depth === 0 ? 'ds-section-label mb-1' : 'ds-caption w-32 shrink-0'}>
+              {labelMeta(k)}
+            </span>
+            <div className={depth === 0 ? '' : 'ds-body'} style={{ fontWeight: 600 }}>
+              <MetaValue value={v} depth={depth + 1} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return <MetaScalar value={value} />
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [filteredOrders, setFilteredOrders] = useState<any[]>([])
@@ -610,45 +678,19 @@ export default function OrdersPage() {
 
             <div className="p-8">
               {selectedOrder.additional_data ? (
-                typeof selectedOrder.additional_data === "object" ? (
-                  <div className="grid grid-cols-1 gap-6">
-                    {Object.entries(selectedOrder.additional_data).map(([key, value]) => (
-                      <div key={key} className="flex flex-col border-b pb-4" style={{ borderColor: 'var(--ds-border)' }}>
-                        <span className="ds-section-label mb-1">{key.replace(/_/g, ' ')}</span>
-                        {value !== null && typeof value === "object" ? (
-                          <div className="ds-well space-y-1.5 mt-1">
-                            {Object.entries(value).map(([k, v]) => (
-                              <div key={k} className="flex ds-body">
-                                <span className="ds-caption w-32 shrink-0">{k.replace(/_/g, ' ')}</span>
-                                <span className="ds-body" style={{ fontWeight: 600 }}>
-                                  {v !== null && typeof v === "object"
-                                    ? JSON.stringify(v)
-                                    : String(v ?? '-')}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="ds-body" style={{ fontWeight: 600 }}>
-                            {value === null || value === undefined ? '-' : String(value)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    className="ds-well"
-                    style={{ background: 'var(--color-indigo-900)', borderColor: 'var(--color-indigo-800)' }}
-                  >
-                    <pre
-                      className="overflow-auto max-h-[400px] leading-relaxed custom-scrollbar ds-mono"
-                      style={{ color: 'var(--color-indigo-100)' }}
-                    >
-                      {JSON.stringify(JSON.parse(selectedOrder.additional_data), null, 4)}
-                    </pre>
-                  </div>
-                )
+                <MetaValue
+                  value={
+                    typeof selectedOrder.additional_data === 'string'
+                      ? (() => {
+                          try {
+                            return JSON.parse(selectedOrder.additional_data)
+                          } catch {
+                            return selectedOrder.additional_data
+                          }
+                        })()
+                      : selectedOrder.additional_data
+                  }
+                />
               ) : (
                 <div className="ds-empty">
                   <span className="ds-empty-icon text-2xl">🏜️</span>
