@@ -6,10 +6,16 @@ import { GET_ORDERS_BY_STORE, GetOrdersByStoreResponse } from "@/graphql/query/o
 import { useProfile } from "@/app/(dashboard)/dashboard/layout"
 import { getActiveStoreId } from '@/lib/jwt'
 import { myStoresService, MyStore } from '@/graphql/query/myStores'
-import * as XLSX from "xlsx"
 import { saveAs } from "file-saver"
-import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
+import {
+  OrderLike,
+  orderRows,
+  buildCsv,
+  saveCsv,
+  buildWorkbook,
+  saveWorkbook,
+  buildPdf,
+} from "@/lib/orderExport"
 import { resolveImageUrl } from "@/lib/imageUtils"
 import { Search, User, Package, Calendar, XCircle, Filter, FileText, Download, Store, ChevronDown } from "lucide-react"
 import { Pagination } from "@/components/ui/Pagination"
@@ -213,167 +219,119 @@ export default function OrdersPage() {
   
   const today = new Date().toISOString().split("T")[0]
 
-  const handleExportExcel = () => {
-    const dataToExport = filteredOrders.length ? filteredOrders : orders
-    if (!dataToExport.length) return alert("No data to export")
+  /** Ambil semua order yang cocok filter dari server (bukan 1 halaman). */
+  const fetchAllForExport = async (): Promise<OrderLike[]> => {
+    const token = localStorage.getItem("token")
+    const storeId = selectedStoreId ?? getActiveStoreId(token)
+    if (!token) throw new Error("Token not found")
 
-    const exportData = dataToExport.map((order) => ({
-      "Order Number": order.order_number,
-      "User": order.user?.full_name || "-",
-      // "Discount (Rp)": order.discount,
-      "Items": order.items
-        .map((item: any) =>
-          `Product ${item.name} x${item.qty} = Rp${item.price.toLocaleString()}`
-        )
-        .join("\n"),
-      "Total (Rp)": order.total_amount,
-      "Created At": order.created_at,
-      // "Additional Data": typeof order.additional_data === "object"
-      //   ? JSON.stringify(order.additional_data)
-      //   : order.additional_data || "",
-    }))
+    graphqlClient.setHeader("Authorization", `Bearer ${token}`)
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders")
+    const all: OrderLike[] = []
+    let p = 1
+    let totalPages = 1
+    do {
+      const res = await graphqlClient.request<GetOrdersByStoreResponse>(
+        GET_ORDERS_BY_STORE,
+        {
+          store_id: storeId,
+          page: p,
+          limit: 100,
+          order_number: search.trim() || undefined,
+          date_from: dateRange.from || undefined,
+          date_to: dateRange.to || undefined,
+        }
+      )
+      const d = res.getOrdersByStore
+      all.push(...(d.data as unknown as OrderLike[]))
+      totalPages = d.pagination.total_pages
+      p += 1
+    } while (p <= totalPages && p <= 200)
 
-    const filename = `${safeStoreName}_orders_${today}.xlsx`
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" })
-    const blob = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    // Filter yang hanya ada di sisi klien (petugas & nama produk).
+    return all.filter((o) => {
+      if (inputBy.trim() && !(o.user?.full_name || "").toLowerCase().includes(inputBy.toLowerCase())) {
+        return false
+      }
+      if (
+        itemSearch.trim() &&
+        !(o.items || []).some((it) => (it.name || "").toLowerCase().includes(itemSearch.toLowerCase()))
+      ) {
+        return false
+      }
+      return true
     })
-    saveAs(blob, filename)
   }
 
-  // Helper to load image to Base64 for jsPDF
+  const exportData = async (): Promise<OrderLike[] | null> => {
+    try {
+      const rows = await fetchAllForExport()
+      if (!rows.length) alert("Tidak ada data untuk diekspor")
+      return rows.length ? rows : null
+    } catch (e) {
+      console.error("Gagal mengambil seluruh data:", e)
+      alert("Gagal mengambil seluruh data. Coba lagi.")
+      return null
+    }
+  }
+
+  /** Ringkasan filter aktif, dicetak di PDF agar laporan bisa dilacak. */
+  const filterSummary = (): string[] => {
+    const f: string[] = []
+    if (search.trim()) f.push(`Order: ${search.trim()}`)
+    if (inputBy.trim()) f.push(`Petugas: ${inputBy.trim()}`)
+    if (itemSearch.trim()) f.push(`Produk: ${itemSearch.trim()}`)
+    if (dateRange.from && dateRange.to) f.push(`Periode: ${dateRange.from} s/d ${dateRange.to}`)
+    if (!f.length) f.push("Semua transaksi")
+    return f
+  }
+
   const getBase64FromUrl = async (url: string): Promise<string> => {
     try {
-      const data = await fetch(url);
-      const blob = await data.blob();
+      const data = await fetch(url)
+      const blob = await data.blob()
       return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onloadend = () => resolve(reader.result as string);
-      });
+        const reader = new FileReader()
+        reader.readAsDataURL(blob)
+        reader.onloadend = () => resolve(reader.result as string)
+      })
     } catch {
-      return "";
+      return ""
     }
-  };
-
-  const handleExportPDF = async () => {
-    const dataToExport = filteredOrders.length ? filteredOrders : orders
-    if (!dataToExport.length) return alert("No data to export")
-
-    const doc = new jsPDF("p", "mm", "a4")
-    const pageWidth = doc.internal.pageSize.getWidth()
-    
-    // --- 1. Top Header with Logos ---
-    // OmBot Logo (Left)
-    const omBotLogoBase64 = await getBase64FromUrl("/ombotico.png");
-    if (omBotLogoBase64) {
-      doc.addImage(omBotLogoBase64, "PNG", 15, 10, 20, 20);
-    }
-
-    // Store Logo (Right)
-    const storeLogoUrl = profile?.me?.user?.store_image ? resolveImageUrl(profile.me.user.store_image) : undefined;
-    if (storeLogoUrl) {
-      const storeLogoBase64 = await getBase64FromUrl(storeLogoUrl);
-      if (storeLogoBase64) {
-        doc.addImage(storeLogoBase64, "JPEG", pageWidth - 35, 10, 20, 20);
-      }
-    }
-
-    // Content: Store Name & Title
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(22)
-    doc.setTextColor(30, 41, 59) // slate-800
-    doc.text(storeName, pageWidth / 2, 20, { align: "center" })
-
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(10)
-    doc.setTextColor(100, 116, 139) // slate-500
-    
-    // Format Export Date: 11 Maret 2026
-    const exportDateFormatted = new Date().toLocaleDateString('id-ID', { 
-      day: 'numeric', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-    doc.text(`Laporan Penjualan OmBot • Per tanggal ${exportDateFormatted}`, pageWidth / 2, 27, { align: "center" })
-
-    // --- 2. Orders Table ---
-    const tableData = dataToExport.map((order) => [
-      order.order_number,
-      order.user?.full_name || "-",
-      order.items
-        .map(
-          (item: any) =>
-            `• ${item.name} (x${item.qty}) = Rp ${item.price.toLocaleString()}`
-        )
-        .join("\n"),
-      `Rp ${order.total_amount.toLocaleString()}`,
-      new Date(order.created_at).toLocaleDateString('id-ID', { 
-        day: 'numeric', 
-        month: 'short', 
-        year: 'numeric' 
-      }),
-    ])
-
-    autoTable(doc, {
-      startY: 40,
-      head: [["Order #", "Petugas", "Item Pesanan", "Total", "Tanggal"]],
-      body: tableData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [37, 99, 235], // blue-600
-        textColor: [255, 255, 255],
-        fontSize: 10,
-        fontStyle: 'bold',
-        halign: 'center'
-      },
-      styles: {
-        fontSize: 9,
-        cellPadding: 4,
-        valign: "middle",
-      },
-      columnStyles: {
-        2: { cellWidth: 70 }, // Items
-        3: { halign: 'right', fontStyle: 'bold' }, // Total
-        4: { halign: 'center' }, // Date
-      },
-    })
-
-    // --- 3. Summary Footer ---
-    const finalY = (doc as any).lastAutoTable.finalY + 10
-    const totalSales = dataToExport.reduce((sum, o) => sum + o.total_amount, 0)
-
-    doc.setDrawColor(226, 232, 240) // border slate-200
-    doc.line(15, finalY, pageWidth - 15, finalY)
-
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(12)
-    doc.setTextColor(30, 41, 59)
-    doc.text("Ringkasan Penjualan:", 15, finalY + 10)
-    
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(10)
-    doc.text(`Total Pesanan: ${dataToExport.length} Order`, 15, finalY + 17)
-
-    // Highlight Total Terjual
-    doc.setFillColor(248, 250, 252) // slate-50
-    doc.rect(pageWidth - 85, finalY + 5, 70, 15, 'F')
-    
-    doc.setFont("helvetica", "bold")
-    doc.setFontSize(11)
-    doc.text("Total Terjual:", pageWidth - 80, finalY + 11)
-    
-    doc.setFontSize(13)
-    doc.setTextColor(37, 99, 235) // blue-600
-    doc.text(`Rp ${totalSales.toLocaleString()}`, pageWidth - 80, finalY + 17)
-
-    doc.save(`${safeStoreName}_orders_${today}.pdf`)
   }
 
+  const handleExportCsv = async () => {
+    const rows = await exportData()
+    if (!rows) return
+    saveCsv(buildCsv(orderRows(rows) as unknown as Record<string, unknown>[]), `${safeStoreName}_orders_${today}.csv`)
+  }
+
+  const handleExportExcel = async () => {
+    const rows = await exportData()
+    if (!rows) return
+    saveWorkbook(buildWorkbook(rows), `${safeStoreName}_orders_${today}.xlsx`)
+  }
+
+  const handleExportPDF = async () => {
+    const rows = await exportData()
+    if (!rows) return
+
+    const [logo, storeLogo] = await Promise.all([
+      getBase64FromUrl("/ombotico.png"),
+      profile?.me?.user?.store_image
+        ? getBase64FromUrl(resolveImageUrl(profile.me.user.store_image))
+        : Promise.resolve(""),
+    ])
+
+    const doc = buildPdf({
+      orders: rows,
+      storeName,
+      logoBase64: logo,
+      storeLogoBase64: storeLogo,
+      filterSummary: filterSummary(),
+    })
+    doc.save(`${safeStoreName}_orders_${today}.pdf`)
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -407,9 +365,20 @@ export default function OrdersPage() {
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 ds-icon-muted pointer-events-none" size={15} />
           </div>
           <button
+            onClick={handleExportCsv}
+            className="ds-btn group"
+            data-variant="secondary"
+            title="Unduh semua baris hasil filter sebagai CSV"
+          >
+            <Download size={16} className="text-sky-600 group-hover:scale-110 transition-transform" />
+            CSV
+          </button>
+
+          <button
             onClick={handleExportExcel}
             className="ds-btn group"
             data-variant="secondary"
+            title="Unduh Excel 3 sheet: Orders, Items, Ringkasan"
           >
             <Download size={16} className="text-emerald-600 group-hover:scale-110 transition-transform" />
             Excel
@@ -419,6 +388,7 @@ export default function OrdersPage() {
             onClick={handleExportPDF}
             className="ds-btn group"
             data-variant="primary"
+            title="Unduh laporan PDF lengkap"
           >
             <FileText size={16} className="group-hover:scale-110 transition-transform" />
             PDF Report
