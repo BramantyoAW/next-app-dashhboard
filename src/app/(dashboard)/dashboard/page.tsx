@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { graphqlClient } from '@/graphql/graphqlClient'
 import { GET_ORDERS_BY_STORE, GetOrdersByStoreResponse } from '@/graphql/query/order/getAllOrderByStore'
+import { STORE_SUMMARY, StoreSummary, StoreSummaryResponse } from '@/graphql/query/order/storeSummary'
 import { useProfile } from '@/app/(dashboard)/dashboard/layout'
 import { useActiveStore } from '@/hooks/useActiveStore'
 import OutletSelect from '@/components/ui/OutletSelect'
@@ -67,7 +68,8 @@ export default function DashboardPage() {
   const profile = useProfile()
   const { stores, activeStoreId, setStore } = useActiveStore()
 
-  const [orders, setOrders] = useState<any[]>([])
+  const [summary, setSummary] = useState<StoreSummary | null>(null)
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState('1m')
 
@@ -118,17 +120,23 @@ export default function DashboardPage() {
         graphqlClient.setHeader('Authorization', `Bearer ${token}`)
         const dateFrom = getDateFromRange(range)
 
-        const res = await graphqlClient.request<GetOrdersByStoreResponse>(
-          GET_ORDERS_BY_STORE,
-          {
-            store_id: activeStoreId,
+        // KPI dihitung SQL (storeSummary). Daftar "Pesanan Terbaru" tetap
+        // query terpisah: tabel hanya butuh 5 baris, filter tanggal sama.
+        const vars = {
+          store_id: activeStoreId,
+          ...(dateFrom ? { date_from: dateFrom.toISOString().split('T')[0] } : {}),
+        }
+        const [summaryRes, ordersRes] = await Promise.all([
+          graphqlClient.request<StoreSummaryResponse>(STORE_SUMMARY, vars),
+          graphqlClient.request<GetOrdersByStoreResponse>(GET_ORDERS_BY_STORE, {
+            ...vars,
             page: 1,
-            limit: 100,
-            ...(dateFrom ? { date_from: dateFrom.toISOString().split('T')[0] } : {}),
-          }
-        )
+            limit: 5,
+          }),
+        ])
 
-        setOrders(res.getOrdersByStore.data || [])
+        setSummary(summaryRes.storeSummary)
+        setRecentOrders(ordersRes.getOrdersByStore.data || [])
       } catch (err) {
         console.error('Error fetching orders:', err)
       } finally {
@@ -143,58 +151,36 @@ export default function DashboardPage() {
   }, [router, range, activeStoreId])
 
   // -------------------- Derived Data --------------------
-  const filteredOrders = useMemo(() => {
-    if (range === 'all') return orders
-    const dateFrom = getDateFromRange(range)
-    if (!dateFrom) return orders
-    return orders.filter((o) => new Date(o.created_at) >= dateFrom)
-  }, [orders, range])
+  // Angka datang sudah diagregasi SQL (storeSummary). FE hanya mengisi
+  // periode kosong dengan 0; itu satu-satunya hitungan yang tersisa.
+  const totalSales = summary?.total_sales ?? 0
+  const totalOrders = summary?.total_orders ?? 0
+  const avgOrderValue = summary?.avg_order_value ?? 0
 
-  const totalSales = filteredOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
-  const totalOrders = filteredOrders.length
-  const avgOrderValue = totalOrders > 0 ? Math.round(totalSales / totalOrders) : 0
-
-  const productSales: Record<string, number> = {}
-  filteredOrders.forEach((o) => {
-    if (!Array.isArray(o.items)) return
-    o.items.forEach((i: any) => {
-      const name = i.name || `Produk #${i.product_id}`
-      productSales[name] = (productSales[name] || 0) + (i.qty || 0)
-    })
-  })
-
-  const topProducts = Object.entries(productSales)
-    .map(([name, qty]) => ({ name: name.length > 22 ? name.slice(0, 21) + '…' : name, qty }))
-    .sort((a, b) => b.qty - a.qty)
-    .slice(0, 5)
+  const topProducts = (summary?.top_products ?? []).map((p) => ({
+    name: p.name.length > 22 ? p.name.slice(0, 21) + '…' : p.name,
+    qty: p.qty,
+  }))
 
   const topProductName = topProducts[0]?.name ?? '-'
 
   /**
    * Tren penjualan per periode. Kunci pakai ISO (YYYY-MM-DD / YYYY-MM) supaya
    * urutannya benar — label "25 Okt" tidak bisa diparse `new Date()` (NaN).
-   * Periode kosong tetap diisi 0 agar garis tidak terputus.
+   * `series` dari server tidak mengisi periode kosong; gap-fill di sini.
    */
   const { series, granularity } = useMemo(() => {
-    const daily = ['1w', '2w', '3w', '1m'].includes(range)
+    const gran: 'hari' | 'bulan' = summary?.granularity ?? 'bulan'
+    const daily = gran === 'hari'
 
     const fmtKey = (d: Date) =>
       daily
         ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 
-    const agg: Record<string, { sales: number; orders: number }> = {}
-    filteredOrders.forEach((o) => {
-      const d = new Date(o.created_at)
-      if (isNaN(d.getTime())) return
-      const k = fmtKey(d)
-      if (!agg[k]) agg[k] = { sales: 0, orders: 0 }
-      agg[k].sales += o.total_amount || 0
-      agg[k].orders += 1
-    })
-
-    const keys = Object.keys(agg).sort()
-    if (keys.length === 0) return { series: [], granularity: daily ? 'hari' : 'bulan' }
+    const byKey = new Map((summary?.series ?? []).map((p) => [p.key, p]))
+    const keys = [...byKey.keys()].sort()
+    if (keys.length === 0) return { series: [], granularity: gran }
 
     // Rentang penuh: dari periode paling awal sampai periode terakhir.
     const start = new Date(keys[0] + (daily ? 'T00:00:00' : '-01T00:00:00'))
@@ -205,36 +191,35 @@ export default function DashboardPage() {
     // ponytail: batas 400 titik cukup untuk 1 tahun harian; naikkan bila perlu.
     for (let i = 0; i < 400 && cursor <= end; i++) {
       const k = fmtKey(cursor)
+      const known = byKey.get(k)
       rows.push({
         key: k,
-        label: daily
+        label: known?.label ?? (daily
           ? cursor.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
-          : cursor.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
-        sales: agg[k]?.sales ?? 0,
-        orders: agg[k]?.orders ?? 0,
+          : cursor.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })),
+        sales: known?.sales ?? 0,
+        orders: known?.orders ?? 0,
       })
       if (daily) cursor.setDate(cursor.getDate() + 1)
       else cursor.setMonth(cursor.getMonth() + 1)
     }
 
-    return { series: rows, granularity: daily ? 'hari' : 'bulan' }
-  }, [filteredOrders, range])
+    return { series: rows, granularity: gran }
+  }, [summary])
 
   const statusData = useMemo(() => {
-    const count: Record<string, number> = {}
-    filteredOrders.forEach((o) => {
-      const s = (o.status || 'lainnya').toLowerCase()
-      count[s] = (count[s] || 0) + 1
-    })
-    return Object.entries(count)
-      .map(([status, value]) => ({
-        status,
-        name: STATUS_LABEL[status] ?? status,
-        value,
-        color: STATUS_COLOR[status] ?? C.slate,
-      }))
+    return (summary?.status_counts ?? [])
+      .map(({ status, total }) => {
+        const s = status.toLowerCase()
+        return {
+          status: s,
+          name: STATUS_LABEL[s] ?? status,
+          value: total,
+          color: STATUS_COLOR[s] ?? C.slate,
+        }
+      })
       .sort((a, b) => b.value - a.value)
-  }, [filteredOrders])
+  }, [summary])
 
   const bestDay = series.reduce(
     (best, r) => (r.sales > best.sales ? r : best),
@@ -474,7 +459,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.slice(0, 5).map((o) => {
+              {recentOrders.map((o) => {
                 const s = (o.status || '').toLowerCase()
                 return (
                   <tr key={o.id}>
@@ -499,7 +484,7 @@ export default function DashboardPage() {
                   </tr>
                 )
               })}
-              {filteredOrders.length === 0 && (
+              {recentOrders.length === 0 && (
                 <tr>
                   <td colSpan={5}>
                     <p className="ds-small" style={{ padding: '16px 0', color: 'var(--ds-fg-muted)' }}>
