@@ -32,8 +32,10 @@ import {
   LayoutTemplate,
   Settings,
   FileCode,
-  CreditCard
+  CreditCard,
+  RefreshCw
 } from 'lucide-react';
+import type { DomainProbe } from '@/lib/domainProbe';
 import { WebStoreStatusBadge } from '@/components/web-store/WebStoreStatusBadge';
 import { StorefrontPreviewButton } from '@/components/web-store/StorefrontPreviewButton';
 import OmBotAiAssistance from '@/components/ai-ops/OmBotAiAssistance';
@@ -119,6 +121,11 @@ export default function OwnerWebStoreSetupPage() {
   const [customDomainDns, setCustomDomainDns] = useState<
     { type: string; name: string; value: string; note?: string }[]
   >([]);
+  // Keterjangkauan domain diukur lewat permintaan HTTP, bukan dari
+  // custom_domain_status. Kolom itu pernah berstatus `active` padahal apex
+  // domainnya tidak punya record sama sekali (demostore-ombot.my.id).
+  const [domainProbe, setDomainProbe] = useState<DomainProbe | null>(null);
+  const [probing, setProbing] = useState(false);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState('');
   const [notifyTelegram, setNotifyTelegram] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
@@ -131,6 +138,39 @@ export default function OwnerWebStoreSetupPage() {
   const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'om-bot.com';
   const subdomain = useMemo(() => subdomainHash || generateHash(storeName), [subdomainHash, storeName]);
   const fullUrl = `https://${subdomain}.${mainDomain}`;
+
+  /**
+   * Domain bawaan hanya dimatikan kalau domain kustom benar-benar menjawab.
+   * Dua alamat hidup sekaligus membuat mesin pencari dan pembeli melihat toko
+   * ganda, jadi keputusannya diambil dari hasil probe, bukan dari status DB.
+   */
+  const defaultDomainDisabled =
+    customDomainStatus === 'active' && Boolean(domainProbe?.live);
+
+  const refreshDomainProbe = async (host: string) => {
+    const target = host.trim();
+    if (!target) return;
+    setProbing(true);
+    try {
+      const res = await fetch(`/api/domain-status?host=${encodeURIComponent(target)}`, {
+        cache: 'no-store',
+      });
+      if (res.ok) setDomainProbe(await res.json());
+    } catch {
+      setDomainProbe(null);
+    } finally {
+      setProbing(false);
+    }
+  };
+
+  // Periksa sekali saat halaman dibuka supaya indikator langsung terisi tanpa
+  // merchant harus menekan tombol.
+  useEffect(() => {
+    if (customDomainStatus === 'active' && customDomain.trim()) {
+      refreshDomainProbe(customDomain);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customDomainStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -568,12 +608,18 @@ export default function OwnerWebStoreSetupPage() {
               />
             </Field>
 
-            <Field label="Subdomain URL Public" icon={<Sparkles size={16} className="ds-icon-muted" />}>
+            {/* === Alamat toko ===
+                Satu blok, urutan tetap: domain bawaan di atas, domain kustom
+                di bawahnya. Begitu domain kustom terbukti bisa dibuka pembeli,
+                domain bawaan dinonaktifkan supaya mesin pencari dan pembeli
+                tidak melihat dua alamat untuk toko yang sama. */}
+            <Field label="Domain Bawaan" icon={<Sparkles size={16} className="ds-icon-muted" />}>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
                     className="ds-input font-mono"
                     value={subdomain}
+                    disabled={defaultDomainDisabled}
                     onChange={(e) => setSubdomainHash(e.target.value.replace(/[^a-z0-9]/g, '').slice(0, 16))}
                     placeholder="tokobudi"
                   />
@@ -584,17 +630,135 @@ export default function OwnerWebStoreSetupPage() {
               </div>
               <div className="flex items-center justify-between mt-2">
                 <p className="ds-small">
-                  Subdomain publik (4–16 karakter alphanumeric).
+                  {defaultDomainDisabled
+                    ? 'Dinonaktifkan — toko memakai domain kustom di bawah.'
+                    : 'Subdomain publik (4–16 karakter alphanumeric).'}
                 </p>
-                <button
-                  type="button"
-                  onClick={copyUrl}
-                  className="ds-link inline-flex items-center gap-1"
-                >
-                  {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                  {copied ? 'Tersalin!' : 'Salin URL'}
-                </button>
+                {!defaultDomainDisabled && (
+                  <button
+                    type="button"
+                    onClick={copyUrl}
+                    className="ds-link inline-flex items-center gap-1"
+                  >
+                    {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                    {copied ? 'Tersalin!' : 'Salin URL'}
+                  </button>
+                )}
               </div>
+            </Field>
+
+            <Field label="Domain Kustom" icon={<Globe size={16} className="ds-icon-muted" />}>
+              <input
+                className="ds-input"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                placeholder="toko-anda.com (opsional)"
+              />
+
+              {customDomain.trim() && (
+                <div className="mt-2 flex flex-wrap items-start gap-2 text-xs">
+                  <span
+                    className={`mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 ${
+                      customDomainStatus === 'active'
+                        ? 'bg-emerald-500'
+                        : customDomainStatus === 'failed'
+                          ? 'bg-rose-500'
+                          : 'bg-amber-400'
+                    }`}
+                  />
+                  <span className="ds-small flex-1">
+                    {customDomainStatus === 'active'
+                      ? 'Domain aktif — SSL sudah terbit.'
+                      : customDomainStatus === 'failed'
+                        ? 'Pendaftaran domain gagal. Periksa kembali penulisan domain, lalu simpan ulang.'
+                        : 'Menunggu verifikasi. Arahkan CNAME domain ini ke proxy-fallback.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
+                  </span>
+                  {customDomainStatus === 'active' && (
+                    <button
+                      type="button"
+                      onClick={() => refreshDomainProbe(customDomain.trim())}
+                      disabled={probing}
+                      className="ds-link inline-flex items-center gap-1"
+                    >
+                      {probing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                      Cek akses
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Hasil probe: satu baris per host. Apex dan www diperiksa
+                  terpisah karena banyak registrar menolak CNAME di root. */}
+              {domainProbe && customDomainStatus === 'active' && (
+                <div className="ds-well mt-2">
+                  {(['apex', 'www'] as const).map((key) => {
+                    const r = key === 'apex' ? domainProbe.apex : domainProbe.www;
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-xs">
+                        <span
+                          className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                            r.ok ? 'bg-emerald-500' : 'bg-rose-500'
+                          }`}
+                        />
+                        <span className="ds-mono break-all">{r.host}</span>
+                        <span className="ds-small">
+                          {r.ok ? 'bisa dibuka' : r.code ? `gagal (HTTP ${r.code})` : 'tidak bisa dihubungi'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Status `active` tanpa host yang menjawab = domain tetap mati
+                  bagi pembeli. Sebutkan host mana yang harus dipakai. */}
+              {domainProbe && customDomainStatus === 'active' && !domainProbe.live && (
+                <p className="text-xs text-rose-600 mt-2">
+                  Cloudflare sudah menerbitkan sertifikat, tetapi tidak ada host yang menjawab.
+                  Penyebab paling sering: record <code>@</code> (apex) belum dibuat di DNS domain kamu.
+                  Sementara itu pembeli tetap memakai domain bawaan.
+                </p>
+              )}
+              {domainProbe?.live && customDomainStatus === 'active' && domainProbe.live !== customDomain.trim() && (
+                <p className="text-xs text-amber-600 mt-2">
+                  Yang bisa dibuka hanya <code>www.{customDomain.trim()}</code>. Apex belum punya record —
+                  tambahkan record <code>@</code> di registrar agar <code>{customDomain.trim()}</code> ikut hidup.
+                </p>
+              )}
+
+              <p className="ds-hint">
+                Hubungkan domain sendiri. Tambahkan record berikut di pengaturan DNS domain kamu.
+                Kolom nama diisi relatif terhadap domain — tulis <code>@</code> atau <code>www</code>,
+                jangan nama lengkap, karena banyak registrar menambahkan domain otomatis.
+              </p>
+              {customDomainDns.length > 0 && (
+                <div className="ds-table-wrap">
+                  <table className="w-full text-xs">
+                    <thead className="ds-thead">
+                      <tr>
+                        <th className="text-left font-medium px-3 py-2">Tipe</th>
+                        <th className="text-left font-medium px-3 py-2">Nama</th>
+                        <th className="text-left font-medium px-3 py-2">Nilai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customDomainDns.map((r, i) => (
+                        <tr key={i} className="align-top">
+                          <td className="ds-mono">{r.type}</td>
+                          <td className="ds-mono break-all">{r.name}</td>
+                          <td className="ds-mono break-all">{r.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-amber-600 mt-1">
+                Record <code>@</code> (root domain) ditolak sebagian registrar karena bentrok dengan
+                SOA/NS yang selalu ada di sana. Kalau muncul pesan seperti "Conflicts with pre-existing
+                RRset", pakai record <code>www</code> saja, atau pindahkan nameserver domain ke
+                Cloudflare (gratis) yang bisa memakai CNAME di root.
+              </p>
             </Field>
 
             <Field label="Tagline / Slogan Toko" icon={<Sparkles size={16} className="ds-icon-muted" />}>
@@ -1217,69 +1381,6 @@ export default function OwnerWebStoreSetupPage() {
               </div>
             </Field>
 
-            <Field label="Domain Kustom" icon={<Globe size={16} className="ds-icon-muted" />}>
-              <input
-                className="ds-input"
-                value={customDomain}
-                onChange={(e) => setCustomDomain(e.target.value)}
-                placeholder="toko-anda.com (opsional)"
-              />
-
-              {customDomain.trim() && (
-                <div className="mt-2 flex items-start gap-2 text-xs">
-                  <span
-                    className={`mt-0.5 inline-block w-2 h-2 rounded-full shrink-0 ${
-                      customDomainStatus === 'active'
-                        ? 'bg-emerald-500'
-                        : customDomainStatus === 'failed'
-                          ? 'bg-rose-500'
-                          : 'bg-amber-400'
-                    }`}
-                  />
-                  <span className="ds-small">
-                    {customDomainStatus === 'active'
-                      ? 'Domain aktif — SSL sudah terbit, pembeli bisa membuka domain ini.'
-                      : customDomainStatus === 'failed'
-                        ? 'Pendaftaran domain gagal. Periksa kembali penulisan domain, lalu simpan ulang.'
-                        : 'Menunggu verifikasi. Arahkan CNAME domain ini ke proxy-fallback.om-bot.com, lalu tunggu 5-10 menit — status diperbarui otomatis.'}
-                  </span>
-                </div>
-              )}
-
-              <p className="ds-hint">
-                Hubungkan domain sendiri. Tambahkan record berikut di pengaturan DNS domain kamu.
-                Kolom nama diisi relatif terhadap domain — tulis <code>@</code> atau <code>www</code>,
-                jangan nama lengkap, karena banyak registrar menambahkan domain otomatis.
-              </p>
-              {customDomainDns.length > 0 && (
-                <div className="ds-table-wrap">
-                  <table className="w-full text-xs">
-                    <thead className="ds-thead">
-                      <tr>
-                        <th className="text-left font-medium px-3 py-2">Tipe</th>
-                        <th className="text-left font-medium px-3 py-2">Nama</th>
-                        <th className="text-left font-medium px-3 py-2">Nilai</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {customDomainDns.map((r, i) => (
-                        <tr key={i} className="align-top">
-                          <td className="ds-mono">{r.type}</td>
-                          <td className="ds-mono break-all">{r.name}</td>
-                          <td className="ds-mono break-all">{r.value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-              <p className="text-xs text-amber-600 mt-1">
-                Record <code>@</code> (root domain) ditolak sebagian registrar karena bentrok dengan
-                SOA/NS yang selalu ada di sana. Kalau muncul pesan seperti "Conflicts with pre-existing
-                RRset", pakai record <code>www</code> saja, atau pindahkan nameserver domain ke
-                Cloudflare (gratis) yang bisa memakai CNAME di root.
-              </p>
-            </Field>
             </>)}
 
             {/* Status Activation — always visible, belongs to toko tab */}

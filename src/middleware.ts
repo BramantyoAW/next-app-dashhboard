@@ -2,6 +2,67 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'om-bot.com';
+const GRAPHQL_URL = process.env.GRAPHQL_URL || 'http://laravel:8000/graphql';
+
+/**
+ * Domain bawaan hanya boleh mengalihkan ke domain kustom kalau domain kustom
+ * itu benar-benar menjawab. Status `active` di database hanyalah klaim —
+ * Cloudflare for SaaS bisa sudah menerbitkan sertifikat sementara apex domain
+ * tidak punya record sama sekali. Kalau kita percaya kolom itu saja, toko bisa
+ * mati total: bawaan dialihkan ke alamat yang tidak bisa dibuka.
+ */
+const REDIRECT_CACHE_MS = 5 * 60 * 1000;
+const redirectCache = new Map<string, { at: number; target: string | null }>();
+
+async function hostAnswers(host: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://${host}/`, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(4000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Host tujuan pengalihan untuk sebuah subdomain, atau null bila tetap dilayani. */
+async function redirectTargetFor(hash: string): Promise<string | null> {
+  const cached = redirectCache.get(hash);
+  if (cached && Date.now() - cached.at < REDIRECT_CACHE_MS) return cached.target;
+
+  let target: string | null = null;
+  try {
+    const res = await fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query($host: String!) { webStoreByHost(host: $host) { custom_domain custom_domain_status } }`,
+        variables: { host: hash },
+      }),
+      signal: AbortSignal.timeout(4000),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      const ws = json?.data?.webStoreByHost;
+      const domain: string = (ws?.custom_domain || '').trim().toLowerCase();
+
+      if (domain && ws?.custom_domain_status === 'active') {
+        // Registrar sering menolak CNAME di root, jadi www diperiksa juga dan
+        // yang dipakai adalah host yang benar-benar menjawab.
+        if (await hostAnswers(domain)) target = domain;
+        else if (await hostAnswers(`www.${domain}`)) target = `www.${domain}`;
+      }
+    }
+  } catch {
+    target = null;
+  }
+
+  redirectCache.set(hash, { at: Date.now(), target });
+  return target;
+}
 
 /** Resolve domain merchant (custom domain) → subdomain_hash lewat backend. */
 async function resolveStoreHashByHost(host: string): Promise<string | null> {
@@ -48,6 +109,17 @@ export async function middleware(request: NextRequest) {
   let storeHash: string | null = null;
   if (hostname.endsWith(`.${MAIN_DOMAIN}`)) {
     storeHash = hostname.replace(`.${MAIN_DOMAIN}`, '');
+
+    // Satu toko satu alamat: begitu domain kustom terbukti hidup, subdomain
+    // bawaan dialihkan permanen ke sana. Tanpa ini mesin pencari dan pembeli
+    // melihat dua alamat untuk toko yang sama, persis yang mau dihindari.
+    if (request.method === 'GET' || request.method === 'HEAD') {
+      const target = await redirectTargetFor(storeHash);
+      if (target) {
+        const url = new URL(`https://${target}${pathname}${request.nextUrl.search}`);
+        return NextResponse.redirect(url, 308);
+      }
+    }
   } else if (hostname.endsWith('.lvh.me')) {
     storeHash = hostname.replace('.lvh.me', '');
   } else if (!isMain) {
