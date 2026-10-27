@@ -1,6 +1,10 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/**
+ * Sengaja .mjs, bukan .ts: Next 15.5+ memuat config lewat TypeScript loader,
+ * sementara image produksi menjalankan `npm prune --production` sehingga
+ * `typescript` tidak ada saat runtime dan container gagal start.
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
