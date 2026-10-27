@@ -29,7 +29,6 @@ const PROFILE_QUERY = gql`
 `
 
 export async function getProfile(token: string) {
-  console.log('[DEBUG] Token:', token);
   if (!token) {
     throw new Error('Token is undefined/null');
   }
