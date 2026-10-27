@@ -486,24 +486,19 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
   const total = Math.min(limit || 4, 8);
   const perView = 4;
   const [idx, setIdx] = useState(0);
-  const [hash, setHash] = useState('');
+  // Hash WAJIB dari context, bukan tebakan hostname. `www.demostore-ombot.my.id`
+  // dulu menghasilkan `www` → storefrontProducts("www") kosong, sehingga halaman
+  // di root domain tampak tanpa produk walau /storefront/demostore normal.
+  const { hash } = usePuckDynamic();
   const [items, setItems] = useState<StorefrontProduct[]>([]);
   const [state, setState] = useState<'loading' | 'done'>('loading');
   // Disimpan supaya bisa membedakan "katalog kosong" dari "kata kunci tidak
-  // ketemu" — dua hal yang butuh pesan berbeda bagi pembeli.
+  // ketemu" — dua hal butuh pesan berbeda bagi pembeli.
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Hash storefront: dari path /storefront/<hash> ATAU subdomain host
-    // (dev *.lvh.me, prod *.<domain>).
-    const fromPath = window.location.pathname.match(/\/storefront\/([^/]+)/)?.[1];
     const q = new URLSearchParams(window.location.search).get('q') || '';
-    const host = window.location.hostname;
-    const fromHost = host.includes('.') && !/^localhost$|^\d/.test(host)
-      ? host.split('.')[0]
-      : '';
-    const h = fromPath || fromHost || '';
-    setHash(h);
+    const h = hash || '';
     setSearchQuery(q);
     if (!h) {
       // Editor / preview — tidak ada katalog storefront, diam.
@@ -534,7 +529,7 @@ function ProductsView({ heading, mode, limit }: ProductsProps) {
     return () => {
       on = false;
     };
-  }, [total]);
+  }, [total, hash]);
 
   const card = (i: number) => (
     <div key={i} className="overflow-hidden rounded-xl border border-black/10">
