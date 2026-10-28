@@ -13,6 +13,7 @@ type PuckChange = AiAssistantResult['changes'][number];
 type PuckBlock = { id?: string; type?: string; props?: Record<string, unknown>; style?: Record<string, unknown>; [k: string]: unknown };
 
 const SCOPED_KEYS = ['css', 'js'];
+const IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 function freshId(): string {
   return `blk_ai_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6).toString(36)}`;
@@ -189,7 +190,7 @@ export function PuckAiAssistant({
   function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).slice(0, 3 - images.length);
     for (const f of files) {
-      if (!f.type.startsWith('image/')) continue;
+      if (!IMG_TYPES.includes(f.type)) continue;
       if (f.size > 6 * 1024 * 1024) continue;
       const reader = new FileReader();
       reader.onload = () => {
@@ -208,7 +209,7 @@ export function PuckAiAssistant({
     if (!imgItem) return; // bukan gambar → biarkan paste teks normal
     e.preventDefault();
     const file = imgItem.getAsFile();
-    if (!file || file.size > 6 * 1024 * 1024 || images.length >= 3) return;
+    if (!file || !IMG_TYPES.includes(file.type) || file.size > 6 * 1024 * 1024 || images.length >= 3) return;
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result);
@@ -219,11 +220,15 @@ export function PuckAiAssistant({
 
   async function send() {
     const text = message.trim();
-    if (!text || loading) return;
+    // Tolak hanya bila TIDAK ada teks DAN TIDAK ada gambar.
+    if ((!text && images.length === 0) || loading) return;
     const sendImages = images.slice();
+    // Backend menolak message kosong (AiAssistantService::chat). Gambar-saja
+    // tetap harus mengirim instruksi tertulis — dan itulah yang tersimpan di riwayat.
+    const wireText = text || (sendImages.length > 0 ? `Buat halaman mengikuti desain pada ${sendImages.length} gambar referensi ini.` : '');
     setImages([]);
     setMessage('');
-    setMessages((m) => [...m, { role: 'user', text }]);
+    setMessages((m) => [...m, { role: 'user', text: wireText }]);
     setLoading(true);
     try {
       // Jangan sertakan sapaan (greeting) ke konteks model — hanya pesan asli.
@@ -235,7 +240,7 @@ export function PuckAiAssistant({
         {
           web_store_id: webStoreId ?? undefined,
           scope: 'page',
-          message: text,
+          message: wireText,
           context,
           history,
           images: sendImages.map((im) => ({ data: im.data })),
@@ -300,10 +305,10 @@ export function PuckAiAssistant({
                     <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                       Usulan perubahan ({m.result.changes.length}) — tinjau sebelum terapkan
                     </div>
-                    {changedBlocksOf(data, m.result.changes).map(({ change, block }, j) => (
+                    {changedBlocksOf(data, m.result.changes).map(({ change, block, newBlocks }, j) => (
                       <div key={j} className="mb-2 rounded-xl border border-slate-200 bg-white">
                         <div className="px-2.5 pt-2 text-xs text-slate-600">{change.description}</div>
-                        <AiChangePreview block={block} change={change} />
+                        <AiChangePreview block={block} change={change} newBlocks={newBlocks} />
                         <div className="flex items-center justify-end gap-1.5 p-2">
                           {m.history ? (
                             // Usulan dari riwayat sesi lalu: preview saja, tak bisa
@@ -396,7 +401,7 @@ export function PuckAiAssistant({
                 placeholder="Contoh: buat hero promo diskon 50% pakai warna brand, atau tempel (Ctrl+V) screenshot & tiru layoutnya..."
                 className="min-w-0 flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
               />
-              <button type="submit" disabled={loading || !message.trim()} className="rounded-xl bg-indigo-600 p-2.5 text-white disabled:opacity-40" aria-label="Kirim"><Send size={15} /></button>
+              <button type="submit" disabled={loading || (!message.trim() && images.length === 0)} className="rounded-xl bg-indigo-600 p-2.5 text-white disabled:opacity-40" aria-label="Kirim"><Send size={15} /></button>
             </form>
             <div className="mt-1 text-[10px] text-slate-400">Maks 3 gambar · PNG/JPG/WebP ≤ 6 MB · bisa di-paste (Ctrl+V). Tinjau preview lalu Terapkan — jangan lupa <b>Simpan</b>.</div>
           </div>

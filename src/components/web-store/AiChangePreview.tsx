@@ -13,10 +13,15 @@ type Change = {
   description?: string;
 };
 
+type ChangedBlock = { change: Change; block: PuckBlock | null; newBlocks: PuckBlock[]; ops: any[] };
+
+/** Op yang paham cara preview-nya (sisanya = tak bisa digambar → beri alasan). */
+const PREVIEWABLE_OPS = ['update_block', 'append_blocks', 'prepend_blocks', 'replace_blocks', 'remove_block', 'reorder_blocks'];
+
 /** Ambil semua blok yang disentuh usulan AI (update_block / append / replace). */
-export function changedBlocksOf(data: { content?: unknown[] } | null, changes: Change[]): { change: Change; block: PuckBlock | null; ops: any[] }[] {
+export function changedBlocksOf(data: { content?: unknown[] } | null, changes: Change[]): ChangedBlock[] {
   if (!data || !Array.isArray(data.content)) return [];
-  const out: { change: Change; block: PuckBlock | null; ops: any[] }[] = [];
+  const out: ChangedBlock[] = [];
   for (const change of changes) {
     const to = change.to as { slug?: string; ops?: any[] } | null;
     const field = change.field || '';
@@ -26,7 +31,16 @@ export function changedBlocksOf(data: { content?: unknown[] } | null, changes: C
     const block = update?.id
       ? (data.content as PuckBlock[]).find((b) => b.props?.id === update.id || b.id === update.id) ?? null
       : null;
-    out.push({ change, block, ops: to.ops });
+    // append/prepend/replace membawa blok baru yang belum ada di kanvas —
+    // itu yang dipreview sebagai "SESUDAH", bukan hasil pencarian blok lama.
+    const newBlocks: PuckBlock[] = [];
+    for (const op of to.ops) {
+      if (!['append_blocks', 'prepend_blocks', 'replace_blocks'].includes(op?.op)) continue;
+      for (const b of Array.isArray(op.blocks) ? op.blocks : []) {
+        if (b && typeof b === 'object' && typeof b.type === 'string') newBlocks.push(b as PuckBlock);
+      }
+    }
+    out.push({ change, block, newBlocks, ops: to.ops });
   }
   return out;
 }
@@ -81,12 +95,46 @@ function BlockPreview({ block, forceCss }: { block: PuckBlock; forceCss?: Record
 }
 
 /** Preview sebelum/sesudah untuk satu usulan perubahan blok. */
-export function AiChangePreview({ block, change }: { block: PuckBlock | null; change: Change }) {
-  if (!block) {
-    return (
-      <div className="mt-2 rounded-lg border border-dashed border-slate-300 p-3 text-xs text-slate-500">
-        {change.description || 'Perubahan blok — blok target tidak ditemukan di kanvas.'}
+export function AiChangePreview({ block, change, newBlocks }: { block: PuckBlock | null; change: Change; newBlocks?: PuckBlock[] }) {
+  // Blok baru hasil append/prepend/replace: tidak ada "SEBELUM" — hanya SESUDAH.
+  const newSection = newBlocks && newBlocks.length > 0 ? (
+      <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Preview blok</span>
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">blok baru</span>
+        </div>
+        <div className="space-y-2">
+          {newBlocks.map((b, i) => (
+            <div key={b.props?.id ? String(b.props.id) : i}>
+              <div className="mb-1 text-center text-[10px] font-bold uppercase text-emerald-600">
+                SESUDAH · {b.type}
+              </div>
+              <div className="max-h-44 overflow-hidden rounded-lg border-2 border-emerald-200 bg-emerald-50/40">
+                <BlockPreview block={b} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+  ) : null;
+
+  if (!block) {
+    // Tak ada blok lama untuk dibandingkan (mis. op hanya remove/reorder atau
+    // tipe yang tak dikenal). Jangan kotak kosong: sebut alasannya.
+    const ops = (change.to as { ops?: any[] } | null)?.ops ?? [];
+    const unknown = ops.map((o) => String(o?.op ?? '')).filter((op) => op && !PREVIEWABLE_OPS.includes(op));
+    return (
+      <>
+        {newSection}
+        <div className="mt-2 rounded-lg border border-dashed border-slate-300 p-3 text-xs text-slate-500">
+          <div>{change.description || 'Perubahan blok — blok target tidak ditemukan di kanvas.'}</div>
+          {unknown.length > 0 && (
+            <div className="mt-1 text-slate-400">
+              Jenis perubahan “{unknown.join(', ')}” belum bisa dipreview di panel ini — cek hasilnya setelah Terapkan.
+            </div>
+          )}
+        </div>
+      </>
     );
   }
 
@@ -114,6 +162,7 @@ export function AiChangePreview({ block, change }: { block: PuckBlock | null; ch
 
   return (
     <div className="mt-2 rounded-xl border border-slate-200 bg-white p-3">
+      {newSection}
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Preview blok</span>
         {hasCss && (
