@@ -4,7 +4,8 @@
  * Shell owner — design system "Lembut Modern" (C).
  *
  * PERUBAHAN: hanya tampilan topbar & spacing. Logika tidak berubah:
- *  - isBuilder → full-bleed (tanpa sidebar/header) tetap sama
+ *  - isBuilder → full-bleed (tanpa sidebar/header); daftar prefix eksplisit
+ *    di FULL_BLEED_PREFIXES
  *  - collapse sidebar desktop tetap sama
  *  - logout tetap sama
  */
@@ -14,6 +15,10 @@ import { Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { OwnerSidebar } from '@/components/owner/OwnerSidebar';
 import { clearAuthToken } from '@/lib/auth';
 
+// Daftar prefix eksplisit (bukan startsWith melebar) — tiap entri punya navigasi
+// sendiri (tombol "Kembali ke Setup"), jadi tidak butuh chrome.
+const FULL_BLEED_PREFIXES = ['/owner/web-store/pages', '/owner/web-store/builder'];
+
 export function OwnerShell({ children, displayName }: { children: React.ReactNode; displayName: string }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -21,7 +26,7 @@ export function OwnerShell({ children, displayName }: { children: React.ReactNod
   const pathname = usePathname();
 
   // Builder & page editor = full-bleed: tanpa sidebar, header, navbar.
-  const isBuilder = pathname.startsWith('/owner/web-store/pages');
+  const isBuilder = FULL_BLEED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));
 
   const handleLogout = () => {
     clearAuthToken();
